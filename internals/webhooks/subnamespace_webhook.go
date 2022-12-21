@@ -1,12 +1,12 @@
 package webhooks
 
 import (
-	danav1 "github.com/dana-team/hns/api/v1"
-	"github.com/dana-team/hns/internals/namespaceDB"
-	"github.com/dana-team/hns/internals/utils"
 	"context"
 	"errors"
 	"fmt"
+	danav1 "github.com/dana-team/hns/api/v1"
+	"github.com/dana-team/hns/internals/namespaceDB"
+	"github.com/dana-team/hns/internals/utils"
 	"github.com/go-logr/logr"
 	qoutav1 "github.com/openshift/api/quota/v1"
 	admissionv1 "k8s.io/api/admission/v1"

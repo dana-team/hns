@@ -19,12 +19,12 @@ limitations under the License.
 package main
 
 import (
+	"flag"
 	danav1 "github.com/dana-team/hns/api/v1"
 	"github.com/dana-team/hns/internals/controllers"
 	"github.com/dana-team/hns/internals/namespaceDB"
 	"github.com/dana-team/hns/internals/server"
 	"github.com/dana-team/hns/internals/webhooks"
-	"flag"
 	buildv1 "github.com/openshift/api/build/v1"
 	quotav1 "github.com/openshift/api/quota/v1"
 	templatev1 "github.com/openshift/api/template/v1"
