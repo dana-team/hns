@@ -1,10 +1,10 @@
 package controllers
 
 import (
-	danav1 "github.com/dana-team/hns/api/v1"
-	"github.com/dana-team/hns/internals/utils"
 	"context"
 	"fmt"
+	danav1 "github.com/dana-team/hns/api/v1"
+	"github.com/dana-team/hns/internals/utils"
 	"github.com/go-logr/logr"
 	. "github.com/onsi/gomega"
 	quotav1 "github.com/openshift/api/quota/v1"

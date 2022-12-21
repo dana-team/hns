@@ -1,9 +1,9 @@
 package server
 
 import (
-	danav1 "github.com/dana-team/hns/api/v1"
 	"context"
 	"fmt"
+	danav1 "github.com/dana-team/hns/api/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"net/http"
 	"sigs.k8s.io/controller-runtime/pkg/client"

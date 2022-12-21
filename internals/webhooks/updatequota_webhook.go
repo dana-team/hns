@@ -1,10 +1,10 @@
 package webhooks
 
 import (
-	danav1 "github.com/dana-team/hns/api/v1"
-	"github.com/dana-team/hns/internals/utils"
 	"context"
 	"fmt"
+	danav1 "github.com/dana-team/hns/api/v1"
+	"github.com/dana-team/hns/internals/utils"
 	"github.com/go-logr/logr"
 	authv1 "k8s.io/api/authorization/v1"
 	corev1 "k8s.io/api/core/v1"
