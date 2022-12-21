@@ -1,0 +1,20 @@
+# permissions for end users to view subnamespaces.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: subnamespace-viewer-role
+rules:
+- apiGroups:
+  - dana.hns.io
+  resources:
+  - subnamespaces
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - dana.hns.io
+  resources:
+  - subnamespaces/status
+  verbs:
+  - get

@@ -1,0 +1,54 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  labels:
+    control-plane: controller-manager
+  name: system
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: controller-manager
+  namespace: system
+  labels:
+    control-plane: controller-manager
+spec:
+  selector:
+    matchLabels:
+      control-plane: controller-manager
+  replicas: 3
+  template:
+    metadata:
+      labels:
+        control-plane: controller-manager
+    spec:
+      tolerations:
+        - key: node-role.kubernetes.io/infra
+          operator: Exists
+          effect: NoSchedule
+      nodeSelector:
+        node-role.kubernetes.io/infra: ''
+      containers:
+        - command:
+            - /manager
+          env:
+            - name: ELASTIC_SERVER
+              value: lucy-log
+            - name: ELASTIC_PORT
+              value: "9200"
+            - name: ELASTIC_INDEX
+              value: danateam_hns
+            - name: MAX_SNS_IN_HIERARCHY
+              value: "100"
+          args:
+            - --enable-leader-election
+          image: controller:latest
+          name: manager
+          resources:
+            limits:
+              cpu: 1
+              memory: 1Gi
+            requests:
+              cpu: 1
+              memory: 1Gi
+      terminationGracePeriodSeconds: 10

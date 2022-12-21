@@ -1,0 +1,5 @@
+varReference:
+  - kind: MutatingWebhookConfiguration
+    path: webhooks[]/clientConfig/url
+  - kind: ValidatingWebhookConfiguration
+    path: webhooks[]/clientConfig/url

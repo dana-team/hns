@@ -1,0 +1,140 @@
+
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingWebhookConfiguration
+metadata:
+  creationTimestamp: null
+  name: mutating-webhook-configuration
+webhooks:
+  - name: buildconfig.dana.io
+    sideEffects: NoneOnDryRun
+    clientConfig:
+      url: https://$(DANA_DEV_VM):9443/mutate-v1-buildconfig
+    reinvocationPolicy: Never
+    rules:
+      - operations:
+          - CREATE
+        apiGroups:
+          - build.openshift.io
+        apiVersions:
+          - v1
+        resources:
+          - buildconfigs
+        scope: '*'
+    matchPolicy: Equivalent
+    admissionReviewVersions:
+      - v1
+      - v1beta1
+    failurePolicy: Fail
+    timeoutSeconds: 30
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingWebhookConfiguration
+metadata:
+  creationTimestamp: null
+  name: validating-webhook-configuration
+webhooks:
+  - name: migrationhierarchy.dana.io
+    clientConfig:
+      url: https://$(DANA_DEV_VM):9443/validate-v1-migrationhierarchy
+    sideEffects: NoneOnDryRun
+    rules:
+      - operations:
+          - CREATE
+          - UPDATE
+        apiGroups:
+          - dana.hns.io
+        apiVersions:
+          - v1
+        resources:
+          - migrationhierarchies
+        scope: '*'
+    matchPolicy: Equivalent
+    admissionReviewVersions:
+      - v1
+      - v1beta1
+    failurePolicy: Fail
+    timeoutSeconds: 30
+  - name: namespace.dana.io
+    sideEffects: NoneOnDryRun
+    clientConfig:
+      url: https://$(DANA_DEV_VM):9443/validate-v1-namespace
+    rules:
+      - operations:
+          - DELETE
+        apiGroups:
+          - ''
+        apiVersions:
+          - v1
+        resources:
+          - namespaces
+        scope: '*'
+    matchPolicy: Equivalent
+    admissionReviewVersions:
+      - v1
+      - v1beta1
+    failurePolicy: Fail
+    timeoutSeconds: 30
+  - name: rolebinding.dana.io
+    sideEffects: NoneOnDryRun
+    clientConfig:
+      url: https://$(DANA_DEV_VM):9443/validate-v1-rolebinding
+    rules:
+      - operations:
+          - DELETE
+          - CREATE
+        apiGroups:
+          - rbac.authorization.k8s.io
+        apiVersions:
+          - v1
+        resources:
+          - rolebindings
+        scope: '*'
+    matchPolicy: Equivalent
+    admissionReviewVersions:
+      - v1
+      - v1beta1
+    failurePolicy: Fail
+    timeoutSeconds: 30
+  - name: subnamespace.dana.io
+    sideEffects: NoneOnDryRun
+    clientConfig:
+      url: https://$(DANA_DEV_VM):9443/validate-v1-subnamespace
+    rules:
+      - operations:
+          - CREATE
+          - UPDATE
+        apiGroups:
+          - dana.hns.io
+        apiVersions:
+          - v1
+        resources:
+          - subnamespaces
+        scope: '*'
+    matchPolicy: Equivalent
+    admissionReviewVersions:
+      - v1
+      - v1beta1
+    failurePolicy: Fail
+    timeoutSeconds: 30
+  - name: updatequota.dana.io
+    sideEffects: NoneOnDryRun
+    clientConfig:
+      url: https://$(DANA_DEV_VM):9443/validate-v1-updatequota
+    rules:
+      - operations:
+          - CREATE
+          - UPDATE
+        apiGroups:
+          - dana.hns.io
+        apiVersions:
+          - v1
+        resources:
+          - updatequota
+        scope: '*'
+    matchPolicy: Equivalent
+    admissionReviewVersions:
+      - v1
+      - v1beta1
+    failurePolicy: Fail
+    timeoutSeconds: 30

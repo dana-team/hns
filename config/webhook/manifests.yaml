@@ -1,0 +1,138 @@
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingWebhookConfiguration
+metadata:
+  creationTimestamp: null
+  name: mutating-webhook-configuration
+webhooks:
+- admissionReviewVersions:
+  - v1
+  - v1beta1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
+      path: /mutate-v1-buildconfig
+  failurePolicy: Fail
+  name: buildconfig.dana.io
+  rules:
+  - apiGroups:
+    - build.openshift.io
+    apiVersions:
+    - v1
+    operations:
+    - CREATE
+    resources:
+    - buildconfigs
+  sideEffects: NoneOnDryRun
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingWebhookConfiguration
+metadata:
+  creationTimestamp: null
+  name: validating-webhook-configuration
+webhooks:
+- admissionReviewVersions:
+  - v1
+  - v1beta1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
+      path: /validate-v1-migrationhierarchy
+  failurePolicy: Fail
+  name: migrationhierarchy.dana.io
+  rules:
+  - apiGroups:
+    - dana.hns.io
+    apiVersions:
+    - v1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - migrationhierarchies
+  sideEffects: NoneOnDryRun
+- admissionReviewVersions:
+  - v1
+  - v1beta1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
+      path: /validate-v1-namespace
+  failurePolicy: Fail
+  name: namespace.dana.io
+  rules:
+  - apiGroups:
+    - ""
+    apiVersions:
+    - v1
+    operations:
+    - DELETE
+    resources:
+    - namespaces
+  sideEffects: NoneOnDryRun
+- admissionReviewVersions:
+  - v1
+  - v1beta1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
+      path: /validate-v1-rolebinding
+  failurePolicy: Fail
+  name: rolebinding.dana.io
+  rules:
+  - apiGroups:
+    - rbac.authorization.k8s.io
+    apiVersions:
+    - v1
+    operations:
+    - DELETE
+    - CREATE
+    resources:
+    - rolebindings
+  sideEffects: NoneOnDryRun
+- admissionReviewVersions:
+  - v1
+  - v1beta1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
+      path: /validate-v1-subnamespace
+  failurePolicy: Fail
+  name: subnamespace.dana.io
+  rules:
+  - apiGroups:
+    - dana.hns.io
+    apiVersions:
+    - v1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - subnamespaces
+  sideEffects: NoneOnDryRun
+- admissionReviewVersions:
+  - v1
+  - v1beta1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
+      path: /validate-v1-updatequota
+  failurePolicy: Fail
+  name: updatequota.dana.io
+  rules:
+  - apiGroups:
+    - dana.hns.io
+    apiVersions:
+    - v1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - updatequota
+  sideEffects: NoneOnDryRun

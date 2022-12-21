@@ -1,0 +1,22 @@
+resources:
+- manifests.yaml
+
+configMapGenerator:
+  - name: environment-hostname
+    envs: [hostname.env]
+    behavior: create
+
+generatorOptions:
+  disableNameSuffixHash: true
+
+configurations:
+  - env-var-transformer.yaml
+
+vars:
+- name: DANA_DEV_VM
+  objref:
+    kind: ConfigMap
+    name: environment-hostname
+    apiVersion: v1
+  fieldref:
+    fieldpath: data.HOSTNAME

@@ -1,0 +1,7 @@
+domain: dana.sns.io
+repo: github.com/dana-team/hns
+resources:
+- group: dana
+  kind: Subnamespace
+  version: v1
+version: "2"

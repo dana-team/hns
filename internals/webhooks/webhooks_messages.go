@@ -1,0 +1,27 @@
+package webhooks
+
+const (
+	denyMessageValidateNamespace                    = "deleting a Namespace with Subnamesapces is forbidden."
+	allowMessageValidateNamespace                   = "deleted successfully"
+	allowMessageValidateRoleBinding                 = "creation marked"
+	allowMessageValidateQuotaObj                    = "there are enough resources to complete the request"
+	denyMessageValidateQuotaObj                     = "there are not enough resources to complete the request of type "
+	denyMessageValidateUsedQuotaObj                 = "subnamespace uses more resources than the requested resources"
+	denyMessageMinQuotaObj                          = "it's forbidden to update a resource to be less than its children's requests of type "
+	contactMessage                                  = "please contact Mador 894"
+	denyMessageRoleBinding                          = "it's forbidden to delete role binding not at the top of the hierarchy"
+	denyMessageCreateResourcePool                   = "only a resource pool can be created under a resource pool"
+	denyMessageUpdateResourcePool                   = "it's forbidden to change a ResourcePool label not at the top of hierarchy"
+	denyMessageDeleteResourcePool                   = "it's forbidden to delete ResourcePool label"
+	denyMessageUpdateResourcePoolDescendant         = "it's forbidden to change to ResourcePool when one of your descendants is ResourcePool"
+	namespaceExistsMessage                          = "a namespace of this name already exists, try to change the name"
+	denyMessageCreatingMoreThanLimit                = "it's forbidden to creating more than %v namespaces under hierarchy "
+	denyMessageMigrationNotAllowed                  = "it's forbidden to migrate in this hierarchy "
+	denyMessageMigrationNotAllowedResourcePool      = "it's forbidden to migrate from or to a ResourcePool"
+	denyMessageMigrationNotAllowedTooFewResources   = "it's forbidden to migrate because there are not enough resources in the requested new parent"
+	denyMessageMigrationNotAllowedTooFewResourcesRP = "it's forbidden to migrate because there are not enough free resources in the ResourcePool"
+	denyMessageImmutableAnnotation                  = "it's forbidden change %v annotation"
+	denyMessageNamespaceNotFound                    = "%v namespace not found"
+	allowMessageUpdatePhase                         = "Updated phase"
+	denyCannotGetClusterName                        = "Cannot get cluster name"
+)

@@ -1,0 +1,14 @@
+kind: Route
+apiVersion: route.openshift.io/v1
+metadata:
+  name: diagram
+  namespace: system
+spec:
+  host:
+  to:
+    kind: Service
+    name: sns-diagram
+    weight: 100
+  port:
+    targetPort: 8888
+  wildcardPolicy: None
