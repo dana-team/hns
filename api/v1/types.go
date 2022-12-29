@@ -59,11 +59,12 @@ const (
 )
 
 // IsRq offsets
+// Secondary Roots
 const (
-	SelfOffset    = 0
-	SiblingOffset = 0
-	ParentOffset  = -1
-	ChildOffset   = 1
+	SelfOffset      = 0
+	ParentOffset    = -1
+	ChildOffset     = 1
+	NoSecondaryRoot = 1
 )
 
 var (

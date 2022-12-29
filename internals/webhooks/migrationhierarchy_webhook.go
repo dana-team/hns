@@ -20,6 +20,7 @@ import (
 	"reflect"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
+	"strconv"
 )
 
 type MigrationHierarchyAnnotator struct {
@@ -45,6 +46,52 @@ func (a *MigrationHierarchyAnnotator) Handle(ctx context.Context, req admission.
 		return admission.Errored(http.StatusBadRequest, err)
 	}
 
+	// get the relevant namespace objects
+	currentNamespace := migrationObject.Object.(*danav1.MigrationHierarchy).Spec.CurrentNamespace
+	toNamespace := migrationObject.Object.(*danav1.MigrationHierarchy).Spec.ToNamespace
+
+	currentNS, err := utils.NewObjectContext(ctx, log, a.Client, client.ObjectKey{Namespace: "", Name: currentNamespace}, &corev1.Namespace{})
+	if err != nil {
+		return admission.Denied(err.Error())
+	}
+	if !currentNS.IsPresent() {
+		return admission.Denied(fmt.Sprintf(denyMessageNamespaceNotFound, currentNamespace))
+	}
+
+	toNS, err := utils.NewObjectContext(ctx, log, a.Client, client.ObjectKey{Namespace: "", Name: toNamespace}, &corev1.Namespace{})
+	if err != nil {
+		return admission.Denied(err.Error())
+	}
+	if !toNS.IsPresent() {
+		return admission.Denied(fmt.Sprintf(denyMessageNamespaceNotFound, toNamespace))
+	}
+
+	// check what the rq-depth of the root namespace to see if there are multiple secondary root namespaces
+	// deny if trying to perform migration involving namesapces from different secondary root namespaces
+	// a secondary root is the first subnamespace after the root namespace in the hierarchy of a subnamespac
+	rootRqDepth, err := utils.GetRqDepthFromNS(currentNS)
+	if err != nil {
+		return admission.Denied(err.Error())
+	}
+
+	rootRqDepthInt, err := strconv.Atoi(rootRqDepth)
+	if err != nil {
+		return admission.Denied(err.Error())
+	}
+	currentNSArray := utils.GetNSDisplayNameArray(currentNS)
+	toNSArray := utils.GetNSDisplayNameArray(toNS)
+
+	if rootRqDepthInt > danav1.NoSecondaryRoot {
+		currentNSSecondaryRoot := currentNSArray[1]
+		toNSSecondaryRoot := toNSArray[1]
+		if currentNSSecondaryRoot != "" && toNSSecondaryRoot != "" {
+			if currentNSSecondaryRoot != toNSSecondaryRoot {
+				return admission.Denied("it is forbidden to migrate subnamespaces under hierarchy '" + currentNSSecondaryRoot +
+					"' to subnamespaces under hierarchy '" + toNSSecondaryRoot + "'")
+			}
+		}
+	}
+
 	//validate the user can do operations on nsparent and ns child
 	cani := a.validatePermissions(ctx, req, log, migrationObject.Object.(*danav1.MigrationHierarchy).Spec.CurrentNamespace)
 	if !cani {
@@ -56,25 +103,6 @@ func (a *MigrationHierarchyAnnotator) Handle(ctx context.Context, req admission.
 	}
 
 	if req.Operation == admissionv1.Create {
-		currentNamespace := migrationObject.Object.(*danav1.MigrationHierarchy).Spec.CurrentNamespace
-		toNamespace := migrationObject.Object.(*danav1.MigrationHierarchy).Spec.ToNamespace
-
-		currentNS, err := utils.NewObjectContext(ctx, log, a.Client, client.ObjectKey{Namespace: "", Name: currentNamespace}, &corev1.Namespace{})
-		if err != nil {
-			return admission.Denied(err.Error())
-		}
-		if !currentNS.IsPresent() {
-			return admission.Denied(fmt.Sprintf(denyMessageNamespaceNotFound, currentNamespace))
-		}
-
-		toNS, err := utils.NewObjectContext(ctx, log, a.Client, client.ObjectKey{Namespace: "", Name: toNamespace}, &corev1.Namespace{})
-		if err != nil {
-			return admission.Denied(err.Error())
-		}
-		if !toNS.IsPresent() {
-			return admission.Denied(fmt.Sprintf(denyMessageNamespaceNotFound, toNamespace))
-		}
-
 		// migration into or from a resourcepool is not allowed
 		if utils.GetNamespaceResourcePooled(currentNS) == "true" || utils.GetNamespaceResourcePooled(toNS) == "true" {
 			return admission.Denied(denyMessageMigrationNotAllowedResourcePool)
