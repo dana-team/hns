@@ -2,6 +2,7 @@ package utils
 
 import (
 	"context"
+	"fmt"
 	"reflect"
 	"strconv"
 	"strings"
@@ -95,4 +96,31 @@ func GetSnsListUp(ns *ObjectContext, rootns string, rclient client.Client, logge
 	}
 
 	return snsList, nil
+}
+
+// GetNSDisplayNameArray returns an array of strings that contains the hierarchy
+// of a namespace in accordance to its display-name
+func GetNSDisplayNameArray(ns *ObjectContext) []string {
+	displayName := ns.Object.GetAnnotations()["openshift.io/display-name"]
+	nsArr := strings.Split(displayName, "/")
+
+	return nsArr
+}
+
+// GetAncestor finds the nearest joint namespace of two subnamespaces in a hierarchy
+func GetAncestor(sourceArr []string, destArr []string) (string, bool, error) {
+	for i := len(sourceArr) - 1; i >= 0; i-- {
+		for j := len(destArr) - 1; j >= 0; j-- {
+			if sourceArr[i] == destArr[j] {
+				// if we've reached the end of the loop, then the Ancestor is
+				// the root namespace, and we return true - otherwise return false
+				if (i == 0) && (j == 0) {
+					return sourceArr[i], true, nil
+				} else {
+					return sourceArr[i], false, nil
+				}
+			}
+		}
+	}
+	return "", false, fmt.Errorf("root namespace does not exist")
 }

@@ -34,7 +34,7 @@ func IsChildlessNamespace(namespace *ObjectContext) bool {
 // IsRq returns true if the depth of the subnamespace is less or equal
 // the pre-set rqDepth AND if the subnamespace is not a ResourcePool
 func IsRq(sns *ObjectContext, offset int) (bool, error) {
-	rootRQDepth, err := GetRqDepth(sns)
+	rootRQDepth, err := GetRqDepthFromSNS(sns)
 	if err != nil {
 		return false, err
 	}
@@ -73,13 +73,21 @@ func GetSnsDepth(sns *ObjectContext) (string, error) {
 	return strconv.Itoa(depthInt), nil
 }
 
-func GetRqDepth(sns *ObjectContext) (string, error) {
+func GetRqDepthFromSNS(sns *ObjectContext) (string, error) {
 	rootns := corev1.Namespace{}
 	parentns := corev1.Namespace{}
 	if err := sns.Client.Get(sns.Ctx, types.NamespacedName{Name: sns.Object.GetNamespace()}, &parentns); err != nil {
 		return "", err
 	}
 	if err := sns.Client.Get(sns.Ctx, types.NamespacedName{Name: parentns.Annotations[danav1.RootCrqSelector]}, &rootns); err != nil {
+		return "", err
+	}
+	return rootns.Annotations[danav1.RqDepth], nil
+}
+
+func GetRqDepthFromNS(ns *ObjectContext) (string, error) {
+	rootns := corev1.Namespace{}
+	if err := ns.Client.Get(ns.Ctx, types.NamespacedName{Name: ns.Object.GetAnnotations()[danav1.RootCrqSelector]}, &rootns); err != nil {
 		return "", err
 	}
 	return rootns.Annotations[danav1.RqDepth], nil

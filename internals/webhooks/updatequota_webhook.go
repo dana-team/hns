@@ -2,7 +2,6 @@ package webhooks
 
 import (
 	"context"
-	"fmt"
 	danav1 "github.com/dana-team/hns/api/v1"
 	"github.com/dana-team/hns/internals/utils"
 	"github.com/go-logr/logr"
@@ -12,12 +11,12 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
+	"strconv"
 
 	// "k8s.io/client-go/tools/clientcmd"
 	"net/http"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
-	"strings"
 )
 
 type UpdateQuotaAnnotator struct {
@@ -59,20 +58,48 @@ func (a *UpdateQuotaAnnotator) Handle(ctx context.Context, req admission.Request
 		return admission.Denied("Namespace " + updatingObject.Object.(*danav1.Updatequota).Spec.DestNamespace + " does not exist")
 	}
 
-	nsRootName, err := a.getAncestor(nsFrom, nsTo)
+	nsFromArray := utils.GetNSDisplayNameArray(nsFrom)
+	nsToArray := utils.GetNSDisplayNameArray(nsTo)
+
+	nsAncestorName, isRoot, err := utils.GetAncestor(nsFromArray, nsToArray)
 	if err != nil {
 		return admission.Denied(err.Error())
+	}
+
+	// check what the rq-depth of the root namespace to see if there are multiple secondary root namespaces
+	// deny if trying to perform UpdateQuota involving namesapces from different secondary root namespaces
+	// a secondary root is the first subnamespace after the root namespace in the hierarchy of a subnamespace
+	// only satisfy the condition if you are not trying to move resources from or to the root namespace
+	rootRqDepth, err := utils.GetRqDepthFromNS(nsFrom)
+	if err != nil {
+		return admission.Denied(err.Error())
+	}
+
+	rootRqDepthInt, err := strconv.Atoi(rootRqDepth)
+	if err != nil {
+		return admission.Denied(err.Error())
+	}
+
+	if rootRqDepthInt > danav1.NoSecondaryRoot {
+		if isRoot && !utils.IsRootNamespace(nsFrom.Object) && !utils.IsRootNamespace(nsTo.Object) {
+			toNSSecondaryRoot := nsToArray[1]
+			fromNSSecondaryRoot := nsFromArray[1]
+			if toNSSecondaryRoot != fromNSSecondaryRoot {
+				return admission.Denied("it is forbidden to move resources to subnamespaces under hierarchy '" + toNSSecondaryRoot +
+					"' from subnamespaces under hierarchy '" + fromNSSecondaryRoot + "'")
+			}
+		}
 	}
 
 	nsFromName := nsFrom.GetName()
 	nsToName := nsTo.GetName()
 	hasFromPermissions := a.validatePermissions(req, nsFromName)
 	hasToPermissions := a.validatePermissions(req, nsToName)
-	hasRootPermissions := a.validatePermissions(req, nsRootName)
+	hasAncestorPermissions := a.validatePermissions(req, nsAncestorName)
 
-	if !hasRootPermissions && !(hasFromPermissions && hasToPermissions) {
+	if !hasAncestorPermissions && !(hasFromPermissions && hasToPermissions) {
 		return admission.Denied("you must have permissions on: " + nsFromName + " and " + nsToName +
-			" or permissions on:" + nsRootName + " to perform this operation")
+			" or permissions on:" + nsAncestorName + " to perform this operation")
 	}
 
 	var snsFrom *utils.ObjectContext
@@ -167,21 +194,4 @@ func (a *UpdateQuotaAnnotator) validatePermissions(req admission.Request, namesp
 		return true
 	}
 	return false
-}
-
-func (a *UpdateQuotaAnnotator) getAncestor(sourcens *utils.ObjectContext, destns *utils.ObjectContext) (string, error) {
-	sourceDisplayName := sourcens.Object.GetAnnotations()["openshift.io/display-name"]
-	destDisplayName := destns.Object.GetAnnotations()["openshift.io/display-name"]
-
-	sourceArr := strings.Split(sourceDisplayName, "/")
-	destArr := strings.Split(destDisplayName, "/")
-
-	for i := len(sourceArr) - 1; i >= 0; i-- {
-		for j := len(destArr) - 1; j >= 0; j-- {
-			if sourceArr[i] == destArr[j] {
-				return sourceArr[i], nil
-			}
-		}
-	}
-	return "", fmt.Errorf("root namespace does not exist")
 }

@@ -16,7 +16,7 @@ const (
 	denyMessageUpdateResourcePoolDescendant         = "it's forbidden to change to ResourcePool when one of your descendants is ResourcePool"
 	namespaceExistsMessage                          = "a namespace of this name already exists, try to change the name"
 	denyMessageCreatingMoreThanLimit                = "it's forbidden to creating more than %v namespaces under hierarchy "
-	denyMessageMigrationNotAllowed                  = "it's forbidden to migrate in this hierarchy "
+	denyMessageMigrationNotAllowed                  = "it's forbidden to migrate from or to this level of the hierarchy"
 	denyMessageMigrationNotAllowedResourcePool      = "it's forbidden to migrate from or to a ResourcePool"
 	denyMessageMigrationNotAllowedTooFewResources   = "it's forbidden to migrate because there are not enough resources in the requested new parent"
 	denyMessageMigrationNotAllowedTooFewResourcesRP = "it's forbidden to migrate because there are not enough free resources in the ResourcePool"
