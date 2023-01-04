@@ -3,19 +3,21 @@ package namespaceDB
 import (
 	"context"
 	"fmt"
+	"sort"
+	"strconv"
+
 	v1 "github.com/dana-team/hns/api/v1"
 	"github.com/dana-team/hns/internals/utils"
 	"github.com/go-logr/logr"
 	quotav1 "github.com/openshift/api/quota/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
-	"sort"
-	"strconv"
+
+	"sync"
 
 	danav1 "github.com/dana-team/hns/api/v1"
 	corev1 "k8s.io/api/core/v1"
 	goclient "sigs.k8s.io/controller-runtime/pkg/client"
-	"sync"
 )
 
 type NamespaceDB struct {
@@ -27,18 +29,29 @@ type NamespaceDB struct {
 // key namespaces with values of all namespaces' names under the key hierarchy.
 // key namespace is the first namespace in the hierarchy that has CRQ and not RQ
 func InitDB(client goclient.Client, log logr.Logger) (*NamespaceDB, error) {
+	rootns := &corev1.Namespace{}
 	ndb := &NamespaceDB{nsparentCrq: make(map[string][]string), mutex: &sync.RWMutex{}}
-	ns := corev1.Namespace{}
+	nslist := corev1.NamespaceList{}
 	snslist := v1.SubnamespaceList{}
+	nsWithSns := corev1.NamespaceList{}
+
+	if err := client.List(context.Background(), &nslist); err != nil {
+		return ndb, err
+	}
 	if err := client.List(context.Background(), &snslist); err != nil {
 		return ndb, err
 	}
-	for _, sns := range snslist.Items {
-		if err := client.Get(context.Background(), types.NamespacedName{Name: sns.Name}, &ns); err != nil {
-			return nil, err
+	for _, ns := range nslist.Items {
+		if isSubnamespace(snslist, ns.Name) {
+			nsWithSns.Items = append(nsWithSns.Items, ns)
 		}
+	}
+	if len(nsWithSns.Items) > 0 {
+		rootns = LocateNS(nslist, nsWithSns.Items[0].Annotations[v1.RootCrqSelector])
+	}
+	for _, ns := range nsWithSns.Items {
 		if ok := ns.Annotations[v1.Role] == v1.Leaf; ok {
-			err := addHierarchy(ns, client, log.WithName("add hierarchy"), ndb)
+			err := addHierarchy(ns, nslist, ndb, rootns)
 			if err != nil {
 				return ndb, err
 			}
@@ -47,28 +60,38 @@ func InitDB(client goclient.Client, log logr.Logger) (*NamespaceDB, error) {
 	return ndb, nil
 }
 
-func addHierarchy(ns corev1.Namespace, client goclient.Client, log logr.Logger, ndb *NamespaceDB) error {
-	nsObjectContext, err := utils.NewObjectContext(context.Background(), log, client, types.NamespacedName{Name: ns.Name}, &corev1.Namespace{})
-	rootns := corev1.Namespace{}
-	if err != nil {
-		return err
+func LocateNS(nsList corev1.NamespaceList, nsName string) *corev1.Namespace {
+	for _, ns := range nsList.Items {
+		if ns.Name == nsName {
+			return &ns
+		}
 	}
-	if err := client.Get(context.Background(), types.NamespacedName{Name: ns.Annotations[v1.RootCrqSelector]}, &rootns); err != nil {
-		return err
+	return nil
+}
+
+func isSubnamespace(snslist v1.SubnamespaceList, nsname string) bool {
+	for _, sns := range snslist.Items {
+		if sns.Name == nsname {
+			return true
+		}
 	}
-	nslistup, err := utils.GetNsListUp(nsObjectContext, rootns.Name, client, log)
+	return false
+}
+
+func addHierarchy(ns corev1.Namespace, nsList corev1.NamespaceList, ndb *NamespaceDB, rootns *corev1.Namespace) error {
+	nslistup, _ := utils.GetNsListUpEfficient(ns, rootns.Name, nsList)
 	sort.Slice(nslistup, func(i, j int) bool {
-		return nslistup[i].Object.(*corev1.Namespace).Annotations[v1.Depth] < nslistup[j].Object.(*corev1.Namespace).Annotations[v1.Depth]
+		return nslistup[i].Annotations[v1.Depth] < nslistup[j].Annotations[v1.Depth]
 	})
-	rqdepth, err := strconv.Atoi(rootns.Annotations[v1.RqDepth])
+	rqdepth, _ := strconv.Atoi(rootns.Annotations[v1.RqDepth])
 	if len(nslistup) > rqdepth {
-		keyname := nslistup[rqdepth].Object.GetName()
+		keyname := nslistup[rqdepth].GetName()
 		if !ndb.isKeyExist(keyname) {
 			ndb.addNsToKey(keyname, keyname)
 		}
 		for _, namespace := range nslistup[rqdepth+1:] {
-			if !ndb.valInKeyExist(keyname, namespace.Object.GetName()) {
-				ndb.addNsToKey(keyname, namespace.Object.GetName())
+			if !ndb.valInKeyExist(keyname, namespace.GetName()) {
+				ndb.addNsToKey(keyname, namespace.GetName())
 			}
 		}
 	}
