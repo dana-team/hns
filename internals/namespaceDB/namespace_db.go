@@ -75,7 +75,7 @@ func addHierarchy(ns corev1.Namespace, client goclient.Client, log logr.Logger, 
 	return nil
 }
 
-//isKeyExist checks whether a key namespace exists in the db
+// isKeyExist checks whether a key namespace exists in the db
 func (ndb *NamespaceDB) isKeyExist(key string) bool {
 	ndb.mutex.RLock()
 	defer ndb.mutex.RUnlock()
@@ -85,7 +85,7 @@ func (ndb *NamespaceDB) isKeyExist(key string) bool {
 	return false
 }
 
-//valInKeyExist checks whether a value in specific key namespace
+// valInKeyExist checks whether a value in specific key namespace
 func (ndb *NamespaceDB) valInKeyExist(key string, value string) bool {
 	ndb.mutex.RLock()
 	defer ndb.mutex.RUnlock()
@@ -97,7 +97,7 @@ func (ndb *NamespaceDB) valInKeyExist(key string, value string) bool {
 	return false
 }
 
-//addNsToKey adds namespace to its key namespace in the db
+// addNsToKey adds namespace to its key namespace in the db
 func (ndb *NamespaceDB) addNsToKey(key string, ns string) {
 	ndb.mutex.Lock()
 	defer ndb.mutex.Unlock()
@@ -114,9 +114,9 @@ func (ndb *NamespaceDB) addNsToKey(key string, ns string) {
 	}
 }
 
-//addNs finds and adds namespace to its key namespace if exist
-//if doesnt it checks whether the namespace is the key namespace
-//otherwise it does nothing since it doesnt need to be in the db
+// addNs finds and adds namespace to its key namespace if exist
+// if doesnt it checks whether the namespace is the key namespace
+// otherwise it does nothing since it doesnt need to be in the db
 func AddNs(ndb *NamespaceDB, client goclient.Client, sns *danav1.Subnamespace) error {
 	keyns := ndb.GetKey(sns.Namespace)
 	if keyns != "" {
@@ -134,7 +134,7 @@ func AddNs(ndb *NamespaceDB, client goclient.Client, sns *danav1.Subnamespace) e
 	return nil
 }
 
-//MigrateNsHierarchy migrates namespace and its children hierarchy from key namespace to another key
+// MigrateNsHierarchy migrates namespace and its children hierarchy from key namespace to another key
 func MigrateNsHierarchy(ndb *NamespaceDB, client goclient.Client, snsname string, targetnsname string) error {
 	oldkeyns := ndb.GetKey(snsname)
 	newkeyns := ndb.GetKey(targetnsname)
@@ -154,7 +154,7 @@ func MigrateNsHierarchy(ndb *NamespaceDB, client goclient.Client, snsname string
 	return nil
 }
 
-//removeNs removes a namespace from a key
+// removeNs removes a namespace from a key
 func (ndb *NamespaceDB) removeNs(nsname string, key string) {
 	ndb.mutex.Lock()
 	defer ndb.mutex.Unlock()
@@ -166,8 +166,8 @@ func (ndb *NamespaceDB) removeNs(nsname string, key string) {
 	}
 }
 
-//getKey takes namespace name
-//and returns sns' key namespace from its hierarchy if exists otherwise it returns empty string
+// getKey takes namespace name
+// and returns sns' key namespace from its hierarchy if exists otherwise it returns empty string
 func (ndb *NamespaceDB) GetKey(ns string) string {
 	ndb.mutex.RLock()
 	defer ndb.mutex.RUnlock()
@@ -184,7 +184,7 @@ func (ndb *NamespaceDB) GetKey(ns string) string {
 	return ""
 }
 
-//GetKeyCount returns the number of namespaces under the hierarchy of given key namespace
+// GetKeyCount returns the number of namespaces under the hierarchy of given key namespace
 func (ndb *NamespaceDB) GetKeyCount(key string) int {
 	ndb.mutex.RLock()
 	defer ndb.mutex.RUnlock()

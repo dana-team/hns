@@ -10,7 +10,7 @@ import (
 
 type Phase string
 
-//Sns phases
+// Sns phases
 const (
 	Missing  Phase = "Missing"
 	Created  Phase = "Created"
@@ -28,10 +28,10 @@ const (
 	False  string = "False"
 )
 
-//MetaGroup
+// MetaGroup
 const MetaGroup = "dana.hns.io/"
 
-//Labels
+// Labels
 const (
 	Hns          = MetaGroup + "subnamespace"
 	Parent       = MetaGroup + "parent"
@@ -39,7 +39,7 @@ const (
 	ResourcePool = MetaGroup + "resourcepool"
 )
 
-//Annotations
+// Annotations
 const (
 	Role            = MetaGroup + "role"
 	Depth           = MetaGroup + "depth"
@@ -52,7 +52,7 @@ const (
 	IsRq            = MetaGroup + "is-rq"
 )
 
-//Finalizers
+// Finalizers
 const (
 	NsFinalizer = MetaGroup + "delete-sns"
 	RbFinalizer = MetaGroup + "delete-rb"

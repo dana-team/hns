@@ -112,8 +112,8 @@ func (r *NamespaceReconciler) SetupWithManager(mgr ctrl.Manager) error {
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-//CleanUp is being called when a namespace is being deleted,it deletes the subnamespace object related to the namespace inside its parent namespace,
-//also removing the finalizer from the namespace, so it can be deleted
+// CleanUp is being called when a namespace is being deleted,it deletes the subnamespace object related to the namespace inside its parent namespace,
+// also removing the finalizer from the namespace, so it can be deleted
 func (r *NamespaceReconciler) CleanUp(namespace *utils.ObjectContext) error {
 
 	// delete the quotaObj of the namespace
@@ -147,7 +147,7 @@ func (r *NamespaceReconciler) CleanUp(namespace *utils.ObjectContext) error {
 	return removeNamespaceFinalizer(namespace)
 }
 
-//Sync is being called every time there is an update in the namepsace's children and make sure its role is up-to-date
+// Sync is being called every time there is an update in the namepsace's children and make sure its role is up-to-date
 func (r *NamespaceReconciler) Sync(namespace *utils.ObjectContext) error {
 	if err := ensureSnsResourcePool(namespace); err != nil {
 		return err
@@ -163,7 +163,7 @@ func (r *NamespaceReconciler) Sync(namespace *utils.ObjectContext) error {
 	return updateRole(namespace, danav1.NoRole)
 }
 
-//Init is being called at the first time namespace is reconciled and adds a finalizer to it
+// Init is being called at the first time namespace is reconciled and adds a finalizer to it
 func (r *NamespaceReconciler) Init(namespace *utils.ObjectContext) error {
 	if err := addNamespaceFinalizer(namespace); err != nil {
 		return err
