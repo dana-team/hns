@@ -107,7 +107,7 @@ func (r *SubnamespaceReconciler) Reconcile(ctx context.Context, req ctrl.Request
 	}
 }
 
-//ensureSubspaceInDB ensures subnamespace in db if it should be
+// ensureSubspaceInDB ensures subnamespace in db if it should be
 func (r *SubnamespaceReconciler) ensureSubspaceInDB(subspace *utils.ObjectContext) error {
 	if r.NamespaceDB.GetKey(subspace.Object.GetName()) != "" {
 		return nil

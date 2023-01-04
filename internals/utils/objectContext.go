@@ -23,7 +23,7 @@ type ObjectContext struct {
 	present bool
 }
 
-//NewObjectContext Creating new objectContext object
+// NewObjectContext Creating new objectContext object
 func NewObjectContext(ctx context.Context, Log logr.Logger, Client client.Client, req types.NamespacedName, object client.Object) (*ObjectContext, error) {
 	log := Log.WithName("NewObjectContext")
 
@@ -44,7 +44,7 @@ func NewObjectContext(ctx context.Context, Log logr.Logger, Client client.Client
 	return &objectContext, nil
 }
 
-//CreateObject Creating the objectContext.object in the cluster
+// CreateObject Creating the objectContext.object in the cluster
 func (r *ObjectContext) CreateObject() error {
 	log := r.Log.WithName("objectContext.CreateObject")
 	if err := r.Create(r.Ctx, r.Object); err != nil {
@@ -61,7 +61,7 @@ func (r *ObjectContext) CreateObject() error {
 	return nil
 }
 
-//UpdateObject Updates the objectContext.object in the cluster
+// UpdateObject Updates the objectContext.object in the cluster
 func (r *ObjectContext) UpdateObject(update func(object client.Object, log logr.Logger) (client.Object, logr.Logger)) error {
 	log := r.Log.WithName("objectContext.UpdateObject")
 	r.Object, log = update(r.Object, log)
@@ -79,7 +79,7 @@ func (r *ObjectContext) UpdateObject(update func(object client.Object, log logr.
 	return nil
 }
 
-//DeleteObject Deletes the objectContext.object from the cluster
+// DeleteObject Deletes the objectContext.object from the cluster
 func (r *ObjectContext) DeleteObject() error {
 	log := r.Log.WithName("objectContext.DeleteObject")
 	if err := r.Delete(r.Ctx, r.Object); err != nil {
@@ -96,7 +96,7 @@ func (r *ObjectContext) DeleteObject() error {
 	return nil
 }
 
-//IsPresent checks if the objectContext.object exists the cluster
+// IsPresent checks if the objectContext.object exists the cluster
 func (r *ObjectContext) IsPresent() bool {
 	return r.present
 }
@@ -127,7 +127,7 @@ func (r *ObjectContext) EnsureDeleteObject() error {
 	return nil
 }
 
-//AppendAnnotations appends the received annotations to objectContext.object annotations
+// AppendAnnotations appends the received annotations to objectContext.object annotations
 func (r *ObjectContext) AppendAnnotations(annotationsToAppend map[string]string) error {
 	newAnnotations := r.Object.GetAnnotations()
 	if newAnnotations == nil {
@@ -148,7 +148,7 @@ func (r *ObjectContext) AppendAnnotations(annotationsToAppend map[string]string)
 	return nil
 }
 
-//AppendLabels appends the received labels to objectContext.object labels
+// AppendLabels appends the received labels to objectContext.object labels
 func (r *ObjectContext) AppendLabels(labelsToAppend map[string]string) error {
 	newLabels := r.Object.GetLabels()
 
@@ -249,7 +249,7 @@ func getParentAggragators(copyFrom *ObjectContext) map[string]string {
 	return parentAggragators
 }
 
-//EnsureUpdateObject force updates the object until 2 seconds timeout exceeds
+// EnsureUpdateObject force updates the object until 2 seconds timeout exceeds
 func (r *ObjectContext) EnsureUpdateObject(update func(object client.Object, log logr.Logger) (client.Object, logr.Logger, error), isStatusUpdate bool) error {
 	ctx, cancel := context.WithTimeout(r.Ctx, time.Second*2)
 	defer cancel()
@@ -260,7 +260,7 @@ func (r *ObjectContext) EnsureUpdateObject(update func(object client.Object, log
 	return nil
 }
 
-//forceUpdateObject updates the object until success or err different than conflict error
+// forceUpdateObject updates the object until success or err different than conflict error
 func (r *ObjectContext) forceUpdateObject(ctx context.Context, update func(object client.Object, log logr.Logger) (client.Object, logr.Logger, error), isStatusUpdate bool) error {
 	localLogger := r.Log.WithName("kubeject.forceUpdateObject")
 	var err error
@@ -281,7 +281,7 @@ func (r *ObjectContext) forceUpdateObject(ctx context.Context, update func(objec
 	}
 }
 
-//updateObject updates the kubeject.object in the cluster
+// updateObject updates the kubeject.object in the cluster
 func (r *ObjectContext) updateObject(ctx context.Context, update func(object client.Object, log logr.Logger) (client.Object, logr.Logger, error), isStatusUpdate bool) error {
 	localLogger := r.Log.WithName("kubeject.UpdateObject")
 	if r.present {
@@ -311,12 +311,12 @@ func (r *ObjectContext) updateObject(ctx context.Context, update func(object cli
 	return nil
 }
 
-//GetName returns the object name
+// GetName returns the object name
 func (r *ObjectContext) GetName() string {
 	return r.Object.GetName()
 }
 
-//GetKindName returns the object kind name
+// GetKindName returns the object kind name
 func (r *ObjectContext) GetKindName() string {
 	return r.Object.GetObjectKind().GroupVersionKind().Kind
 }
