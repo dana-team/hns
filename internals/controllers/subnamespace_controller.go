@@ -107,7 +107,7 @@ func (r *SubnamespaceReconciler) Reconcile(ctx context.Context, req ctrl.Request
 	}
 }
 
-//ensureSubspaceInDB ensures subnamespace in db if it should be
+// ensureSubspaceInDB ensures subnamespace in db if it should be
 func (r *SubnamespaceReconciler) ensureSubspaceInDB(subspace *utils.ObjectContext) error {
 	if r.NamespaceDB.GetKey(subspace.Object.GetName()) != "" {
 		return nil
@@ -178,15 +178,6 @@ func (r *SubnamespaceReconciler) Sync(ownerNamespace *utils.ObjectContext, subsp
 		)
 		value := vRequest.Value() - totalRequest.Value()
 		free[res] = *resource.NewQuantity(value, resource.BinarySI)
-	}
-
-	if err := subspace.UpdateObject(func(object client.Object, log logr.Logger) (client.Object, logr.Logger) {
-		object.(*danav1.Subnamespace).Status.Namespaces = childrenRequests
-		object.(*danav1.Subnamespace).Status.Total.Allocated = allocated
-		object.(*danav1.Subnamespace).Status.Total.Free = free
-		return object, log
-	}); err != nil {
-		return ctrl.Result{}, err
 	}
 
 	if subspaceparent.IsPresent() {
@@ -265,6 +256,14 @@ func (r *SubnamespaceReconciler) Sync(ownerNamespace *utils.ObjectContext, subsp
 			}
 		}
 
+	}
+	if err := subspace.UpdateObject(func(object client.Object, log logr.Logger) (client.Object, logr.Logger) {
+		object.(*danav1.Subnamespace).Status.Namespaces = childrenRequests
+		object.(*danav1.Subnamespace).Status.Total.Allocated = allocated
+		object.(*danav1.Subnamespace).Status.Total.Free = free
+		return object, log
+	}); err != nil {
+		return ctrl.Result{}, err
 	}
 	return ctrl.Result{}, nil
 }

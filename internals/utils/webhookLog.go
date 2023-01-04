@@ -30,7 +30,7 @@ func (elk *elasticSearch) GetElasticIndexUrl() string {
 
 type Action string
 
-//WebhookLog Actions
+// WebhookLog Actions
 const (
 	Create Action = "create"
 	Delete Action = "delete"
@@ -49,7 +49,7 @@ type WebhookLog struct {
 	elastic    elasticSearch
 }
 
-//NewWebhookLog Creating new objectContext object
+// NewWebhookLog Creating new objectContext object
 func NewWebhookLog(timestamp time.Time, objectType string, namespace string, action Action, user string, message string, resources corev1.ResourceList, cluster string) *WebhookLog {
 	return &WebhookLog{
 		Timestamp:  timestamp.Format("2006-01-02T15:04:05.000000"),

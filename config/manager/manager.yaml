@@ -39,7 +39,7 @@ spec:
             - name: ELASTIC_INDEX
               value: danateam_hns
             - name: MAX_SNS_IN_HIERARCHY
-              value: "100"
+              value: "250"
           args:
             - --enable-leader-election
           image: controller:latest

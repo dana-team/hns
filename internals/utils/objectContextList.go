@@ -14,7 +14,7 @@ type ObjectContextList struct {
 	Objects client.ObjectList
 }
 
-//NewObjectContext Creating new objectContext object
+// NewObjectContext Creating new objectContext object
 func NewObjectContextList(ctx context.Context, Log logr.Logger, Client client.Client, objects client.ObjectList, req ...client.ListOption) (*ObjectContextList, error) {
 	log := Log.WithName("NewObjectContextList")
 
