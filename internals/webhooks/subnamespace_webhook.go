@@ -4,6 +4,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/http"
+	"time"
+
 	danav1 "github.com/dana-team/hns/api/v1"
 	"github.com/dana-team/hns/internals/namespaceDB"
 	"github.com/dana-team/hns/internals/utils"
@@ -12,10 +15,8 @@ import (
 	admissionv1 "k8s.io/api/admission/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"net/http"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
-	"time"
 )
 
 type SubNamespaceAnnotator struct {
@@ -298,7 +299,7 @@ func ValidateUpdateSnsRequest(parentQuotaObj *utils.ObjectContext, newSns *utils
 	quotaUsed := utils.GetQuotaUsed(myQuotaObj.Object)
 	siblingsResources := utils.GetQuotaObjsListResources(getSnsSiblingQuotaObjs(newSns))
 
-	for res := range quotaParent {
+	for res := range quotaRequest {
 		var (
 			vSiblings, _ = siblingsResources[res]
 			vParent, _   = quotaParent[res]
@@ -311,11 +312,11 @@ func ValidateUpdateSnsRequest(parentQuotaObj *utils.ObjectContext, newSns *utils
 		vParent.Sub(vRequest)
 		vParent.Add(vOld)
 		if vParent.Value() < 0 {
-			return errors.New(denyMessageValidateQuotaObj + res.String())
+			return errors.New(denyMessageValidateQuotaObj + res.String() + " in subnamespace" + string(newSns.Object.GetNamespace()))
 		}
 		vRequest.Sub(vUsed)
 		if vRequest.Value() < 0 {
-			return errors.New(denyMessageValidateUsedQuotaObj)
+			return errors.New(string(newSns.Object.GetName()) + " " + denyMessageValidateUsedQuotaObj)
 		}
 	}
 	return nil

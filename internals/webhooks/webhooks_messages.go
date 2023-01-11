@@ -6,7 +6,7 @@ const (
 	allowMessageValidateRoleBinding                 = "creation marked"
 	allowMessageValidateQuotaObj                    = "there are enough resources to complete the request"
 	denyMessageValidateQuotaObj                     = "there are not enough resources to complete the request of type "
-	denyMessageValidateUsedQuotaObj                 = "subnamespace uses more resources than the requested resources"
+	denyMessageValidateUsedQuotaObj                 = "uses more resources than the requested resources"
 	denyMessageMinQuotaObj                          = "it's forbidden to update a resource to be less than its children's requests of type "
 	contactMessage                                  = "please contact Mador 894"
 	denyMessageRoleBinding                          = "it's forbidden to delete role binding not at the top of the hierarchy"
