@@ -43,6 +43,35 @@ func NamespaceFinalizerExists(namespace client.Object) bool {
 	return controllerutil.ContainsFinalizer(namespace, danav1.NsFinalizer)
 }
 
+func LocateNS(nsList corev1.NamespaceList, nsName string) *corev1.Namespace {
+	for _, ns := range nsList.Items {
+		if ns.Name == nsName {
+			return &ns
+		}
+	}
+	return nil
+}
+
+func GetNsListUpEfficient(ns corev1.Namespace, rootns string, nsList corev1.NamespaceList) ([]corev1.Namespace, error) {
+
+	var nsListUp []corev1.Namespace
+
+	displayName := ns.GetAnnotations()["openshift.io/display-name"]
+	nsArr := strings.Split(displayName, "/")
+	index, err := IndexOf(rootns, nsArr)
+	if err != nil {
+		return nil, err
+	}
+	snsArr := nsArr[index:]
+
+	for i := len(snsArr) - 1; i >= 1; i-- {
+		ns := LocateNS(nsList, snsArr[i])
+		nsListUp = append(nsListUp, *ns)
+	}
+
+	return nsListUp, nil
+}
+
 func GetNsListUp(ns *ObjectContext, rootns string, rclient client.Client, logger logr.Logger) ([]*ObjectContext, error) {
 
 	var nsList []*ObjectContext
