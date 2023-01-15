@@ -174,3 +174,12 @@ func IndexOf(element string, arr []string) (int, error) {
 	}
 	return -1, fmt.Errorf("dont find root ns")
 }
+
+func ContainsString(sslice []string, s string) bool {
+	for _, a := range sslice {
+		if a == s {
+			return true
+		}
+	}
+	return false
+}
