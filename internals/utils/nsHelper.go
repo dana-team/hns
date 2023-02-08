@@ -123,3 +123,10 @@ func GetNamespaceParent(namespace client.Object) string {
 	}
 	return namespace.(*corev1.Namespace).Labels[danav1.Parent]
 }
+
+func IsSecondaryRootNamespace(namespace client.Object) bool {
+	if !isNamespace(namespace) {
+		return false
+	}
+	return namespace.(*corev1.Namespace).Annotations[danav1.IsSecondaryRoot] == danav1.True
+}
