@@ -2,6 +2,7 @@ package webhooks
 
 import (
 	"context"
+
 	danav1 "github.com/dana-team/hns/api/v1"
 	"github.com/dana-team/hns/internals/utils"
 	"github.com/go-logr/logr"
@@ -11,10 +12,10 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
-	"strconv"
 
 	// "k8s.io/client-go/tools/clientcmd"
 	"net/http"
+
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
@@ -66,24 +67,24 @@ func (a *UpdateQuotaAnnotator) Handle(ctx context.Context, req admission.Request
 		return admission.Denied(err.Error())
 	}
 
-	// check what the rq-depth of the root namespace to see if there are multiple secondary root namespaces
 	// deny if trying to perform UpdateQuota involving namesapces from different secondary root namespaces
 	// a secondary root is the first subnamespace after the root namespace in the hierarchy of a subnamespace
 	// only satisfy the condition if you are not trying to move resources from or to the root namespace
-	rootRqDepth, err := utils.GetRqDepthFromNS(nsFrom)
-	if err != nil {
-		return admission.Denied(err.Error())
-	}
+	if isRoot && !utils.IsRootNamespace(nsFrom.Object) && !utils.IsRootNamespace(nsTo.Object) {
+		toNSSecondaryRoot := nsToArray[1]
+		fromNSSecondaryRoot := nsFromArray[1]
 
-	rootRqDepthInt, err := strconv.Atoi(rootRqDepth)
-	if err != nil {
-		return admission.Denied(err.Error())
-	}
+		nsSecondaryRootTo, err := utils.NewObjectContext(ctx, log, a.Client, client.ObjectKey{Name: toNSSecondaryRoot}, &corev1.Namespace{})
+		if err != nil {
+			return admission.Errored(http.StatusBadRequest, err)
+		}
 
-	if rootRqDepthInt > danav1.NoSecondaryRoot {
-		if isRoot && !utils.IsRootNamespace(nsFrom.Object) && !utils.IsRootNamespace(nsTo.Object) {
-			toNSSecondaryRoot := nsToArray[1]
-			fromNSSecondaryRoot := nsFromArray[1]
+		nsSecondaryRootFrom, err := utils.NewObjectContext(ctx, log, a.Client, client.ObjectKey{Name: fromNSSecondaryRoot}, &corev1.Namespace{})
+		if err != nil {
+			return admission.Errored(http.StatusBadRequest, err)
+		}
+
+		if utils.IsSecondaryRootNamespace(nsSecondaryRootTo.Object) || utils.IsSecondaryRootNamespace(nsSecondaryRootFrom.Object) {
 			if toNSSecondaryRoot != fromNSSecondaryRoot {
 				return admission.Denied("it is forbidden to move resources to subnamespaces under hierarchy '" + toNSSecondaryRoot +
 					"' from subnamespaces under hierarchy '" + fromNSSecondaryRoot + "'")

@@ -72,7 +72,7 @@ func (r *UpdateQuotaReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 				if err != nil {
 					updatingObject.UpdateObject(func(object client.Object, log logr.Logger) (client.Object, logr.Logger) {
 						object.(*danav1.Updatequota).Status.Phase = danav1.Error
-						object.(*danav1.Updatequota).Status.Reason = "Updating the quota down the hierarchy failed at namespace" + snslistdown[i].GetName() + "\n" + err.Error()
+						object.(*danav1.Updatequota).Status.Reason = "Updating the quota down the hierarchy failed at namespace " + snslistdown[i].GetName() + "\n" + err.Error()
 						log = log.WithValues("phase", danav1.Error)
 						return object, log
 					})
@@ -90,7 +90,7 @@ func (r *UpdateQuotaReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 				if err != nil {
 					updatingObject.UpdateObject(func(object client.Object, log logr.Logger) (client.Object, logr.Logger) {
 						object.(*danav1.Updatequota).Status.Phase = danav1.Error
-						object.(*danav1.Updatequota).Status.Reason = "Updating the quota up the hierarchy failed at namespace" + snslistup[i].GetName() + "\n" + err.Error()
+						object.(*danav1.Updatequota).Status.Reason = "Updating the quota up the hierarchy failed at namespace " + snslistup[i].GetName() + "\n" + err.Error()
 						log = log.WithValues("phase", danav1.Error)
 						return object, log
 					})
@@ -108,7 +108,7 @@ func (r *UpdateQuotaReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 				if err != nil {
 					updatingObject.UpdateObject(func(object client.Object, log logr.Logger) (client.Object, logr.Logger) {
 						object.(*danav1.Updatequota).Status.Phase = danav1.Error
-						object.(*danav1.Updatequota).Status.Reason = "Updating the quota up the hierarchy failed at namespace" + snslistup[i].GetName() + "\n" + err.Error()
+						object.(*danav1.Updatequota).Status.Reason = "Updating the quota up the hierarchy failed at namespace " + snslistup[i].GetName() + "\n" + err.Error()
 						log = log.WithValues("phase", danav1.Error)
 						return object, log
 					})
@@ -125,7 +125,7 @@ func (r *UpdateQuotaReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 				if err != nil {
 					updatingObject.UpdateObject(func(object client.Object, log logr.Logger) (client.Object, logr.Logger) {
 						object.(*danav1.Updatequota).Status.Phase = danav1.Error
-						object.(*danav1.Updatequota).Status.Reason = "Updating the quota down the hierarchy failed at namespace" + snslistdown[i].GetName() + "\n" + err.Error()
+						object.(*danav1.Updatequota).Status.Reason = "Updating the quota down the hierarchy failed at namespace " + snslistdown[i].GetName() + "\n" + err.Error()
 						log = log.WithValues("phase", danav1.Error)
 						return object, log
 					})
@@ -165,7 +165,7 @@ func (r *UpdateQuotaReconciler) getAncestor(sourcens *utils.ObjectContext, destn
 		}
 	}
 
-	return "", fmt.Errorf("dont find root ns")
+	return "", fmt.Errorf("did not find root ns")
 }
 
 func (r *UpdateQuotaReconciler) getSnsListDown(ns *utils.ObjectContext, rootns string) ([]*utils.ObjectContext, error) {
