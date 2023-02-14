@@ -91,15 +91,24 @@ func (a *UpdateQuotaAnnotator) Handle(ctx context.Context, req admission.Request
 		}
 	}
 
+	// check if requster has the needed permissions on the namespaces and deny otherwise
+	// there are 3 scenarios in which UpdateQuota is allowed:
+	// 1. if the user has the needed permissions on the Ancestor of the two namespaces
+	// 2. if the user has the needed permissions on both namespaces
+	// 3. if the user has the needed permissions on the namespace from which resources are moved
+	//    and both namespaces are in the same branch
 	nsFromName := nsFrom.GetName()
 	nsToName := nsTo.GetName()
 	hasFromPermissions := a.validatePermissions(req, nsFromName)
 	hasToPermissions := a.validatePermissions(req, nsToName)
 	hasAncestorPermissions := a.validatePermissions(req, nsAncestorName)
 
-	if !hasAncestorPermissions && !(hasFromPermissions && hasToPermissions) {
+	inBranch := utils.ContainsString(nsFromArray, nsToName)
+
+	if !hasAncestorPermissions && !(hasFromPermissions && hasToPermissions) && !(hasFromPermissions && inBranch) {
 		return admission.Denied("you must have permissions on: " + nsFromName + " and " + nsToName +
-			" or permissions on:" + nsAncestorName + " to perform this operation")
+			", or permissions on: " + nsAncestorName + " to perform this operation. Having permissions only on: " +
+			nsFromName + " is enough just when resources are moved in the same branch of the hierarchy.")
 	}
 
 	var snsFrom *utils.ObjectContext

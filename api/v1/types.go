@@ -1,11 +1,10 @@
 package v1
 
 import (
-	"os"
-	"strconv"
-
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
+	"os"
+	"strconv"
 )
 
 type Phase string
@@ -50,6 +49,9 @@ const (
 	DisplayName     = "openshift.io/display-name"
 	RqDepth         = MetaGroup + "rq-depth"
 	IsRq            = MetaGroup + "is-rq"
+	IsSecondaryRoot = MetaGroup + "is-secondary-root"
+	IsUpperRp       = MetaGroup + "is-upper-rp"
+	UpperRp         = MetaGroup + "upper-rp"
 )
 
 // Finalizers

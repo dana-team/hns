@@ -31,6 +31,61 @@ func IsChildlessNamespace(namespace *ObjectContext) bool {
 	return false
 }
 
+// IsUpperResourcePool returns true if the subnamespace is an upper resource pool
+// it happens only when the parent is from subnamespace kind or is a root namespace
+func IsUpperResourcePool(sns *ObjectContext) (bool, error) {
+	isResourcePool, _ := sns.Object.GetLabels()[danav1.ResourcePool]
+	parentNs, err := NewObjectContext(sns.Ctx, sns.Log, sns.Client, types.NamespacedName{Name: sns.Object.GetNamespace()}, &corev1.Namespace{})
+	if err != nil {
+		return false, err
+	}
+	parentSns, err := NewObjectContext(sns.Ctx, sns.Log, sns.Client, types.NamespacedName{Name: parentNs.Object.GetName(), Namespace: GetNamespaceParent(parentNs.Object)}, &danav1.Subnamespace{})
+	if err != nil {
+		return false, err
+	}
+	parentRole, _ := parentNs.Object.GetAnnotations()[danav1.Role]
+	isParentResourcePool, _ := parentSns.Object.GetLabels()[danav1.ResourcePool]
+	if (isResourcePool == "true") && (parentRole == danav1.Root || isParentResourcePool == "false") {
+		return true, nil
+	}
+	return false, nil
+}
+
+// AppendUpperResourcePoolAnnotation appends annotation to determine if the subnamespace is an upper resourcepool
+// if the sns has an upper resourcepool it appends an annotation with the upper resourcepool name
+func AppendUpperResourcePoolAnnotation(sns *ObjectContext, parentSns *ObjectContext) error {
+	isUpperResourcePool, err := IsUpperResourcePool(sns)
+	if err != nil {
+		return err
+	}
+	if isUpperResourcePool {
+		if err = sns.AppendAnnotations(map[string]string{danav1.IsUpperRp: danav1.True}); err != nil {
+			return err
+		}
+	} else {
+		if err = sns.AppendAnnotations(map[string]string{danav1.IsUpperRp: danav1.False}); err != nil {
+			return err
+		}
+	}
+
+	isParentUpperResourcePool, _ := parentSns.Object.GetAnnotations()[danav1.IsUpperRp]
+	if err != nil {
+		return err
+	}
+	if isParentUpperResourcePool == danav1.True {
+		if err = sns.AppendAnnotations(map[string]string{danav1.UpperRp: parentSns.GetName()}); err != nil {
+			return err
+		}
+	}
+	upperRp, exists := parentSns.Object.GetAnnotations()[danav1.UpperRp]
+	if exists {
+		if err = sns.AppendAnnotations(map[string]string{danav1.UpperRp: upperRp}); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 // IsRq returns true if the depth of the subnamespace is less or equal
 // the pre-set rqDepth AND if the subnamespace is not a ResourcePool
 func IsRq(sns *ObjectContext, offset int) (bool, error) {
@@ -173,4 +228,13 @@ func IndexOf(element string, arr []string) (int, error) {
 		}
 	}
 	return -1, fmt.Errorf("dont find root ns")
+}
+
+func ContainsString(sslice []string, s string) bool {
+	for _, a := range sslice {
+		if a == s {
+			return true
+		}
+	}
+	return false
 }
