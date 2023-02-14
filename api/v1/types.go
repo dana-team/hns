@@ -20,11 +20,11 @@ const (
 )
 
 const (
-	Root   string = "root"
-	NoRole string = "none"
-	Leaf   string = "leaf"
-	True   string = "True"
-	False  string = "False"
+	Root   			string = "root"
+	NoRole 			string = "none"
+	Leaf   			string = "leaf"
+	True   			string = "True"
+	False  			string = "False"
 )
 
 // MetaGroup
@@ -49,7 +49,8 @@ const (
 	DisplayName     = "openshift.io/display-name"
 	RqDepth         = MetaGroup + "rq-depth"
 	IsRq            = MetaGroup + "is-rq"
-	IsUpperRp       = MetaGroup + "is-upper-rp"
+	IsSecondaryRoot = MetaGroup + "is-secondary-root"
+  IsUpperRp       = MetaGroup + "is-upper-rp"
 	UpperRp         = MetaGroup + "upper-rp"
 )
 
@@ -65,7 +66,6 @@ const (
 	SelfOffset      = 0
 	ParentOffset    = -1
 	ChildOffset     = 1
-	NoSecondaryRoot = 1
 )
 
 var (

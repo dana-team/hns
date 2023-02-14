@@ -341,7 +341,7 @@ func ValidateUpdateSnsRequest(parentQuotaObj *utils.ObjectContext, newSns *utils
 		vParent.Sub(vRequest)
 		vParent.Add(vOld)
 		if vParent.Value() < 0 {
-			return errors.New(denyMessageValidateQuotaObj + res.String() + " in subnamespace" + string(newSns.Object.GetNamespace()))
+			return errors.New(denyMessageValidateQuotaObj + res.String() + " in subnamespace: " + string(newSns.Object.GetNamespace()))
 		}
 		vRequest.Sub(vUsed)
 		if vRequest.Value() < 0 {

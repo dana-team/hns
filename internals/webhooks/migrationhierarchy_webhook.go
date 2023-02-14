@@ -3,6 +3,9 @@ package webhooks
 import (
 	"context"
 	"fmt"
+	"net/http"
+	"reflect"
+
 	danav1 "github.com/dana-team/hns/api/v1"
 	"github.com/dana-team/hns/internals/namespaceDB"
 	"github.com/dana-team/hns/internals/utils"
@@ -16,11 +19,8 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
-	"net/http"
-	"reflect"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
-	"strconv"
 )
 
 type MigrationHierarchyAnnotator struct {
@@ -66,25 +66,26 @@ func (a *MigrationHierarchyAnnotator) Handle(ctx context.Context, req admission.
 		return admission.Denied(fmt.Sprintf(denyMessageNamespaceNotFound, toNamespace))
 	}
 
-	// check what the rq-depth of the root namespace to see if there are multiple secondary root namespaces
 	// deny if trying to perform migration involving namesapces from different secondary root namespaces
 	// a secondary root is the first subnamespace after the root namespace in the hierarchy of a subnamespac
-	rootRqDepth, err := utils.GetRqDepthFromNS(currentNS)
-	if err != nil {
-		return admission.Denied(err.Error())
-	}
-
-	rootRqDepthInt, err := strconv.Atoi(rootRqDepth)
-	if err != nil {
-		return admission.Denied(err.Error())
-	}
 	currentNSArray := utils.GetNSDisplayNameArray(currentNS)
 	toNSArray := utils.GetNSDisplayNameArray(toNS)
 
-	if rootRqDepthInt > danav1.NoSecondaryRoot {
-		currentNSSecondaryRoot := currentNSArray[1]
-		toNSSecondaryRoot := toNSArray[1]
-		if currentNSSecondaryRoot != "" && toNSSecondaryRoot != "" {
+	currentNSSecondaryRoot := currentNSArray[1]
+	toNSSecondaryRoot := toNSArray[1]
+
+	nsSecondaryRootCurrent, err := utils.NewObjectContext(ctx, log, a.Client, client.ObjectKey{Name: currentNSSecondaryRoot}, &corev1.Namespace{})
+	if err != nil {
+		return admission.Errored(http.StatusBadRequest, err)
+	}
+
+	nsSecondaryRootTo, err := utils.NewObjectContext(ctx, log, a.Client, client.ObjectKey{Name: toNSSecondaryRoot}, &corev1.Namespace{})
+	if err != nil {
+		return admission.Errored(http.StatusBadRequest, err)
+	}
+
+	if currentNSSecondaryRoot != "" && toNSSecondaryRoot != "" {
+		if utils.IsSecondaryRootNamespace(nsSecondaryRootTo.Object) || utils.IsSecondaryRootNamespace(nsSecondaryRootCurrent.Object) {
 			if currentNSSecondaryRoot != toNSSecondaryRoot {
 				return admission.Denied("it is forbidden to migrate subnamespaces under hierarchy '" + currentNSSecondaryRoot +
 					"' to subnamespaces under hierarchy '" + toNSSecondaryRoot + "'")
