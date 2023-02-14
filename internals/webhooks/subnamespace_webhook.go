@@ -161,9 +161,38 @@ func (a *SubNamespaceAnnotator) Handle(ctx context.Context, req admission.Reques
 			return admission.Allowed(allowMessageValidateQuotaObj)
 		}
 
-		if err := ValidateUpdateSnsRequest(parentQuotaObj, sns, oldSns, myQuotaObj); err != nil {
-			return admission.Denied(err.Error())
+		isRp, _ := sns.Object.GetLabels()[danav1.ResourcePool]
+		isUpperRp, _ := sns.Object.GetAnnotations()[danav1.IsUpperRp]
+		// if subnamespace or upper resourcepool - resources validation
+		// reduce desired resources from parent and check validity
+		if isRp != "true" || isUpperRp == danav1.True {
+			if err := ValidateUpdateSnsRequest(parentQuotaObj, sns, oldSns, myQuotaObj); err != nil {
+				return admission.Denied(err.Error())
+			}
 		}
+
+		// Logic for resourcepool migration
+		//upperRp, exists := sns.Object.GetAnnotations()[danav1.UpperRp]
+		//if exists {
+		//	upperRpQuotaObj, err := utils.NewObjectContext(sns.Ctx, sns.Log, sns.Client, types.NamespacedName{Name: upperRp}, &qoutav1.ClusterResourceQuota{})
+		//	if err != nil {
+		//		log.Error(err, "unable to get upper resource pool quota object")
+		//		return admission.Denied(err.Error() + sns.Object.GetName())
+		//	} else {
+		//		if err := ValidateUpdateSnsRequest(upperRpQuotaObj, sns, oldSns, myQuotaObj); err != nil {
+		//			return admission.Denied(err.Error())
+		//		}
+		//	}
+		//} else {
+		//	if err := ValidateUpdateSnsRequest(parentQuotaObj, sns, oldSns, myQuotaObj); err != nil {
+		//		return admission.Denied(err.Error())
+		//	}
+		//}
+
+		//if err := ValidateUpdateSnsRequest(parentQuotaObj, sns, oldSns, myQuotaObj); err != nil {
+		//	return admission.Denied(err.Error())
+		//}
+
 		if resourceName := snsChangedObject(oldSns, sns); len(resourceName) > 0 {
 			if !utils.UsernameToFilter(req.UserInfo.Username) {
 				//Write relevant log to elastic
@@ -312,7 +341,7 @@ func ValidateUpdateSnsRequest(parentQuotaObj *utils.ObjectContext, newSns *utils
 		vParent.Sub(vRequest)
 		vParent.Add(vOld)
 		if vParent.Value() < 0 {
-			return errors.New(denyMessageValidateQuotaObj + res.String() + " in subnamespace: " + string(newSns.Object.GetNamespace()))
+			return errors.New(denyMessageValidateQuotaObj + res.String() + " in subnamespace" + string(newSns.Object.GetNamespace()))
 		}
 		vRequest.Sub(vUsed)
 		if vRequest.Value() < 0 {
