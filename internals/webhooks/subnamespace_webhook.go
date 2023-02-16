@@ -76,6 +76,10 @@ func (a *SubNamespaceAnnotator) Handle(ctx context.Context, req admission.Reques
 			return admission.Denied(denyMessageCreateResourcePool)
 		}
 
+		if isValid, err := ValidateAllResourceQuotaParamsValid(sns); !isValid {
+			return admission.Denied(err.Error())
+		}
+
 		//validate the sns creation
 		if validRequest, result := ValidateCreateSnsRequest(sns, parentQuotaObj); !validRequest {
 			return admission.Denied(denyMessageValidateQuotaObj + result)
@@ -269,6 +273,25 @@ func ValidateCreateSnsRequest(sns *utils.ObjectContext, parentQuotaObj *utils.Ob
 		}
 	}
 	return true, ""
+}
+
+// ValidateAllResourceQuotaParamsValid validates that all quota params: storage, cpu, memory, gpu exists and are positive
+// if one of the params is not valid, the function returns false with the relevant error
+func ValidateAllResourceQuotaParamsValid(sns *utils.ObjectContext) (bool, error) {
+	quotaSNS := utils.GetSnsQuotaSpec(sns.Object).Hard
+	ResourceQuotaParams := []corev1.ResourceName{"basic.storageclass.storage.k8s.io/requests.storage", "cpu", "memory", "requests.nvidia.com/gpu", "pods"}
+
+	for _, res := range ResourceQuotaParams {
+		requestedRes := quotaSNS[res]
+		if requestedRes.Format == "" {
+			return false, errors.New(denyMessageWithoutResourceRequest + res.String())
+		}
+
+		if requestedRes.Sign() == -1 {
+			return false, errors.New(denyMessageNegativeRequest + res.String())
+		}
+	}
+	return true, nil
 }
 
 func IsMinResources(sns *utils.ObjectContext) error {
