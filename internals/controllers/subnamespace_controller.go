@@ -141,6 +141,7 @@ func (r *SubnamespaceReconciler) Sync(ownerNamespace *utils.ObjectContext, subsp
 		return ctrl.Result{}, err
 	}
 	subspaceChilds, err := utils.NewObjectContextList(subspace.Ctx, subspace.Log, subspace.Client, &danav1.SubnamespaceList{}, client.InNamespace(namespace.Object.GetName()))
+
 	if err != nil {
 		return ctrl.Result{}, err
 	}
@@ -223,6 +224,10 @@ func (r *SubnamespaceReconciler) Sync(ownerNamespace *utils.ObjectContext, subsp
 		}); err != nil {
 			return ctrl.Result{}, err
 		}
+	}
+
+	if err := utils.AppendUpperResourcePoolAnnotation(subspace, subspaceparent); err != nil {
+		return ctrl.Result{}, err
 	}
 
 	r.addSnsChildNamespaceEvent(subspace)
