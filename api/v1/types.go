@@ -21,11 +21,11 @@ const (
 )
 
 const (
-	Root   			string = "root"
-	NoRole 			string = "none"
-	Leaf   			string = "leaf"
-	True   			string = "True"
-	False  			string = "False"
+	Root   string = "root"
+	NoRole string = "none"
+	Leaf   string = "leaf"
+	True   string = "True"
+	False  string = "False"
 )
 
 // MetaGroup
@@ -62,9 +62,9 @@ const (
 // IsRq offsets
 // Secondary Roots
 const (
-	SelfOffset      = 0
-	ParentOffset    = -1
-	ChildOffset     = 1
+	SelfOffset   = 0
+	ParentOffset = -1
+	ChildOffset  = 1
 )
 
 var (

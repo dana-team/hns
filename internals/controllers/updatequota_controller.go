@@ -209,13 +209,10 @@ func addSnsQuota(sns *utils.ObjectContext, quotaSpec corev1.ResourceQuotaSpec) e
 		return err
 	}
 
-	// ensure quota is equal to sns
-	err = ensureSnsEqualQuota(sns.Object.(*danav1.Subnamespace).Spec.ResourceQuotaSpec, utils.GetSnsQuotaSpec(sns.Object))
+	err = ensureSnsEqualQuota(sns)
 	if err != nil {
 		return err
 	}
-	time.Sleep(400 * time.Millisecond)
-
 	return nil
 }
 
@@ -237,24 +234,33 @@ func subSnsQuota(sns *utils.ObjectContext, quotaSpec corev1.ResourceQuotaSpec) e
 		return err
 	}
 
-	// ensure quota is equal to sns
-	err = ensureSnsEqualQuota(sns.Object.(*danav1.Subnamespace).Spec.ResourceQuotaSpec, utils.GetSnsQuotaSpec(sns.Object))
+	err = ensureSnsEqualQuota(sns)
 	if err != nil {
 		return err
 	}
-	time.Sleep(400 * time.Millisecond)
-
 	return nil
 }
 
-func ensureSnsEqualQuota(snsQuota corev1.ResourceQuotaSpec, quota corev1.ResourceQuotaSpec) error {
-	for ok := false; ok; ok = false {
-		ok = true
-		for res := range snsQuota.Hard {
-			if snsQuota.Hard[res] != quota.Hard[res] {
+// ensureSnsEqualQuota compares the sns quota spec and the resource quota spec
+// in a loop until they are equal. this way we can know that the subnamespace
+// has been properly updated before doing the updatequota operation
+func ensureSnsEqualQuota(sns *utils.ObjectContext) error {
+	ok := false
+	quotaObj, err := utils.GetSNSQuotaObj(sns)
+	if err != nil {
+		return err
+	}
+	snsQuotaSpec := sns.Object.(*danav1.Subnamespace).Spec.ResourceQuotaSpec
+	for !ok {
+		resourceQuotaSpec := utils.GetQuotaObjSpec(quotaObj.Object)
+		for res := range resourceQuotaSpec.Hard {
+			if snsQuotaSpec.Hard[res] != resourceQuotaSpec.Hard[res] {
 				ok = false
 			}
 		}
+		ok = true
+		// we wait between iterations because we don't want to overload the API with many requests
+		time.Sleep(500 * time.Millisecond)
 	}
 	return nil
 }
