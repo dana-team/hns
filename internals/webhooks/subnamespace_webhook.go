@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	danav1 "github.com/dana-team/hns/api/v1"
@@ -74,6 +75,12 @@ func (a *SubNamespaceAnnotator) Handle(ctx context.Context, req admission.Reques
 			return admission.Errored(http.StatusInternalServerError, err)
 		} else if !validChange {
 			return admission.Denied(denyMessageCreateResourcePool)
+		}
+
+		if utils.GetSnsResourcePooled(sns.Object) == "false" {
+			if isValid, err := ValidateAllResourceQuotaParamsValid(sns); !isValid {
+				return admission.Denied(err.Error())
+			}
 		}
 
 		//validate the sns creation
@@ -159,6 +166,12 @@ func (a *SubNamespaceAnnotator) Handle(ctx context.Context, req admission.Reques
 
 		if !myQuotaObj.IsPresent() {
 			return admission.Allowed(allowMessageValidateQuotaObj)
+		}
+
+		if utils.GetSnsResourcePooled(sns.Object) == "false" {
+			if isValid, err := ValidateAllResourceQuotaParamsValid(sns); !isValid {
+				return admission.Denied(err.Error())
+			}
 		}
 
 		if err := ValidateUpdateSnsRequest(parentQuotaObj, sns, oldSns, myQuotaObj); err != nil {
@@ -269,6 +282,35 @@ func ValidateCreateSnsRequest(sns *utils.ObjectContext, parentQuotaObj *utils.Ob
 		}
 	}
 	return true, ""
+}
+
+// ValidateAllResourceQuotaParamsValid validates that all quota params: storage, cpu, memory, gpu exists and are positive
+// if one of the params is not valid, the function returns false with the relevant error
+func ValidateAllResourceQuotaParamsValid(sns *utils.ObjectContext) (bool, error) {
+	quotaSNS := utils.GetSnsQuotaSpec(sns.Object).Hard
+	resourceQuotaParams := danav1.ZeroedQuota.Hard
+	var missinsResources []string
+	var negativeResources []string
+	for res := range resourceQuotaParams {
+		requestedRes := quotaSNS[res]
+		if requestedRes.Format == "" {
+			missinsResources = append(missinsResources, res.String())
+		}
+
+		if requestedRes.Sign() == -1 {
+			negativeResources = append(negativeResources, res.String())
+		}
+	}
+	if missinsResources != nil && negativeResources != nil {
+		return false, errors.New(denyMessageMissingAndNegativeResourceRequest + strings.Join(missinsResources, ", ") + ", " + strings.Join(negativeResources, ", "))
+	}
+	if missinsResources != nil {
+		return false, errors.New(denyMessageMissingResourceRequest + strings.Join(missinsResources, ", "))
+	}
+	if negativeResources != nil {
+		return false, errors.New(denyMessageNegativeResourceRequest + strings.Join(negativeResources, ", "))
+	}
+	return true, nil
 }
 
 func IsMinResources(sns *utils.ObjectContext) error {
