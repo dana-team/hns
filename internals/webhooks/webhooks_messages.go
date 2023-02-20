@@ -24,4 +24,7 @@ const (
 	denyMessageNamespaceNotFound                    = "%v namespace not found"
 	allowMessageUpdatePhase                         = "Updated phase"
 	denyCannotGetClusterName                        = "Cannot get cluster name"
+	denyMessageNegativeResourceRequest              = "it's forbidden to set a subnamespace with negative amount of "
+	denyMessageMissingResourceRequest               = "it's forbidden to set a subnamespace without providing requested amount of "
+	denyMessageMissingAndNegativeResourceRequest    = "it's forbidden to set a subnamespace without providing or providing negative amount of "
 )
