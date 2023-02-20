@@ -21,11 +21,11 @@ const (
 )
 
 const (
-	Root   			string = "root"
-	NoRole 			string = "none"
-	Leaf   			string = "leaf"
-	True   			string = "True"
-	False  			string = "False"
+	Root   string = "root"
+	NoRole string = "none"
+	Leaf   string = "leaf"
+	True   string = "True"
+	False  string = "False"
 )
 
 // MetaGroup
@@ -51,6 +51,8 @@ const (
 	RqDepth         = MetaGroup + "rq-depth"
 	IsRq            = MetaGroup + "is-rq"
 	IsSecondaryRoot = MetaGroup + "is-secondary-root"
+	IsUpperRp       = MetaGroup + "is-upper-rp"
+	UpperRp         = MetaGroup + "upper-rp"
 )
 
 // Finalizers
@@ -62,9 +64,9 @@ const (
 // IsRq offsets
 // Secondary Roots
 const (
-	SelfOffset      = 0
-	ParentOffset    = -1
-	ChildOffset     = 1
+	SelfOffset   = 0
+	ParentOffset = -1
+	ChildOffset  = 1
 )
 
 var (
