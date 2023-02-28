@@ -2,6 +2,7 @@ package webhooks
 
 import (
 	"context"
+	"reflect"
 
 	danav1 "github.com/dana-team/hns/api/v1"
 	"github.com/dana-team/hns/internals/utils"
@@ -157,6 +158,19 @@ func (a *UpdateQuotaAnnotator) Handle(ctx context.Context, req admission.Request
 	}
 	if !(snsToQuotaObj.IsPresent()) {
 		return admission.Denied("Quota Object " + updatingObject.Object.(*danav1.Updatequota).Spec.DestNamespace + " does not exist")
+	}
+
+	//deny update of updatequota object after it's been created(when the status phase is not empty)
+	//check if the current updatequota object in the cluster(if it's present) has status
+	//if the status is not empty - denied the update of the updatequota object
+	currentUpdateQuota, err := utils.NewObjectContext(ctx, log, a.Client, client.ObjectKey{Name: req.Name, Namespace: req.Namespace}, &danav1.Updatequota{})
+	if err != nil {
+		return admission.Errored(http.StatusBadRequest, err)
+	}
+	if currentUpdateQuota.IsPresent() {
+		if !reflect.ValueOf(currentUpdateQuota.Object.(*danav1.Updatequota).Status).IsZero() {
+			return admission.Denied("Quota Object " + updatingObject.Object.(*danav1.Updatequota).ObjectMeta.Name + " already finished ")
+		}
 	}
 
 	return admission.Allowed("")
