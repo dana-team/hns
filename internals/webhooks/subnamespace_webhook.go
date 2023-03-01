@@ -129,12 +129,6 @@ func (a *SubNamespaceAnnotator) Handle(ctx context.Context, req admission.Reques
 			return admission.Denied(denyMessageUpdateResourcePool)
 		}
 
-		if validChange, err := oneOfSnsDescendantIsResourcePool(oldSns, sns); err != nil {
-			return admission.Errored(http.StatusInternalServerError, err)
-		} else if !validChange {
-			return admission.Denied(denyMessageUpdateResourcePoolDescendant)
-		}
-
 		if isExists, err := isSnsQuotaObjExists(sns); err != nil {
 			log.Error(err, "unable to get sns quota object")
 			return admission.Denied(err.Error())
@@ -174,34 +168,30 @@ func (a *SubNamespaceAnnotator) Handle(ctx context.Context, req admission.Reques
 			}
 		}
 
-		if err := ValidateUpdateSnsRequest(parentQuotaObj, sns, oldSns, myQuotaObj); err != nil {
-			return admission.Denied(err.Error())
-
-			isRp, _ := sns.Object.GetLabels()[danav1.ResourcePool]
-			isUpperRp, _ := sns.Object.GetAnnotations()[danav1.IsUpperRp]
-			// Only check the validity of the request if the subnamespace is not a ResourcePool OR the subnamespace is the upper ResourcePool
-			// this is because only in that case the subnamespace would have a RQ or CRQ attached to it.
-			// Otherwise, the subnamespace is part of a ResourcePool (and does not have a RQ/CRQ attached to it) and hence this check is unneeded.
-			if isRp != "true" || isUpperRp == danav1.True {
-				if err := ValidateUpdateSnsRequest(parentQuotaObj, sns, oldSns, myQuotaObj); err != nil {
-					return admission.Denied(err.Error())
-				}
+		isRp, _ := sns.Object.GetLabels()[danav1.ResourcePool]
+		isUpperRp, _ := sns.Object.GetAnnotations()[danav1.IsUpperRp]
+		// Only check the validity of the request if the subnamespace is not a ResourcePool OR the subnamespace is the upper ResourcePool
+		// this is because only in that case the subnamespace would have a RQ or CRQ attached to it.
+		// Otherwise, the subnamespace is part of a ResourcePool (and does not have a RQ/CRQ attached to it) and hence this check is unneeded.
+		if isRp != "true" || isUpperRp == danav1.True {
+			if err := ValidateUpdateSnsRequest(parentQuotaObj, sns, oldSns, myQuotaObj); err != nil {
+				return admission.Denied(err.Error())
 			}
-
-			if resourceName := snsChangedObject(oldSns, sns); len(resourceName) > 0 {
-				if !utils.UsernameToFilter(req.UserInfo.Username) {
-					//Write relevant log to elastic
-					webhookLog := utils.NewWebhookLog(time.Now(), sns.Object.GetObjectKind().GroupVersionKind().Kind,
-						sns.Object.GetNamespace(), utils.Edit, req.UserInfo.Username,
-						fmt.Sprintf("%+q amount changed", resourceName), utils.GetSnsQuotaSpec(sns.Object).Hard, clusterName)
-					err := webhookLog.UploadLogToElastic()
-					if err != nil {
-						log.Error(err, "unable to upload log to elastic")
-					}
-				}
-			}
-			return admission.Allowed(allowMessageValidateQuotaObj)
 		}
+
+		if resourceName := snsChangedObject(oldSns, sns); len(resourceName) > 0 {
+			if !utils.UsernameToFilter(req.UserInfo.Username) {
+				//Write relevant log to elastic
+				webhookLog := utils.NewWebhookLog(time.Now(), sns.Object.GetObjectKind().GroupVersionKind().Kind,
+					sns.Object.GetNamespace(), utils.Edit, req.UserInfo.Username,
+					fmt.Sprintf("%+q amount changed", resourceName), utils.GetSnsQuotaSpec(sns.Object).Hard, clusterName)
+				err := webhookLog.UploadLogToElastic()
+				if err != nil {
+					log.Error(err, "unable to upload log to elastic")
+				}
+			}
+		}
+		return admission.Allowed(allowMessageValidateQuotaObj)
 	}
 	return admission.Denied(contactMessage)
 }
