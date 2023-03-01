@@ -129,12 +129,6 @@ func (a *SubNamespaceAnnotator) Handle(ctx context.Context, req admission.Reques
 			return admission.Denied(denyMessageUpdateResourcePool)
 		}
 
-		if validChange, err := oneOfSnsDescendantIsResourcePool(oldSns, sns); err != nil {
-			return admission.Errored(http.StatusInternalServerError, err)
-		} else if !validChange {
-			return admission.Denied(denyMessageUpdateResourcePoolDescendant)
-		}
-
 		if isExists, err := isSnsQuotaObjExists(sns); err != nil {
 			log.Error(err, "unable to get sns quota object")
 			return admission.Denied(err.Error())
