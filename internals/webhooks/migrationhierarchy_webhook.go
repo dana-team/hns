@@ -156,7 +156,7 @@ func (a *MigrationHierarchyAnnotator) Handle(ctx context.Context, req admission.
 			return admission.Errored(http.StatusBadRequest, err)
 		}
 		if !reflect.DeepEqual(migrationObject.Object.(*danav1.MigrationHierarchy).Spec, oldObj.Spec) {
-			return admission.Denied("you can't update this object")
+			return admission.Denied("It is forbidden to update an object of type " + oldObj.TypeMeta.Kind)
 		}
 		return admission.Allowed(allowMessageUpdatePhase)
 	}

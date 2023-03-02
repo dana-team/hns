@@ -2,6 +2,7 @@ package webhooks
 
 import (
 	"context"
+	"reflect"
 
 	danav1 "github.com/dana-team/hns/api/v1"
 	"github.com/dana-team/hns/internals/utils"
@@ -18,6 +19,8 @@ import (
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
+
+	admissionv1 "k8s.io/api/admission/v1"
 )
 
 type UpdateQuotaAnnotator struct {
@@ -157,6 +160,20 @@ func (a *UpdateQuotaAnnotator) Handle(ctx context.Context, req admission.Request
 	}
 	if !(snsToQuotaObj.IsPresent()) {
 		return admission.Denied("Quota Object " + updatingObject.Object.(*danav1.Updatequota).Spec.DestNamespace + " does not exist")
+	}
+
+	//deny update of updatequota object after it's been created(when the status phase is not empty)
+	//check if the current updatequota object in the cluster(if it's present) different from the new updatequota object
+	//if the there is a diff - denied the update of the updatequota object
+	if req.Operation == admissionv1.Update {
+		oldUpdateQuota := &danav1.Updatequota{}
+		if err := a.Decoder.DecodeRaw(req.OldObject, oldUpdateQuota); err != nil {
+			log.Error(err, "could not decode object")
+			return admission.Errored(http.StatusBadRequest, err)
+		}
+		if !reflect.ValueOf(oldUpdateQuota.Status).IsZero() {
+			return admission.Denied("It is forbidden to update an object of type " + oldUpdateQuota.TypeMeta.Kind)
+		}
 	}
 
 	return admission.Allowed("")
