@@ -90,6 +90,7 @@ func ComposeRoleBinding(rbName string, namespace string, subjects []rbacv1.Subje
 }
 
 func ComposeSns(name string, namespace string, quota corev1.ResourceList, labels map[string]string) *danav1.Subnamespace {
+	labels[danav1.IsRq] = "False"
 	return &danav1.Subnamespace{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,

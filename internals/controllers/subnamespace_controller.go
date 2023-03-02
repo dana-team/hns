@@ -185,13 +185,11 @@ func (r *SubnamespaceReconciler) Sync(ownerNamespace *utils.ObjectContext, subsp
 			},
 		}}
 	}
-
 	//subspaceparent.UpdateObject(func(object client.Object, log logr.Logger) (client.Object, logr.Logger) {
 	//	object.(*danav1.Subnamespace).Status.Phase = danav1.Missing
 	//	log = log.WithValues("phase", danav1.Missing)
 	//	return object, log
 	//})
-
 	// resourcePool Feature
 	subspaceCrqName := subspace.Object.GetName()
 	subspaceCrq, err := utils.NewObjectContext(subspace.Ctx, subspace.Log, subspace.Client, types.NamespacedName{Name: subspaceCrqName}, &quotav1.ClusterResourceQuota{})
@@ -205,14 +203,12 @@ func (r *SubnamespaceReconciler) Sync(ownerNamespace *utils.ObjectContext, subsp
 	if err != nil {
 		return ctrl.Result{}, err
 	}
-
 	if utils.GetSnsResourcePooled(subspace.Object) == "" {
 		if err := setSnsResourcePool(ownerNamespace, subspace); err != nil {
 			return ctrl.Result{}, err
 		}
 		return ctrl.Result{Requeue: true}, nil
 	}
-
 	if utils.GetNamespaceResourcePooled(ownerNamespace) == "true" && utils.GetSnsResourcePooled(subspace.Object) == "true" {
 		if err := subspaceCrq.EnsureDeleteObject(); err != nil {
 			return ctrl.Result{}, err
@@ -225,11 +221,9 @@ func (r *SubnamespaceReconciler) Sync(ownerNamespace *utils.ObjectContext, subsp
 			return ctrl.Result{}, err
 		}
 	}
-
 	if err := utils.AppendUpperResourcePoolAnnotation(subspace, subspaceparent); err != nil {
 		return ctrl.Result{}, err
 	}
-
 	r.addSnsChildNamespaceEvent(subspace)
 	if utils.GetSnsResourcePooled(subspace.Object) == "false" || utils.IsRootResourcePool(subspace) {
 		rqFlag, err := utils.IsRq(subspace, danav1.SelfOffset)
@@ -256,15 +250,23 @@ func (r *SubnamespaceReconciler) Sync(ownerNamespace *utils.ObjectContext, subsp
 				return ctrl.Result{}, err
 			}
 		}
-
 	}
-	if err := subspace.UpdateObject(func(object client.Object, log logr.Logger) (client.Object, logr.Logger) {
-		object.(*danav1.Subnamespace).Status.Namespaces = childrenRequests
-		object.(*danav1.Subnamespace).Status.Total.Allocated = allocated
-		object.(*danav1.Subnamespace).Status.Total.Free = free
-		return object, log
-	}); err != nil {
-		return ctrl.Result{}, err
+	if len(subspaceChilds.Objects.(*danav1.SubnamespaceList).Items) > 0 {
+		for _, upperChild := range subspaceChilds.Objects.(*danav1.SubnamespaceList).Items {
+			snsChild, err := utils.NewObjectContext(subspace.Ctx, subspace.Log, subspace.Client, types.NamespacedName{Name: upperChild.GetName(), Namespace: subspace.GetName()}, &danav1.Subnamespace{})
+			if err != nil {
+				return ctrl.Result{}, err
+			}
+				r.addSnsChildSubnamespaceEvent(snsChild, subspace.GetName())
+		}
+		if err := subspace.UpdateObject(func(object client.Object, log logr.Logger) (client.Object, logr.Logger) {
+			object.(*danav1.Subnamespace).Status.Namespaces = childrenRequests
+			object.(*danav1.Subnamespace).Status.Total.Allocated = allocated
+			object.(*danav1.Subnamespace).Status.Total.Free = free
+			return object, log
+		}); err != nil {
+			return ctrl.Result{}, err
+		}
 	}
 	return ctrl.Result{}, nil
 }
@@ -311,7 +313,8 @@ func (r *SubnamespaceReconciler) Init(ownerNamespace *utils.ObjectContext, subsp
 		return err
 	}
 
-	if err := subspace.AppendAnnotations(map[string]string{danav1.DisplayName: utils.GetNamespaceDisplayName(ownerNamespace.Object) + "/" + subspace.Object.GetName()}); err != nil {
+	if err := subspace.AppendAnnotations(map[string]string{danav1.DisplayName: utils.GetNamespaceDisplayName(ownerNamespace.Object) + "/" + subspace.Object.GetName(),
+		danav1.IsRq: "False"}); err != nil {
 		return err
 	}
 
@@ -372,6 +375,14 @@ func (r *SubnamespaceReconciler) addSnsChildNamespaceEvent(subspace *utils.Objec
 		ObjectMeta: metav1.ObjectMeta{
 			Name:   subspace.Object.GetName(),
 			Labels: map[string]string{danav1.Hns: "true"},
+		},
+	}}
+}
+func (r *SubnamespaceReconciler) addSnsChildSubnamespaceEvent(subspace *utils.ObjectContext, ownerNamespace string) {
+	r.SnsEvents <- event.GenericEvent{Object: &danav1.Subnamespace{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      subspace.Object.GetName(),
+			Namespace: ownerNamespace,
 		},
 	}}
 }

@@ -1,9 +1,6 @@
 package v1
 
 import (
-	"os"
-	"strconv"
-
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 )
@@ -71,7 +68,8 @@ const (
 
 var (
 	DefaultAnnotations = []string{CrqSelector, "scheduler.alpha.kubernetes.io/defaultTolerations", "openshift.io/node-selector"}
-	MaxSNS, _          = strconv.Atoi(os.Getenv("MAX_SNS_IN_HIERARCHY"))
+	//MaxSNS, _          = strconv.Atoi(os.Getenv("MAX_SNS_IN_HIERARCHY"))
+	MaxSNS = 250
 )
 
 var (

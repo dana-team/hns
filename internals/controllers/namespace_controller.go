@@ -16,6 +16,8 @@ package controllers
 
 import (
 	"context"
+	"reflect"
+
 	danav1 "github.com/dana-team/hns/api/v1"
 	"github.com/dana-team/hns/internals/utils"
 	"github.com/go-logr/logr"
@@ -25,7 +27,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
-	"reflect"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
@@ -293,7 +294,7 @@ func ensureSnsResourcePool(namespace *utils.ObjectContext) error {
 			return err
 		}
 
-		if utils.GetSnsResourcePooled(snsToUpdate.Object) != namespaceResourcePooled && !utils.IsRootResourcePool(snsToUpdate) {
+		if utils.GetSnsResourcePooled(snsToUpdate.Object) != namespaceResourcePooled && !utils.IsRootResourcePool(snsToUpdate) && namespaceResourcePooled == "true" {
 			if err := snsToUpdate.UpdateObject(func(object client.Object, log logr.Logger) (client.Object, logr.Logger) {
 				log = log.WithValues(danav1.ResourcePool, "true")
 				object.SetLabels(map[string]string{danav1.ResourcePool: namespaceResourcePooled})

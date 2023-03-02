@@ -101,7 +101,7 @@ undeploy: ## Undeploy controller from the K8s cluster specified in ~/.kube/confi
 LOCAL_CERT_DIR ?= ./k8s-webhook-server/serving-certs
 
 dev: manifests kustomize
-	echo HOSTNAME=`hostname` > config/webhook-dev/hostname.env
+	echo HOSTNAME='dana-dev-2.westeurope.cloudapp.azure.com' > config/webhook-dev/hostname.env
 	$(KUSTOMIZE) build config/dev | oc apply -f -
 	mkdir -p $(LOCAL_CERT_DIR)
 	sleep 3

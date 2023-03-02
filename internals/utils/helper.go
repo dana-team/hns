@@ -34,7 +34,7 @@ func IsChildlessNamespace(namespace *ObjectContext) bool {
 // IsUpperResourcePool returns true if the subnamespace is an upper resource pool
 // it happens only when the parent is from subnamespace kind or is a root namespace
 func IsUpperResourcePool(sns *ObjectContext) (bool, error) {
-	isResourcePool, _ := sns.Object.GetLabels()[danav1.ResourcePool]
+	isResourcePool := sns.Object.GetLabels()[danav1.ResourcePool]
 	parentNs, err := NewObjectContext(sns.Ctx, sns.Log, sns.Client, types.NamespacedName{Name: sns.Object.GetNamespace()}, &corev1.Namespace{})
 	if err != nil {
 		return false, err
@@ -44,7 +44,7 @@ func IsUpperResourcePool(sns *ObjectContext) (bool, error) {
 		return false, err
 	}
 	parentRole, _ := parentNs.Object.GetAnnotations()[danav1.Role]
-	isParentResourcePool, _ := parentSns.Object.GetLabels()[danav1.ResourcePool]
+	isParentResourcePool := parentSns.Object.GetLabels()[danav1.ResourcePool]
 	if (isResourcePool == "true") && (parentRole == danav1.Root || isParentResourcePool == "false") {
 		return true, nil
 	}
@@ -62,6 +62,11 @@ func AppendUpperResourcePoolAnnotation(sns *ObjectContext, parentSns *ObjectCont
 		if err = sns.AppendAnnotations(map[string]string{danav1.IsUpperRp: danav1.True}); err != nil {
 			return err
 		}
+		if err = sns.DeleteAnnotations([]string{danav1.UpperRp}); err != nil {
+			return err
+		}
+		return nil
+
 	} else {
 		if err = sns.AppendAnnotations(map[string]string{danav1.IsUpperRp: danav1.False}); err != nil {
 			return err
