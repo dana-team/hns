@@ -153,6 +153,7 @@ func main() {
 		Log:         ctrl.Log.WithName("controllers").WithName("MigrationHierarchy"),
 		Scheme:      mgr.GetScheme(),
 		NamespaceDB: ndb,
+		SnsEvents:   snsEvents,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "MigrationHierarchy")
 		os.Exit(1)
