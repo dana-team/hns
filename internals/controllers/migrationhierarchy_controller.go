@@ -24,10 +24,12 @@ import (
 	"github.com/dana-team/hns/internals/utils"
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/event"
 )
 
 // MigrationHierarchyReconciler reconciles a MigrationHierarchy object
@@ -36,6 +38,7 @@ type MigrationHierarchyReconciler struct {
 	Log         logr.Logger
 	Scheme      *runtime.Scheme
 	NamespaceDB *namespaceDB.NamespaceDB
+	SnsEvents   chan event.GenericEvent
 }
 
 // +kubebuilder:rbac:groups=dana.hns.io,resources=migrationhierarchies,verbs=get;list;watch;create;update;patch;delete
@@ -65,6 +68,17 @@ func (r *MigrationHierarchyReconciler) Reconcile(ctx context.Context, req ctrl.R
 		if err != nil {
 			return ctrl.Result{}, err
 		}
+
+		// at the end of the migration operation we need to sync the original parent of the subnamespace that is being
+		// migrated in order for its status to show the correct list of child subnamespaces. 
+		// Therefore, we here store in a variable the original parent of the subnamespace that is being migrated
+		sourceParentNs, err := utils.NewObjectContext(ctx, log, r.Client, client.ObjectKey{Namespace: "", Name: utils.GetNamespaceParent(ns.Object)}, &corev1.Namespace{})
+		if err != nil {
+			return ctrl.Result{}, err
+		}
+		sourceSnsParentName := utils.GetNamespaceParent(ns.Object)
+		sourceSnsParentNamespace := utils.GetNamespaceParent(sourceParentNs.Object)
+
 		oldSns, err := utils.NewObjectContext(ctx, log, r.Client, client.ObjectKey{Name: currentNamespace, Namespace: utils.GetNamespaceParent(ns.Object)}, &danav1.Subnamespace{})
 		if err != nil {
 			return ctrl.Result{}, err
@@ -129,6 +143,9 @@ func (r *MigrationHierarchyReconciler) Reconcile(ctx context.Context, req ctrl.R
 			log = log.WithValues("migration phase", danav1.Complete)
 			return object, log
 		})
+
+		// resync for the parent source sns
+		r.addSnsToSnsEvent(sourceSnsParentName, sourceSnsParentNamespace)
 	}
 
 	return ctrl.Result{}, nil
@@ -138,4 +155,15 @@ func (r *MigrationHierarchyReconciler) SetupWithManager(mgr ctrl.Manager) error 
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&danav1.MigrationHierarchy{}).
 		Complete(r)
+}
+
+// addSnsToSnsEvent takes two paramaters: snsName and snsNamespace
+// then adds the sns to the sns event channel to trigger new resync for the sns
+func (r *MigrationHierarchyReconciler) addSnsToSnsEvent(snsName string, snsNamespace string) {
+	r.SnsEvents <- event.GenericEvent{Object: &danav1.Subnamespace{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      snsName,
+			Namespace: snsNamespace,
+		},
+	}}
 }
