@@ -246,19 +246,19 @@ func subSnsQuota(sns *utils.ObjectContext, quotaSpec corev1.ResourceQuotaSpec) e
 // has been properly updated before doing the updatequota operation
 func ensureSnsEqualQuota(sns *utils.ObjectContext) error {
 	ok := false
-	quotaObj, err := utils.GetSNSQuotaObj(sns)
-	if err != nil {
-		return err
-	}
 	snsQuotaSpec := sns.Object.(*danav1.Subnamespace).Spec.ResourceQuotaSpec
 	for !ok {
+		ok = true
+		quotaObj, err := utils.GetSNSQuotaObj(sns)
+		if err != nil {
+			return err
+		}
 		resourceQuotaSpec := utils.GetQuotaObjSpec(quotaObj.Object)
 		for res := range resourceQuotaSpec.Hard {
 			if snsQuotaSpec.Hard[res] != resourceQuotaSpec.Hard[res] {
 				ok = false
 			}
 		}
-		ok = true
 		// we wait between iterations because we don't want to overload the API with many requests
 		time.Sleep(500 * time.Millisecond)
 	}
