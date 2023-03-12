@@ -3,6 +3,10 @@ package utils
 import (
 	"context"
 	"fmt"
+	"strconv"
+	"strings"
+	"time"
+
 	danav1 "github.com/dana-team/hns/api/v1"
 	"github.com/go-logr/logr"
 	quotav1 "github.com/openshift/api/quota/v1"
@@ -10,9 +14,6 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"strconv"
-	"strings"
-	"time"
 )
 
 type ObjectContext struct {
@@ -148,6 +149,22 @@ func (r *ObjectContext) AppendAnnotations(annotationsToAppend map[string]string)
 	return nil
 }
 
+func (r *ObjectContext) DeleteAnnotations(annotationsToDelete []string) error {
+	ann := r.Object.GetAnnotations()
+	for _, key := range annotationsToDelete {
+		delete(ann, key)
+	}
+	r.Object.SetAnnotations(ann)
+
+	if err := r.UpdateObject(func(object client.Object, log logr.Logger) (client.Object, logr.Logger) {
+		log = log.WithValues("updated", "annotations")
+		return object, log
+	}); err != nil {
+		return err
+	}
+	return nil
+}
+
 // AppendLabels appends the received labels to objectContext.object labels
 func (r *ObjectContext) AppendLabels(labelsToAppend map[string]string) error {
 	newLabels := r.Object.GetLabels()
@@ -210,7 +227,7 @@ func (r *ObjectContext) UpdateNsByparent(nsparent *ObjectContext, nsChild *Objec
 		labels[danav1.Aggragator+nsName] = "true"
 		labels[danav1.Parent] = nsparent.Object.(*corev1.Namespace).Name
 		labels[danav1.Hns] = "true"
-		labels[danav1.ResourcePool] = GetNamespaceResourcePooled(nsChild)
+		//labels[danav1.ResourcePool] = GetNamespaceResourcePooled(nsChild)
 		object.(*corev1.Namespace).SetLabels(labels)
 
 		log = log.WithValues("update ns labels and annotations", nsName)

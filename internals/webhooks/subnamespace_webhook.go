@@ -162,11 +162,11 @@ func (a *SubNamespaceAnnotator) Handle(ctx context.Context, req admission.Reques
 			return admission.Allowed(allowMessageValidateQuotaObj)
 		}
 
-		if utils.GetSnsResourcePooled(sns.Object) == "false" {
-			if isValid, err := ValidateAllResourceQuotaParamsValid(sns); !isValid {
-				return admission.Denied(err.Error())
-			}
-		}
+		// if utils.GetSnsResourcePooled(sns.Object) == "false" && utils.GetSnsResourcePooled(oldSns.Object) == "false" {
+		// 	if isValid, err := ValidateAllResourceQuotaParamsValid(sns); !isValid {
+		// 		return admission.Denied(err.Error())
+		// 	}
+		// }
 
 		isRp, _ := sns.Object.GetLabels()[danav1.ResourcePool]
 		isUpperRp, _ := sns.Object.GetAnnotations()[danav1.IsUpperRp]

@@ -15,6 +15,7 @@ package controllers
 import (
 	"context"
 	"errors"
+	"fmt"
 	"strconv"
 	"strings"
 
@@ -125,6 +126,37 @@ func (r *SubnamespaceReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		For(&danav1.Subnamespace{}).
 		Complete(r)
 }
+func rqcEqual(a, b corev1.ResourceQuotaSpec) bool {
+	if *b.Hard.Cpu() != *a.Hard.Cpu() ||
+		*b.Hard.Memory() != *a.Hard.Memory() ||
+		*b.Hard.Pods() != *a.Hard.Pods() {
+		return false
+	}
+	return true
+}
+
+func namespacesEqual(a, b []danav1.Namespaces) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i, v := range a {
+		if !rqcEqual(v.ResourceQuotaSpec, b[i].ResourceQuotaSpec) {
+			return false
+		}
+	}
+	return true
+}
+func resourceListEqual(a, b corev1.ResourceList) bool {
+	if b.Cpu().AsApproximateFloat64() != a.Cpu().AsApproximateFloat64() ||
+		b.Memory().AsApproximateFloat64() != a.Memory().AsApproximateFloat64() ||
+		b.Pods().AsApproximateFloat64() != a.Pods().AsApproximateFloat64() {
+		fmt.Println("CPU=" + strconv.FormatBool(b.Cpu().AsApproximateFloat64() != a.Cpu().AsApproximateFloat64()))
+		fmt.Println("Memory=" + strconv.FormatBool(b.Memory().AsApproximateFloat64() != a.Memory().AsApproximateFloat64()))
+		fmt.Println("Pods=" + strconv.FormatBool(b.Pods().AsApproximateFloat64() != a.Pods().AsApproximateFloat64()))
+		return false
+	}
+	return true
+}
 
 func (r *SubnamespaceReconciler) Sync(ownerNamespace *utils.ObjectContext, subspace *utils.ObjectContext) (ctrl.Result, error) {
 	//status usage feature
@@ -177,15 +209,22 @@ func (r *SubnamespaceReconciler) Sync(ownerNamespace *utils.ObjectContext, subsp
 		free[res] = *resource.NewQuantity(value, resource.BinarySI)
 	}
 
-	if subspaceparent.IsPresent() {
-		r.SnsEvents <- event.GenericEvent{Object: &danav1.Subnamespace{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      subspaceparent.Object.GetName(),
-				Namespace: subspaceparent.Object.GetNamespace(),
-			},
-		}}
+	for _, sns := range subspaceChilds.Objects.(*danav1.SubnamespaceList).Items {
+		snsChild, err := utils.NewObjectContext(subspace.Ctx, subspace.Log, subspace.Client, types.NamespacedName{Name: sns.GetName(), Namespace: subspace.GetName()}, &danav1.Subnamespace{})
+		if err != nil {
+			return ctrl.Result{}, err
+		}
+		if utils.GetSnsResourcePooled(subspace.Object) == "false" &&
+			utils.GetSnsResourcePooled(snsChild.Object) == "true" &&
+			snsChild.Object.GetAnnotations()[danav1.IsUpperRp] == danav1.False {
+			r.SnsEvents <- event.GenericEvent{Object: &danav1.Subnamespace{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      sns.GetName(),
+					Namespace: subspace.Object.GetName(),
+				},
+			}}
+		}
 	}
-
 	//subspaceparent.UpdateObject(func(object client.Object, log logr.Logger) (client.Object, logr.Logger) {
 	//	object.(*danav1.Subnamespace).Status.Phase = danav1.Missing
 	//	log = log.WithValues("phase", danav1.Missing)
@@ -205,7 +244,6 @@ func (r *SubnamespaceReconciler) Sync(ownerNamespace *utils.ObjectContext, subsp
 	if err != nil {
 		return ctrl.Result{}, err
 	}
-
 	if utils.GetSnsResourcePooled(subspace.Object) == "" {
 		if err := setSnsResourcePool(ownerNamespace, subspace); err != nil {
 			return ctrl.Result{}, err
@@ -225,20 +263,32 @@ func (r *SubnamespaceReconciler) Sync(ownerNamespace *utils.ObjectContext, subsp
 			return ctrl.Result{}, err
 		}
 	}
-
+	if _, ok := subspace.Object.GetAnnotations()[danav1.IsRq]; !ok {
+		if err = subspace.AppendAnnotations(map[string]string{danav1.IsRq: danav1.False}); err != nil {
+			return ctrl.Result{}, err
+		}
+	}
 	if err := utils.AppendUpperResourcePoolAnnotation(subspace, subspaceparent); err != nil {
 		return ctrl.Result{}, err
 	}
-
 	r.addSnsChildNamespaceEvent(subspace)
 	if utils.GetSnsResourcePooled(subspace.Object) == "false" || utils.IsRootResourcePool(subspace) {
+		if subspaceparent.IsPresent() {
+			r.SnsEvents <- event.GenericEvent{Object: &danav1.Subnamespace{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      subspaceparent.Object.GetName(),
+					Namespace: subspaceparent.Object.GetNamespace(),
+				},
+			}}
+		}
 		rqFlag, err := utils.IsRq(subspace, danav1.SelfOffset)
 		if err != nil {
 			return ctrl.Result{}, err
 		}
 		//check by the annotation if the subnamespace have crq or rq, if it more than write in the annotation so it crq
 		if !rqFlag {
-			//call to function of sync crq and subnamespace
+			fmt.Print("hello benda!!!")
+			// call to function of sync crq and subnamespace
 			_, err := syncCrq(ownerNamespace, subspace, subspaceCrq)
 			if err != nil {
 				return ctrl.Result{}, err
@@ -258,13 +308,17 @@ func (r *SubnamespaceReconciler) Sync(ownerNamespace *utils.ObjectContext, subsp
 		}
 
 	}
-	if err := subspace.UpdateObject(func(object client.Object, log logr.Logger) (client.Object, logr.Logger) {
-		object.(*danav1.Subnamespace).Status.Namespaces = childrenRequests
-		object.(*danav1.Subnamespace).Status.Total.Allocated = allocated
-		object.(*danav1.Subnamespace).Status.Total.Free = free
-		return object, log
-	}); err != nil {
-		return ctrl.Result{}, err
+	if !namespacesEqual(subspace.Object.(*danav1.Subnamespace).Status.Namespaces, childrenRequests) ||
+		!resourceListEqual(subspace.Object.(*danav1.Subnamespace).Status.Total.Allocated, allocated) ||
+		!resourceListEqual(subspace.Object.(*danav1.Subnamespace).Status.Total.Free, free) {
+		if err := subspace.UpdateObject(func(object client.Object, log logr.Logger) (client.Object, logr.Logger) {
+			object.(*danav1.Subnamespace).Status.Namespaces = childrenRequests
+			object.(*danav1.Subnamespace).Status.Total.Allocated = allocated
+			object.(*danav1.Subnamespace).Status.Total.Free = free
+			return object, log
+		}); err != nil {
+			return ctrl.Result{}, err
+		}
 	}
 	return ctrl.Result{}, nil
 }
@@ -497,7 +551,6 @@ func updateRqQuotaHard(subspace *utils.ObjectContext, spec corev1.ResourceList) 
 
 func ensureSubspaceCrq(ownerNamespace *utils.ObjectContext, subspace *utils.ObjectContext) (ctrl.Result, error) {
 	subspaceCrqName := subspace.Object.GetName()
-
 	quota := utils.GetSnsQuotaSpec(subspace.Object)
 	if len(quota.Hard) == 0 {
 		err := createZeroedSnsCrq(ownerNamespace, subspace)
@@ -506,6 +559,7 @@ func ensureSubspaceCrq(ownerNamespace *utils.ObjectContext, subspace *utils.Obje
 		}
 
 		crqUsed, err := getSnsCrqUsed(subspace)
+
 		if err != nil {
 			return ctrl.Result{}, err
 		}
@@ -513,7 +567,6 @@ func ensureSubspaceCrq(ownerNamespace *utils.ObjectContext, subspace *utils.Obje
 		if crqUsed == nil {
 			return ctrl.Result{Requeue: true}, nil
 		}
-
 		if err := updateSnsQuotaSpec(subspace, crqUsed); err != nil {
 			return ctrl.Result{}, err
 		}
@@ -663,6 +716,7 @@ func composeChildNamespace(ownerNamespace *utils.ObjectContext, subspace *utils.
 
 	ann := getParentAnnotations(ownerNamespace)
 	ann[danav1.Depth] = childNamespaceDepth
+	ann[danav1.IsRq] = danav1.False
 	ann[danav1.SnsPointer] = childNamespaceName
 	ann[danav1.CrqSelector+"-"+childNamespaceDepth] = childNamespaceName
 	ann[danav1.DisplayName] = parentDisplayName + "/" + childNamespaceName

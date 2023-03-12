@@ -17,7 +17,7 @@ func IsRootResourcePool(sns *ObjectContext) bool {
 	}
 
 	if sns.Object.(*danav1.Subnamespace).Labels[danav1.ResourcePool] == "true" {
-		if len(GetSnsQuotaSpec(sns.Object).Hard) > 0 {
+		if len(GetSnsQuotaSpec(sns.Object).Hard) >= 0 {
 			if GetNamespaceResourcePooled(parentNamespace) == "false" {
 				return true
 			}

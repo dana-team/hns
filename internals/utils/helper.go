@@ -62,6 +62,9 @@ func AppendUpperResourcePoolAnnotation(sns *ObjectContext, parentSns *ObjectCont
 		if err = sns.AppendAnnotations(map[string]string{danav1.IsUpperRp: danav1.True}); err != nil {
 			return err
 		}
+		if err = sns.DeleteAnnotations([]string{danav1.UpperRp}); err != nil {
+			return err
+		}
 	} else {
 		if err = sns.AppendAnnotations(map[string]string{danav1.IsUpperRp: danav1.False}); err != nil {
 			return err
@@ -78,7 +81,7 @@ func AppendUpperResourcePoolAnnotation(sns *ObjectContext, parentSns *ObjectCont
 		}
 	}
 	upperRp, exists := parentSns.Object.GetAnnotations()[danav1.UpperRp]
-	if exists {
+	if exists && !isUpperResourcePool {
 		if err = sns.AppendAnnotations(map[string]string{danav1.UpperRp: upperRp}); err != nil {
 			return err
 		}

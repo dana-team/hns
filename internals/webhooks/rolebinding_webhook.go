@@ -3,16 +3,17 @@ package webhooks
 import (
 	"context"
 	"fmt"
+	"net/http"
+	"time"
+
 	"github.com/dana-team/hns/internals/utils"
 	"github.com/go-logr/logr"
 	admissionv1 "k8s.io/api/admission/v1"
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"net/http"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
-	"time"
 )
 
 type RoleBindingAnnotator struct {
