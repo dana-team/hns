@@ -5,4 +5,4 @@ kind: Kustomization
 images:
 - name: controller
   newName: quay.io/danateamorg/hns-manual
-  newTag: v0.14
+  newTag: "0.17"
