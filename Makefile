@@ -114,6 +114,11 @@ undev: manifests kustomize
 	rm -r $(LOCAL_CERT_DIR)
 	rm config/webhookdev/hostname.env
 
+.PHONY: test-e2e
+test-e2e:
+	go clean -testcache
+	go test -v -timeout 0 ./test/e2e/...
+
 ##@ Build Dependencies
 
 ## Location to install dependencies to
