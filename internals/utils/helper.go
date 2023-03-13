@@ -216,7 +216,10 @@ func UpdateAllNsChildsOfNs(nsparent *ObjectContext) error {
 		if err != nil {
 			return err
 		}
-		return UpdateAllNsChildsOfNs(ns)
+		err = UpdateAllNsChildsOfNs(ns)
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }
