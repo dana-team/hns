@@ -114,6 +114,14 @@ func CreateUser(u string) {
 	labelTestingUsers(u)
 }
 
+// CreatePod creates the specified Pod
+func CreatePod(name, ns string) {
+	pod := generatePodManifest(name, ns)
+	MustApplyYAML(pod)
+	RunShouldContain(name, propagationTime, "kubectl get pods -n" + ns)
+	labelTestingPods(pod)
+}
+
 // generateRootNSManifest generates a namespace manifest with the
 // parameters needed to indicate a root namespace
 func generateRootNSManifest(nm string, rqDepth string) string {
@@ -175,7 +183,7 @@ spec:
     hard: ` + argsToResourceListString(4, args...)
 }
 
-// generateUserManifest generates an UpdateQuota manifest
+// generateUserManifest generates an User manifest
 func generateUserManifest(nm string) string {
 	return `# temp file created by user_test.go
 apiVersion: user.openshift.io/v1
@@ -185,6 +193,23 @@ metadata:
 groups: 
   - e2e-test`
 }
+
+// generatePodManifest generates an Pod manifest
+func generatePodManifest(name, ns string) string {
+	return `# temp file created by user_pod.go
+apiVersion: v1
+kind: Pod
+metadata:
+	name: ` + name + `
+	namespace: ` + ns + `
+spec:
+	containers:
+	- name: nginx
+	image: nginx:1.14.2
+	ports:
+	- containerPort: 80`
+}
+
 
 // argsToResourceListString provides a convenient way to specify a resource list
 // in hard limits/usages for RQ instances, or limits/requests for pod

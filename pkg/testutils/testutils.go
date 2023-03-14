@@ -279,6 +279,11 @@ func labelTestingUsers(user string) {
 	MustRun("kubectl label --overwrite user", user, testingNamespaceLabel+"=true")
 }
 
+// labelTestingPods marks testing pods with a label for future search and lookup.
+func labelTestingPods(pod string) {
+	MustRun("kubectl label --overwrite pod", pod, testingNamespaceLabel+"=true")
+}
+
 // CleanupTestNamespaces finds the list of namespaces labeled as test namespaces and delegates
 // to cleanupNamespaces function.
 func CleanupTestNamespaces() {

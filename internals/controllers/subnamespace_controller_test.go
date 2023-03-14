@@ -14,7 +14,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-var _ = PDescribe("Subnamespace controller tests", func() {
+var _ = Describe("Subnamespace controller tests", func() {
 	ctx := context.Background()
 	childSns := utils.ComposeSns(getRandomName("childsns"), testRootNs.Name, composeDefaultSnsQuota(int64(childResources)), map[string]string{})
 	childNs := utils.ComposeNamespace(childSns.Name, map[string]string{danaTestLabel: "true"}, map[string]string{})

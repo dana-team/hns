@@ -9,7 +9,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-var _ = PDescribe("RoleBinding controller", func() {
+var _ = Describe("RoleBinding controller", func() {
 	ctx := context.Background()
 	rootRb := utils.ComposeRoleBinding(getRandomName("rb"), testRootNs.Name, []rbacv1.Subject{{Kind: "User", Name: getRandomName("subject")}}, rbacv1.RoleRef{Kind: "ClusterRole", Name: "admin"})
 	childSns := utils.ComposeSns(getRandomName("childsns"), testRootNs.Name, composeDefaultSnsQuota(int64(childResources)), map[string]string{})
