@@ -194,6 +194,7 @@ groups:
   - e2e-test`
 }
 
+
 // generatePodManifest generates an Pod manifest
 func generatePodManifest(name, ns string) string {
 	return `# temp file created by user_pod.go
@@ -209,8 +210,6 @@ spec:
 	ports:
 	- containerPort: 80`
 }
-
-
 
 // argsToResourceListString provides a convenient way to specify a resource list
 // in hard limits/usages for RQ instances, or limits/requests for pod
