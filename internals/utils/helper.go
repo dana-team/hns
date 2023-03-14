@@ -224,6 +224,26 @@ func UpdateAllNsChildsOfNs(nsparent *ObjectContext) error {
 	return nil
 }
 
+// GetAllObjectChilds takes one paramater: rootObject
+// then return a slice of all the descendants of the root object(including the root itself)
+func GetAllSnsChilds(rootObject *ObjectContext) []*ObjectContext {
+	if rootObject == nil {
+		return []*ObjectContext{}
+	}
+	var subspaceDescendant []*ObjectContext
+	subspaceChilds, err := NewObjectContextList(rootObject.Ctx, rootObject.Log, rootObject.Client, &danav1.SubnamespaceList{}, client.InNamespace(rootObject.Object.GetName()))
+	if err != nil {
+		return nil
+	}
+	for _, snsItem := range subspaceChilds.Objects.(*danav1.SubnamespaceList).Items {
+		sns, _ := NewObjectContext(rootObject.Ctx, rootObject.Log, rootObject.Client, types.NamespacedName{Name: snsItem.GetName(), Namespace: snsItem.GetNamespace()}, &danav1.Subnamespace{})
+		childrenNs := GetAllSnsChilds(sns)
+		subspaceDescendant = append(subspaceDescendant, childrenNs...)
+	}
+
+	return append([]*ObjectContext{rootObject}, subspaceDescendant...)
+}
+
 func IndexOf(element string, arr []string) (int, error) {
 	for key, value := range arr {
 		if element == value {
