@@ -15,7 +15,6 @@ package controllers
 import (
 	"context"
 	"errors"
-	"fmt"
 	"strconv"
 	"strings"
 
@@ -150,9 +149,6 @@ func resourceListEqual(a, b corev1.ResourceList) bool {
 	if b.Cpu().AsApproximateFloat64() != a.Cpu().AsApproximateFloat64() ||
 		b.Memory().AsApproximateFloat64() != a.Memory().AsApproximateFloat64() ||
 		b.Pods().AsApproximateFloat64() != a.Pods().AsApproximateFloat64() {
-		fmt.Println("CPU=" + strconv.FormatBool(b.Cpu().AsApproximateFloat64() != a.Cpu().AsApproximateFloat64()))
-		fmt.Println("Memory=" + strconv.FormatBool(b.Memory().AsApproximateFloat64() != a.Memory().AsApproximateFloat64()))
-		fmt.Println("Pods=" + strconv.FormatBool(b.Pods().AsApproximateFloat64() != a.Pods().AsApproximateFloat64()))
 		return false
 	}
 	return true
@@ -287,7 +283,6 @@ func (r *SubnamespaceReconciler) Sync(ownerNamespace *utils.ObjectContext, subsp
 		}
 		//check by the annotation if the subnamespace have crq or rq, if it more than write in the annotation so it crq
 		if !rqFlag {
-			fmt.Print("hello benda!!!")
 			// call to function of sync crq and subnamespace
 			_, err := syncCrq(ownerNamespace, subspace, subspaceCrq)
 			if err != nil {
