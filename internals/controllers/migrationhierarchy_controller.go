@@ -18,6 +18,7 @@ package controllers
 
 import (
 	"context"
+
 	danav1 "github.com/dana-team/hns/api/v1"
 	"github.com/dana-team/hns/internals/namespaceDB"
 	"github.com/dana-team/hns/internals/utils"
@@ -69,7 +70,7 @@ func (r *MigrationHierarchyReconciler) Reconcile(ctx context.Context, req ctrl.R
 		}
 
 		// at the end of the migration operation we need to sync the original parent of the subnamespace that is being
-		// migrated in order for its status to show the correct list of child subnamespaces. 
+		// migrated in order for its status to show the correct list of child subnamespaces.
 		// Therefore, we here store in a variable the original parent of the subnamespace that is being migrated
 		sourceParentNs, err := utils.NewObjectContext(ctx, log, r.Client, client.ObjectKey{Namespace: "", Name: utils.GetNamespaceParent(ns.Object)}, &corev1.Namespace{})
 		if err != nil {
@@ -145,6 +146,12 @@ func (r *MigrationHierarchyReconciler) Reconcile(ctx context.Context, req ctrl.R
 
 		// resync for the parent source sns
 		r.addSnsToSnsEvent(sourceSnsParentName, sourceSnsParentNamespace)
+
+		// get all the sns descendants and resync each one
+		snsDescendants := utils.GetAllObjectChildren(newSns)
+		for _, sns := range snsDescendants {
+			r.addSnsToSnsEvent(sns.Object.GetName(), sns.Object.GetNamespace())
+		}
 	}
 
 	return ctrl.Result{}, nil
