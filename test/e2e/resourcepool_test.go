@@ -23,7 +23,7 @@ var _ = Describe("ResourcePool", func() {
 		CleanupTestNamespaces()
 	})
 
-	PIt("should create and delete a resourcepool under a subnamespace", func() {
+	It("should create and delete a resourcepool under a subnamespace", func() {
 		nsA := GenerateE2EName("a")
 		nsB := GenerateE2EName("b")
 		nsC := GenerateE2EName("c")
@@ -43,7 +43,7 @@ var _ = Describe("ResourcePool", func() {
 		MustNotRun("kubectl get ns", nsC)
 	})
 
-	PIt("should create a resourcepool under a resourcepool and update the labels accordingly", func() {
+	It("should create a resourcepool under a resourcepool and update the labels accordingly", func() {
 		nsA := GenerateE2EName("a")
 		nsB := GenerateE2EName("b")
 		nsC := GenerateE2EName("c")
@@ -61,7 +61,7 @@ var _ = Describe("ResourcePool", func() {
 		FieldShouldContain("subnamespace", nsC, nsD, ".metadata.annotations", danav1.UpperRp+":"+nsC)
 	})
 
-	PIt("should update the resources of an upper resourcepool", func() {
+	It("should update the resources of an upper resourcepool", func() {
 		nsA := GenerateE2EName("a")
 		nsB := GenerateE2EName("b")
 		nsC := GenerateE2EName("c")
@@ -82,7 +82,7 @@ var _ = Describe("ResourcePool", func() {
 		FieldShouldContain("subnamespace", nsB, nsC, ".status.total.free.pods", "20")
 	})
 
-	PIt("should delete a resourcepool if it's a leaf", func() {
+	It("should delete a resourcepool if it's a leaf", func() {
 		nsA := GenerateE2EName("a")
 		nsB := GenerateE2EName("b")
 		nsC := GenerateE2EName("c")
@@ -96,7 +96,7 @@ var _ = Describe("ResourcePool", func() {
 		MustRun("kubectl delete subnamespace -n", nsC, nsD)
 	})
 
-	PIt("should create a clusterresourcequota for a resourcepool regardless ofP its depth only if it's upper", func() {
+	It("should create a clusterresourcequota for a resourcepool regardless ofP its depth only if it's upper", func() {
 		nsA := GenerateE2EName("a")
 		nsB := GenerateE2EName("b")
 		nsC := GenerateE2EName("c")
@@ -113,7 +113,7 @@ var _ = Describe("ResourcePool", func() {
 		RunShouldNotContain(nsD, propagationTime, "kubectl get clusterresourcequota")
 	})
 
-	PIt("should turn all descendants of a subnamespace to resourcepool when the sns turns to resourcepool", func() {
+	It("should turn all descendants of a subnamespace to resourcepool when the sns turns to resourcepool", func() {
 		nsA := GenerateE2EName("a")
 		nsB := GenerateE2EName("b")
 		nsC := GenerateE2EName("c")
@@ -193,7 +193,7 @@ var _ = Describe("ResourcePool", func() {
 		RunShouldNotContain(nsI, propagationTime, "kubectl get clusterresourcequota")
 		RunShouldNotContain(nsJ, propagationTime, "kubectl get clusterresourcequota")
 	})
-	PIt("should turn only the upper resourcepool into a subnamespace when converting", func() {
+	It("should turn only the upper resourcepool into a subnamespace when converting", func() {
 		nsA := GenerateE2EName("a")
 		nsB := GenerateE2EName("b")
 		nsC := GenerateE2EName("c")
@@ -243,7 +243,7 @@ var _ = Describe("ResourcePool", func() {
 		ComplexFieldShouldContain("subnamespace", nsB, nsC, "'{{range.status.namespaces}}{{.namespace}}{{\"\\n\"}}{{end}}'", nsE)
 		ComplexFieldShouldContain("subnamespace", nsB, nsC, "'{{range.status.namespaces}}{{.namespace}}{{\"\\n\"}}{{end}}'", nsF)
 	})
-	PIt("should sum the children workloads correctly", func() {
+	It("should sum the children workloads correctly", func() {
 		nsA := GenerateE2EName("a")
 		nsB := GenerateE2EName("b")
 		nsC := GenerateE2EName("c")
@@ -398,7 +398,7 @@ var _ = Describe("ResourcePool", func() {
 		RunShouldNotContain(nsE, propagationTime, "kubectl get clusterresourcequota")
 
 	})
-	PIt("should not create a subnamespace under a resourcepool", func() {
+	It("should not create a subnamespace under a resourcepool", func() {
 		nsA := GenerateE2EName("a")
 		nsB := GenerateE2EName("b")
 		nsC := GenerateE2EName("c")

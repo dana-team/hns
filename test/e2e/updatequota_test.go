@@ -5,7 +5,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 )
 
-var _ = PDescribe("ResourcePool", func() {
+var _ = Describe("ResourcePool", func() {
 	nsRoot := GenerateE2EName("root")
 
 	BeforeEach(func() {

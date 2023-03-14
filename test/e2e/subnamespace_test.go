@@ -6,7 +6,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 )
 
-var _ = PDescribe("Subnamespaces", func() {
+var _ = Describe("Subnamespaces", func() {
 	nsRoot := GenerateE2EName("root")
 
 	BeforeEach(func() {
