@@ -294,9 +294,9 @@ func ensureSnsResourcePool(namespace *utils.ObjectContext) error {
 			return err
 		}
 
-		if utils.GetSnsResourcePooled(snsToUpdate.Object) != namespaceResourcePooled && !utils.IsRootResourcePool(snsToUpdate) && namespaceResourcePooled == "true" {
+		if utils.GetNamespaceResourcePooled(namespace) == "true" && !utils.IsRootResourcePool(snsToUpdate) {
 			if err := snsToUpdate.UpdateObject(func(object client.Object, log logr.Logger) (client.Object, logr.Logger) {
-				log = log.WithValues(danav1.ResourcePool, "true")
+				log = log.WithValues(danav1.ResourcePool, namespaceResourcePooled)
 				object.SetLabels(map[string]string{danav1.ResourcePool: namespaceResourcePooled})
 				return object, log
 			}); err != nil {
