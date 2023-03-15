@@ -18,6 +18,7 @@ bin
 !vendor/**/zz_generated.*
 k8s-webhook-server/**
 config/webhook-dev/hostname.env
+.vscode/launch.json
 
 # editor and IDE paraphernalia
 .idea
