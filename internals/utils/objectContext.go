@@ -228,7 +228,6 @@ func (r *ObjectContext) UpdateNsByparent(nsparent *ObjectContext, nsChild *Objec
 		labels[danav1.Aggragator+nsName] = "true"
 		labels[danav1.Parent] = nsparent.Object.(*corev1.Namespace).Name
 		labels[danav1.Hns] = "true"
-		//labels[danav1.ResourcePool] = GetNamespaceResourcePooled(nsChild)
 		object.(*corev1.Namespace).SetLabels(labels)
 
 		log = log.WithValues("update ns labels and annotations", nsName)

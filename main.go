@@ -93,7 +93,7 @@ func main() {
 		Port:               9443,
 
 		// uncomment here when debugging webhooks locally
-		//CertDir: "k8s-webhook-server/serving-certs/",
+		// CertDir: "k8s-webhook-server/serving-certs/",
 	})
 	if err != nil {
 		setupLog.Error(err, "unable to start manager")

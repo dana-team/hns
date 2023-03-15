@@ -77,10 +77,8 @@ func NamespacesEqual(a, b []danav1.Namespaces) bool {
 
 // ResourceListEqual gets two ResourceLists and returns whether their specs are equal
 func ResourceListEqual(a, b corev1.ResourceList) bool {
-	if b.Cpu().AsApproximateFloat64() != a.Cpu().AsApproximateFloat64() ||
-		b.Memory().AsApproximateFloat64() != a.Memory().AsApproximateFloat64() ||
-		b.Pods().AsApproximateFloat64() != a.Pods().AsApproximateFloat64() ||
-		b.Storage().AsApproximateFloat64() != a.Storage().AsApproximateFloat64() {
+	if !b.Cpu().Equal(*a.Cpu()) || !b.Memory().Equal(*a.Memory()) ||
+	 !b.Pods().Equal(*a.Pods()) || !b.Storage().Equal(*a.Storage())  {
 		return false
 	}
 	return true
