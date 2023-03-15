@@ -162,7 +162,7 @@ func (a *SubNamespaceAnnotator) Handle(ctx context.Context, req admission.Reques
 			return admission.Allowed(allowMessageValidateQuotaObj)
 		}
 
-		if utils.GetSnsResourcePooled(sns.Object) == "false" {
+		if utils.GetSnsResourcePooled(sns.Object) == "false" && utils.GetSnsResourcePooled(oldSns.Object) == "false" {
 			if isValid, err := ValidateAllResourceQuotaParamsValid(sns); !isValid {
 				return admission.Denied(err.Error())
 			}

@@ -18,6 +18,8 @@ package main
 
 import (
 	"flag"
+	"os"
+
 	danav1 "github.com/dana-team/hns/api/v1"
 	"github.com/dana-team/hns/internals/controllers"
 	"github.com/dana-team/hns/internals/namespaceDB"
@@ -30,7 +32,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
-	"os"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/event"
@@ -92,7 +93,7 @@ func main() {
 		Port:               9443,
 
 		// uncomment here when debugging webhooks locally
-		//CertDir: "k8s-webhook-server/serving-certs/",
+		// CertDir: "k8s-webhook-server/serving-certs/",
 	})
 	if err != nil {
 		setupLog.Error(err, "unable to start manager")

@@ -1,10 +1,11 @@
 package testutils
 
 import (
-	danav1 "github.com/dana-team/hns/api/v1"
-	. "github.com/onsi/gomega"
 	"strconv"
 	"strings"
+
+	danav1 "github.com/dana-team/hns/api/v1"
+	. "github.com/onsi/gomega"
 )
 
 const (
@@ -114,6 +115,14 @@ func CreateUser(u string) {
 	labelTestingUsers(u)
 }
 
+// CreatePod creates a pod in the specified namespace
+func CreatePod(ns, name string) {
+	pod := generatePodManifest(ns, name)
+	MustApplyYAML(pod)
+	RunShouldContain(name, propagationTime, "kubectl get pod -n", ns)
+	labelTestingNs(ns)
+}
+
 // generateRootNSManifest generates a namespace manifest with the
 // parameters needed to indicate a root namespace
 func generateRootNSManifest(nm string, rqDepth string) string {
@@ -175,7 +184,7 @@ spec:
     hard: ` + argsToResourceListString(4, args...)
 }
 
-// generateUserManifest generates an UpdateQuota manifest
+// generateUserManifest generates an User manifest
 func generateUserManifest(nm string) string {
 	return `# temp file created by user_test.go
 apiVersion: user.openshift.io/v1
@@ -184,6 +193,23 @@ metadata:
   name: ` + nm + `
 groups: 
   - e2e-test`
+}
+
+// generatePodManifest generates an Pod manifest
+func generatePodManifest(ns, name string) string {
+	return `# temp file created by pod_test.go
+apiVersion: v1
+kind: Pod
+metadata:
+  name: ` + name + `
+  namespace: ` + ns + `
+spec:
+  containers:
+  - name: nginx
+    image: nginx:1.14.2
+    ports:
+    - containerPort: 80
+`
 }
 
 // argsToResourceListString provides a convenient way to specify a resource list
