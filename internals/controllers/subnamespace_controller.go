@@ -258,6 +258,10 @@ func (r *SubnamespaceReconciler) Sync(ownerNamespace *utils.ObjectContext, subsp
 		}
 
 	}
+	if err := subspace.AppendAnnotations(map[string]string{danav1.DisplayName: utils.GetNamespaceDisplayName(ownerNamespace.Object) + "/" + subspace.Object.GetName()}); err != nil {
+		return ctrl.Result{}, err
+	}
+
 	if err := subspace.UpdateObject(func(object client.Object, log logr.Logger) (client.Object, logr.Logger) {
 		object.(*danav1.Subnamespace).Status.Namespaces = childrenRequests
 		object.(*danav1.Subnamespace).Status.Total.Allocated = allocated
