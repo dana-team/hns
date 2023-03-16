@@ -81,6 +81,10 @@ func (a *SubNamespaceAnnotator) Handle(ctx context.Context, req admission.Reques
 			if isValid, err := ValidateAllResourceQuotaParamsValid(sns); !isValid {
 				return admission.Denied(err.Error())
 			}
+		} else if utils.GetSnsResourcePooled(sns.Object) == "true" {
+			if isValid, err := ValidateUpperResourcepoolHasQuota(sns); !isValid {
+				return admission.Denied(err.Error())
+			}
 		}
 
 		//validate the sns creation
@@ -164,6 +168,10 @@ func (a *SubNamespaceAnnotator) Handle(ctx context.Context, req admission.Reques
 
 		if utils.GetSnsResourcePooled(sns.Object) == "false" && utils.GetSnsResourcePooled(oldSns.Object) == "false" {
 			if isValid, err := ValidateAllResourceQuotaParamsValid(sns); !isValid {
+				return admission.Denied(err.Error())
+			}
+		} else if utils.GetSnsResourcePooled(sns.Object) == "true" {
+			if isValid, err := ValidateUpperResourcepoolHasQuota(sns); !isValid {
 				return admission.Denied(err.Error())
 			}
 		}
@@ -311,6 +319,18 @@ func ValidateAllResourceQuotaParamsValid(sns *utils.ObjectContext) (bool, error)
 	}
 	if negativeResources != nil {
 		return false, errors.New(denyMessageNegativeResourceRequest + strings.Join(negativeResources, ", "))
+	}
+	return true, nil
+}
+
+// ValidateUpperResourcepoolHasQuota validates that upper resource pool cannot be created with empty quota
+func ValidateUpperResourcepoolHasQuota(sns *utils.ObjectContext) (bool, error) {
+	quotaSNS := utils.GetSnsQuotaSpec(sns.Object).Hard
+	isUpperRp, _ := utils.IsUpperResourcePool(sns)
+	if isUpperRp {
+		if len(quotaSNS) == 0 {
+			return false, errors.New(denyMessageRpMustHaveQuota)
+		}
 	}
 	return true, nil
 }

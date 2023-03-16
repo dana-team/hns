@@ -59,7 +59,7 @@ func (r *MigrationHierarchyReconciler) Reconcile(ctx context.Context, req ctrl.R
 		return ctrl.Result{}, nil
 	}
 
-	if migrationObject.Object.(*danav1.MigrationHierarchy).Status.Phase != danav1.Complete {
+	if migrationObject.Object.(*danav1.MigrationHierarchy).Status.Phase != danav1.Complete && migrationObject.Object.(*danav1.MigrationHierarchy).Status.Phase != danav1.Error {
 
 		currentNamespace := migrationObject.Object.(*danav1.MigrationHierarchy).Spec.CurrentNamespace
 		toNamespace := migrationObject.Object.(*danav1.MigrationHierarchy).Spec.ToNamespace
@@ -87,26 +87,18 @@ func (r *MigrationHierarchyReconciler) Reconcile(ctx context.Context, req ctrl.R
 		if err != nil {
 			return ctrl.Result{}, err
 		}
-		destparentSns, err := utils.NewObjectContext(ctx, log, r.Client, client.ObjectKey{Name: toNamespace, Namespace: utils.GetNamespaceParent(toNs.Object)}, &danav1.Subnamespace{})
-		if err != nil {
-			return ctrl.Result{}, err
-		}
 
-		if err := namespaceDB.MigrateNsHierarchy(r.NamespaceDB, r.Client, ns.GetName(), toNs.GetName()); err != nil {
-			return ctrl.Result{}, err
-		}
-
-		destparentSnsLabels := destparentSns.Object.(*danav1.Subnamespace).GetLabels()
 		labels := make(map[string]string)
 
 		x := oldSns.Object.(*danav1.Subnamespace).GetLabels()
 		_ = x
-		// change old sns type to his parent type
-		if destparentSnsLabels[danav1.ResourcePool] == "true" {
+		// new sns should be as the type of the migrated subnamespace
+		if oldSns.Object.GetLabels()[danav1.ResourcePool] == "true" {
 			labels[danav1.ResourcePool] = "true"
-		}
-		if destparentSnsLabels[danav1.ResourcePool] == "false" {
-			labels[danav1.ResourcePool] = "false"
+		} else {
+			if oldSns.Object.GetLabels()[danav1.ResourcePool] == "false" {
+				labels[danav1.ResourcePool] = "false"
+			}
 		}
 
 		// create new sns and delete old sns
@@ -117,9 +109,24 @@ func (r *MigrationHierarchyReconciler) Reconcile(ctx context.Context, req ctrl.R
 			return ctrl.Result{}, err
 		}
 		if err := newSns.EnsureCreateObject(); err != nil {
+			migrationObject.UpdateObject(func(object client.Object, log logr.Logger) (client.Object, logr.Logger) {
+				object.(*danav1.MigrationHierarchy).Status.Phase = danav1.Error
+				object.(*danav1.MigrationHierarchy).Status.Reason = "creating the subnamespace under the dest namespace failed because: " + "\n" + err.Error()
+				log = log.WithValues("migration phase", danav1.Error)
+				return object, log
+			})
 			return ctrl.Result{}, err
 		}
 		if err := oldSns.EnsureDeleteObject(); err != nil {
+			migrationObject.UpdateObject(func(object client.Object, log logr.Logger) (client.Object, logr.Logger) {
+				object.(*danav1.MigrationHierarchy).Status.Phase = danav1.Error
+				object.(*danav1.MigrationHierarchy).Status.Reason = "deleting the old subnamespace failed because: " + "\n" + err.Error()
+				log = log.WithValues("migration phase", danav1.Error)
+				return object, log
+			})
+			if err := newSns.EnsureDeleteObject(); err != nil {
+				return ctrl.Result{}, err
+			}
 			return ctrl.Result{}, err
 		}
 		log.Info("new subnamespace created")
@@ -137,10 +144,15 @@ func (r *MigrationHierarchyReconciler) Reconcile(ctx context.Context, req ctrl.R
 			return object, log
 		})
 
+		if err := namespaceDB.MigrateNsHierarchy(r.NamespaceDB, r.Client, r.Log, ns.GetName(), toNs.GetName()); err != nil {
+			return ctrl.Result{}, err
+		}
+
 		// change status to done
 		migrationObject.UpdateObject(func(object client.Object, log logr.Logger) (client.Object, logr.Logger) {
 			object.(*danav1.MigrationHierarchy).Status.Phase = danav1.Complete
 			log = log.WithValues("migration phase", danav1.Complete)
+			object.(*danav1.MigrationHierarchy).Status.Reason = ""
 			return object, log
 		})
 

@@ -274,8 +274,8 @@ func (r *SubnamespaceReconciler) Sync(ownerNamespace *utils.ObjectContext, subsp
 				return ctrl.Result{}, err
 			}
 		}
-}
-  if err := subspace.AppendAnnotations(map[string]string{danav1.DisplayName: utils.GetNamespaceDisplayName(ownerNamespace.Object) + "/" + subspace.Object.GetName()}); err != nil {
+	}
+	if err := subspace.AppendAnnotations(map[string]string{danav1.DisplayName: utils.GetNamespaceDisplayName(ownerNamespace.Object) + "/" + subspace.Object.GetName()}); err != nil {
 		return ctrl.Result{}, err
 	}
 	if utils.IsUpdateNeeded(subspace.Object, childrenRequests, allocated, free) {
@@ -287,6 +287,7 @@ func (r *SubnamespaceReconciler) Sync(ownerNamespace *utils.ObjectContext, subsp
 		}); err != nil {
 			return ctrl.Result{}, err
 		}
+	}
 	return ctrl.Result{}, nil
 }
 
@@ -679,7 +680,6 @@ func composeChildNamespace(ownerNamespace *utils.ObjectContext, subspace *utils.
 	childNamespaceDepth := strconv.Itoa(ownerNamespaceDepth + 1)
 	childNamespaceName := subspace.Object.GetName()
 	parentDisplayName := utils.GetNamespaceDisplayName(ownerNamespace.Object)
-	ownerResourcePooled := utils.GetNamespaceResourcePooled(ownerNamespace)
 
 	ann := getParentAnnotations(ownerNamespace)
 	ann[danav1.Depth] = childNamespaceDepth
@@ -690,7 +690,7 @@ func composeChildNamespace(ownerNamespace *utils.ObjectContext, subspace *utils.
 	labels := getParentAggragators(ownerNamespace)
 	labels[danav1.Aggragator+childNamespaceName] = "true"
 	labels[danav1.Hns] = "true"
-	labels[danav1.ResourcePool] = ownerResourcePooled
+	labels[danav1.ResourcePool] = subspace.Object.GetLabels()[danav1.ResourcePool]
 	labels[danav1.Parent] = ownerNamespace.Object.(*corev1.Namespace).Name
 
 	return utils.ComposeNamespace(childNamespaceName, labels, ann)

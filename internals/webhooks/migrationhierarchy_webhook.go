@@ -67,7 +67,7 @@ func (a *MigrationHierarchyAnnotator) Handle(ctx context.Context, req admission.
 	}
 
 	// deny if trying to perform migration involving namesapces from different secondary root namespaces
-	// a secondary root is the first subnamespace after the root namespace in the hierarchy of a subnamespac
+	// a secondary root is the first subnamespace after the root namespace in the hierarchy of a subnamespace
 	currentNSArray := utils.GetNSDisplayNameArray(currentNS)
 	toNSArray := utils.GetNSDisplayNameArray(toNS)
 
@@ -104,24 +104,27 @@ func (a *MigrationHierarchyAnnotator) Handle(ctx context.Context, req admission.
 	}
 
 	if req.Operation == admissionv1.Create {
-		// migration into or from a resourcepool is not allowed
-		if utils.GetNamespaceResourcePooled(currentNS) == "true" || utils.GetNamespaceResourcePooled(toNS) == "true" {
-			return admission.Denied(denyMessageMigrationNotAllowedResourcePool)
+		// migration from a subnamespace to a resourcepool is not allowed
+		if utils.GetNamespaceResourcePooled(currentNS) == "false" && utils.GetNamespaceResourcePooled(toNS) == "true" {
+			return admission.Denied(denyMessageMigrationNotAllowedSnsToRp)
 		}
 
-		// migration is only allowed for subnamespaces that either have a clusterresourcequota, or their direct
-		// parent have a clusterresourcequota; otherwise, the webhook fails the request
-		toKey := a.NamespaceDB.GetKey(toNamespace)
-		currentKey := a.NamespaceDB.GetKey(currentNamespace)
-		if (toKey == "") || (currentKey == "") || (currentKey == currentNamespace) {
-			return admission.Denied(denyMessageMigrationNotAllowed)
-		}
-		childrenNum, err := numChildren(a.Client, currentNamespace)
-		if err != nil {
-			return admission.Denied(err.Error())
-		}
-		if (a.NamespaceDB.GetKeyCount(toKey) + childrenNum) >= danav1.MaxSNS {
-			return admission.Denied(fmt.Sprintf(denyMessageCreatingMoreThanLimit, danav1.MaxSNS) + toKey)
+		// if the subnamespace is not a resourcepool, it is only allowed to migrate subnamespaces that either have a CRQ,
+		// or their direct parent have a clusterresourcequota; otherwise, the webhook fails the request
+
+		if utils.GetNamespaceResourcePooled(currentNS) == "false" && utils.GetNamespaceResourcePooled(toNS) == "false" {
+			toKey := a.NamespaceDB.GetKey(toNamespace)
+			currentKey := a.NamespaceDB.GetKey(currentNamespace)
+			if (toKey == "") || (currentKey == "") || (currentKey == currentNamespace) {
+				return admission.Denied(denyMessageMigrationNotAllowed)
+			}
+			childrenNum, err := numChildren(a.Client, currentNamespace)
+			if err != nil {
+				return admission.Denied(err.Error())
+			}
+			if (a.NamespaceDB.GetKeyCount(toKey) + childrenNum) >= danav1.MaxSNS {
+				return admission.Denied(fmt.Sprintf(denyMessageCreatingMoreThanLimit, danav1.MaxSNS) + toKey)
+			}
 		}
 
 		currSNS, err := utils.GetNamespaceSns(currentNS)
@@ -138,7 +141,6 @@ func (a *MigrationHierarchyAnnotator) Handle(ctx context.Context, req admission.
 				return admission.Denied(denyMessageMigrationNotAllowedTooFewResources)
 			}
 		} else if utils.GetNamespaceResourcePooled(toNS) == "true" {
-			// TODO: remove this from code
 			if validRequest, _ := ValidateMigrateRpRequest(currSNS, toSNS); !validRequest {
 				return admission.Denied(denyMessageMigrationNotAllowedTooFewResourcesRP)
 			}

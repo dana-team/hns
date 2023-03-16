@@ -158,21 +158,21 @@ func AddNs(ndb *NamespaceDB, client goclient.Client, sns *danav1.Subnamespace) e
 }
 
 // MigrateNsHierarchy migrates namespace and its children hierarchy from key namespace to another key
-func MigrateNsHierarchy(ndb *NamespaceDB, client goclient.Client, snsname string, targetnsname string) error {
+func MigrateNsHierarchy(ndb *NamespaceDB, client goclient.Client, log logr.Logger, snsname string, targetnsname string) error {
 	oldkeyns := ndb.GetKey(snsname)
 	newkeyns := ndb.GetKey(targetnsname)
 	if oldkeyns == "" || newkeyns == "" {
 		return fmt.Errorf("sub namespace has no key")
 	}
-	crq := quotav1.ClusterResourceQuota{}
-	if err := client.Get(context.Background(), types.NamespacedName{Name: snsname}, &crq); err != nil {
+	ns, err := utils.NewObjectContext(context.Background(), log, client, types.NamespacedName{Name: snsname}, &corev1.Namespace{})
+	if err != nil {
 		return err
 	}
-	namespaces := crq.Status.Namespaces
-	for _, namespace := range namespaces {
-		nsname := namespace.Namespace
-		ndb.removeNs(nsname, oldkeyns)
-		ndb.addNsToKey(newkeyns, nsname)
+	childrenList := utils.GetAllObjectChildren(ns)
+	for _, child := range childrenList {
+		childName := child.GetName()
+		ndb.removeNs(childName, oldkeyns)
+		ndb.addNsToKey(newkeyns, childName)
 	}
 	return nil
 }
