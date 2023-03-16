@@ -84,6 +84,7 @@ var _ = Describe("Subnamespaces", func() {
 		// verify subnamespace annotations
 		FieldShouldContain("subnamespace", nsRoot, nsA, ".metadata.annotations", danav1.IsRq+":"+danav1.True)
 		FieldShouldContain("subnamespace", nsA, nsB, ".metadata.annotations", danav1.IsRq+":"+danav1.True)
+		FieldShouldContain("subnamespace", nsB, nsC, ".metadata.annotations", danav1.CrqPointer+":"+nsC)
 		FieldShouldContain("subnamespace", nsB, nsC, ".metadata.annotations", danav1.IsRq+":"+danav1.False)
 		FieldShouldContain("subnamespace", nsB, nsC, ".metadata.annotations", danav1.IsUpperRp+":"+danav1.False)
 		FieldShouldContain("subnamespace", nsB, nsC, ".metadata.annotations", "openshift.io/display-name:"+nsRoot+"/"+nsA+"/"+nsB+"/"+nsC)

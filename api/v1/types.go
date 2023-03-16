@@ -53,6 +53,7 @@ const (
 	IsSecondaryRoot = MetaGroup + "is-secondary-root"
 	IsUpperRp       = MetaGroup + "is-upper-rp"
 	UpperRp         = MetaGroup + "upper-rp"
+	CrqPointer      = MetaGroup + "crq-pointer"
 )
 
 // Finalizers

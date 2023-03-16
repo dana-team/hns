@@ -241,3 +241,20 @@ func addQuantityToResourceList(resourceList corev1.ResourceList, resourceName co
 		resourceList[resourceName] = quantity
 	}
 }
+
+// GetCrqPointer gets a subnamespace and returns its crq pointer.
+// If it has a crq (which means it's a subns or upper rp), it returns its name.
+// If it doesn't, it returns the upper resourcepool's name.
+func GetCrqPointer(subns client.Object) string {
+	if subns.GetAnnotations()[danav1.IsRq] == danav1.True{
+		return ""
+	}
+	if subns.GetLabels()[danav1.ResourcePool] == "false" ||
+		subns.GetAnnotations()[danav1.IsUpperRp] == danav1.True {
+		return subns.GetName()
+	}
+	return subns.GetAnnotations()[danav1.UpperRp]
+ 
+ 
+ }
+ 

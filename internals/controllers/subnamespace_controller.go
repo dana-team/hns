@@ -236,6 +236,12 @@ func (r *SubnamespaceReconciler) Sync(ownerNamespace *utils.ObjectContext, subsp
 			return ctrl.Result{}, err
 		}
 	}
+	crqPointer := utils.GetCrqPointer(subspace.Object)
+	if crqPointer != "" {
+		if err = subspace.AppendAnnotations(map[string]string{danav1.CrqPointer: crqPointer }); err != nil {
+			return ctrl.Result{}, err
+		}
+	}
 	if err := utils.AppendUpperResourcePoolAnnotation(subspace, subspaceparent); err != nil {
 		return ctrl.Result{}, err
 	}
@@ -274,8 +280,8 @@ func (r *SubnamespaceReconciler) Sync(ownerNamespace *utils.ObjectContext, subsp
 				return ctrl.Result{}, err
 			}
 		}
-}
-  if err := subspace.AppendAnnotations(map[string]string{danav1.DisplayName: utils.GetNamespaceDisplayName(ownerNamespace.Object) + "/" + subspace.Object.GetName()}); err != nil {
+	}
+	if err := subspace.AppendAnnotations(map[string]string{danav1.DisplayName: utils.GetNamespaceDisplayName(ownerNamespace.Object) + "/" + subspace.Object.GetName()}); err != nil {
 		return ctrl.Result{}, err
 	}
 	if utils.IsUpdateNeeded(subspace.Object, childrenRequests, allocated, free) {
@@ -287,6 +293,7 @@ func (r *SubnamespaceReconciler) Sync(ownerNamespace *utils.ObjectContext, subsp
 		}); err != nil {
 			return ctrl.Result{}, err
 		}
+	}
 	return ctrl.Result{}, nil
 }
 
