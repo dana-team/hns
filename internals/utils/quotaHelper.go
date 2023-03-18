@@ -254,7 +254,5 @@ func GetCrqPointer(subns client.Object) string {
 		return subns.GetName()
 	}
 	return subns.GetAnnotations()[danav1.UpperRp]
- 
- 
  }
  
