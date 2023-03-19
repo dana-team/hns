@@ -176,7 +176,15 @@ func (r *SubnamespaceReconciler) Sync(ownerNamespace *utils.ObjectContext, subsp
 		value := vRequest.Value() - totalRequest.Value()
 		free[res] = *resource.NewQuantity(value, resource.BinarySI)
 	}
-
+	// trigger the parent subnamespace in order to update the resourcequota status, if needed
+	if subspaceparent.IsPresent() {
+		r.SnsEvents <- event.GenericEvent{Object: &danav1.Subnamespace{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      subspaceparent.Object.GetName(),
+				Namespace: subspaceparent.Object.GetNamespace(),
+			},
+		}}
+	}
 	// trigger the child subnamespaces if the upper resourcepool was converted into a subnamespace
 	// it will create the crqs and add the respective annotations
 	for _, sns := range subspaceChilds.Objects.(*danav1.SubnamespaceList).Items {
@@ -247,15 +255,6 @@ func (r *SubnamespaceReconciler) Sync(ownerNamespace *utils.ObjectContext, subsp
 	}
 	r.addSnsChildNamespaceEvent(subspace)
 	if utils.GetSnsResourcePooled(subspace.Object) == "false" || utils.IsRootResourcePool(subspace) {
-		// trigger the parent subnamespace in order to update the resourcequota status, if needed
-		if subspaceparent.IsPresent() {
-			r.SnsEvents <- event.GenericEvent{Object: &danav1.Subnamespace{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      subspaceparent.Object.GetName(),
-					Namespace: subspaceparent.Object.GetNamespace(),
-				},
-			}}
-		}
 		rqFlag, err := utils.IsRq(subspace, danav1.SelfOffset)
 		if err != nil {
 			return ctrl.Result{}, err
