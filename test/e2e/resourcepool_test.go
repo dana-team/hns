@@ -410,4 +410,16 @@ var _ = Describe("ResourcePool", func() {
 
 		ShouldNotCreateSubnamespace(nsD, nsB, false, storage, "10Gi", cpu, "10", memory, "10Gi", pods, "10", gpu, "10")
 	})
+	It("should show an upper resource pool children", func() {
+		nsA := GenerateE2EName("a")
+		nsB := GenerateE2EName("b")
+		nsC := GenerateE2EName("c")
+
+		CreateSubnamespace(nsA, nsRoot, false, storage, "50Gi", cpu, "50", memory, "50Gi", pods, "50", gpu, "50")
+		CreateSubnamespace(nsB, nsA, true, storage, "25Gi", cpu, "25", memory, "25Gi", pods, "25", gpu, "25")
+		CreateSubnamespace(nsC, nsB, true)
+
+		ComplexFieldShouldContain("subnamespace", nsA, nsB, "'{{range.status.namespaces}}{{.namespace}}{{\"\\n\"}}{{end}}'", nsC)
+
+	})
 })
