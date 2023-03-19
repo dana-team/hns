@@ -244,6 +244,12 @@ func (r *SubnamespaceReconciler) Sync(ownerNamespace *utils.ObjectContext, subsp
 			return ctrl.Result{}, err
 		}
 	}
+	crqPointer := utils.GetCrqPointer(subspace.Object)
+	if crqPointer != "" {
+		if err = subspace.AppendAnnotations(map[string]string{danav1.CrqPointer: crqPointer }); err != nil {
+			return ctrl.Result{}, err
+		}
+	}
 	if err := utils.AppendUpperResourcePoolAnnotation(subspace, subspaceparent); err != nil {
 		return ctrl.Result{}, err
 	}
