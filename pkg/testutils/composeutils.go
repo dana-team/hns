@@ -66,7 +66,7 @@ func CreateSubnamespace(nm, nsnm string, isRp bool, args ...string) {
 }
 
 // ShouldNotCreateSubnamespace should not be able to create the specified Subnamespace
-//in the parent namespace and with the given resources
+// in the parent namespace and with the given resources
 func ShouldNotCreateSubnamespace(nm, nsnm string, isRp bool, args ...string) {
 	sns := generateSNSManifest(nm, nsnm, strconv.FormatBool(isRp), args...)
 	MustNotApplyYAML(sns)

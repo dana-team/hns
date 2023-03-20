@@ -111,7 +111,6 @@ func (a *MigrationHierarchyAnnotator) Handle(ctx context.Context, req admission.
 
 		// if the subnamespace is not a resourcepool, it is only allowed to migrate subnamespaces that either have a CRQ,
 		// or their direct parent have a clusterresourcequota; otherwise, the webhook fails the request
-
 		if utils.GetNamespaceResourcePooled(currentNS) == "false" && utils.GetNamespaceResourcePooled(toNS) == "false" {
 			toKey := a.NamespaceDB.GetKey(toNamespace)
 			currentKey := a.NamespaceDB.GetKey(currentNamespace)

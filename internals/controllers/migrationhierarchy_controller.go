@@ -93,13 +93,7 @@ func (r *MigrationHierarchyReconciler) Reconcile(ctx context.Context, req ctrl.R
 		x := oldSns.Object.(*danav1.Subnamespace).GetLabels()
 		_ = x
 		// new sns should be as the type of the migrated subnamespace
-		if oldSns.Object.GetLabels()[danav1.ResourcePool] == "true" {
-			labels[danav1.ResourcePool] = "true"
-		} else {
-			if oldSns.Object.GetLabels()[danav1.ResourcePool] == "false" {
-				labels[danav1.ResourcePool] = "false"
-			}
-		}
+		labels[danav1.ResourcePool] = oldSns.Object.GetLabels()[danav1.ResourcePool]
 
 		// create new sns and delete old sns
 		composedNewSns := utils.ComposeSns(currentNamespace, toNamespace, oldSns.Object.(*danav1.Subnamespace).Spec.ResourceQuotaSpec.Hard, labels)

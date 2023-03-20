@@ -34,20 +34,12 @@ func GetNamespaceResourcePooled(namespace *ObjectContext) string {
 		return "false"
 	}
 	currentNamespaceState := namespace.Object.(*corev1.Namespace).Labels[danav1.ResourcePool]
-	if currentNamespaceState == "true" {
-		return "true"
-	} else if currentNamespaceState == "false" {
-		return "false"
-	} else {
-		namespaceSns, err := GetNamespaceSns(namespace)
-		if err != nil {
-			return "false"
-		}
+	if currentNamespaceState != "true" && currentNamespaceState != "false" {
+		namespaceSns, _ := GetNamespaceSns(namespace)
 		currentSnsState := namespaceSns.Object.(*danav1.Subnamespace).Labels[danav1.ResourcePool]
-		if currentSnsState == "" {
-			return "false"
-		}
 		return currentSnsState
+	} else {
+		return currentNamespaceState
 	}
 }
 

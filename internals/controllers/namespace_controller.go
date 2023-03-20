@@ -295,6 +295,7 @@ func ensureSnsResourcePool(namespace *utils.ObjectContext) error {
 		}
 
 		isUpperRp, err := utils.IsUpperResourcePool(snsToUpdate)
+		//if the sns is not the same type as his parent and is not upper resourcepool - the type should be as his parent
 		if utils.GetSnsResourcePooled(snsToUpdate.Object) != namespaceResourcePooled && !isUpperRp {
 			if err := snsToUpdate.UpdateObject(func(object client.Object, log logr.Logger) (client.Object, logr.Logger) {
 				log = log.WithValues(danav1.ResourcePool, namespaceResourcePooled)
