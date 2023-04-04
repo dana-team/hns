@@ -78,13 +78,13 @@ func NamespacesEqual(a, b []danav1.Namespaces) bool {
 // ResourceListEqual gets two ResourceLists and returns whether their specs are equal
 func ResourceListEqual(a, b corev1.ResourceList) bool {
 	if !b.Cpu().Equal(*a.Cpu()) || !b.Memory().Equal(*a.Memory()) ||
-	 !b.Pods().Equal(*a.Pods()) || !b.Storage().Equal(*a.Storage())  {
+		!b.Pods().Equal(*a.Pods()) || !b.Storage().Equal(*a.Storage()) {
 		return false
 	}
 	return true
 }
 
-//IsChildUpperRp gets a subnamespace father and child objects and returns whether the child should now become
+// IsChildUpperRp gets a subnamespace father and child objects and returns whether the child should now become
 // the upper resource pool
 func IsChildUpperRp(father, child client.Object) bool {
 	if GetSnsResourcePooled(father) == "false" && GetSnsResourcePooled(child) == "true" &&
@@ -94,7 +94,7 @@ func IsChildUpperRp(father, child client.Object) bool {
 	return false
 }
 
-//IsUpdateNeeded gets a subnamespace object, a []danav1.Namespaces and two resource lists and returns whether
+// IsUpdateNeeded gets a subnamespace object, a []danav1.Namespaces and two resource lists and returns whether
 // the subnamespace object status has to be updated
 func IsUpdateNeeded(subspace client.Object, childrenRequests []danav1.Namespaces, allocated, free corev1.ResourceList) bool {
 	if !NamespacesEqual(subspace.(*danav1.Subnamespace).Status.Namespaces, childrenRequests) ||

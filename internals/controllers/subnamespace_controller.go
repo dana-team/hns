@@ -201,11 +201,26 @@ func (r *SubnamespaceReconciler) Sync(ownerNamespace *utils.ObjectContext, subsp
 			}}
 		}
 	}
-	//subspaceparent.UpdateObject(func(object client.Object, log logr.Logger) (client.Object, logr.Logger) {
-	//	object.(*danav1.Subnamespace).Status.Phase = danav1.Missing
-	//	log = log.WithValues("phase", danav1.Missing)
-	//	return object, log
-	//})
+
+	// trigger the child subnamespaces if the subnamespace was converted into a resourcepool
+	// it will update the isUpperRp annotation and the quotas accordingly
+	if utils.GetSnsResourcePooled(subspace.Object) == "true" {
+		for _, sns := range subspaceChilds.Objects.(*danav1.SubnamespaceList).Items {
+			snsChild, err := utils.NewObjectContext(subspace.Ctx, subspace.Log, subspace.Client, types.NamespacedName{Name: sns.GetName(), Namespace: subspace.GetName()}, &danav1.Subnamespace{})
+			if err != nil {
+				return ctrl.Result{}, err
+			}
+			isUpperResourcePool := snsChild.Object.GetAnnotations()[danav1.IsUpperRp]
+			if isUpperResourcePool == "True" {
+				r.SnsEvents <- event.GenericEvent{Object: &danav1.Subnamespace{
+					ObjectMeta: metav1.ObjectMeta{
+						Name:      snsChild.Object.GetName(),
+						Namespace: snsChild.Object.GetNamespace(),
+					},
+				}}
+			}
+		}
+	}
 
 	// resourcePool Feature
 	subspaceCrqName := subspace.Object.GetName()
@@ -246,7 +261,7 @@ func (r *SubnamespaceReconciler) Sync(ownerNamespace *utils.ObjectContext, subsp
 	}
 	crqPointer := utils.GetCrqPointer(subspace.Object)
 	if crqPointer != "" {
-		if err = subspace.AppendAnnotations(map[string]string{danav1.CrqPointer: crqPointer }); err != nil {
+		if err = subspace.AppendAnnotations(map[string]string{danav1.CrqPointer: crqPointer}); err != nil {
 			return ctrl.Result{}, err
 		}
 	}
@@ -254,7 +269,8 @@ func (r *SubnamespaceReconciler) Sync(ownerNamespace *utils.ObjectContext, subsp
 		return ctrl.Result{}, err
 	}
 	r.addSnsChildNamespaceEvent(subspace)
-	if utils.GetSnsResourcePooled(subspace.Object) == "false" || utils.IsRootResourcePool(subspace) {
+	isUpperRp, _ := utils.IsUpperResourcePool(subspace)
+	if utils.GetSnsResourcePooled(subspace.Object) == "false" || isUpperRp {
 		rqFlag, err := utils.IsRq(subspace, danav1.SelfOffset)
 		if err != nil {
 			return ctrl.Result{}, err
@@ -306,7 +322,8 @@ func (r *SubnamespaceReconciler) Init(ownerNamespace *utils.ObjectContext, subsp
 			return err
 		}
 	}
-	if utils.GetSnsResourcePooled(subspace.Object) == "false" || utils.IsRootResourcePool(subspace) {
+	isUpperRp, _ := utils.IsUpperResourcePool(subspace)
+	if utils.GetSnsResourcePooled(subspace.Object) == "false" || isUpperRp {
 		rqFlag, err := utils.IsRq(subspace, danav1.SelfOffset)
 		if err != nil {
 			return err
@@ -685,7 +702,6 @@ func composeChildNamespace(ownerNamespace *utils.ObjectContext, subspace *utils.
 	childNamespaceDepth := strconv.Itoa(ownerNamespaceDepth + 1)
 	childNamespaceName := subspace.Object.GetName()
 	parentDisplayName := utils.GetNamespaceDisplayName(ownerNamespace.Object)
-	ownerResourcePooled := utils.GetNamespaceResourcePooled(ownerNamespace)
 
 	ann := getParentAnnotations(ownerNamespace)
 	ann[danav1.Depth] = childNamespaceDepth
@@ -696,7 +712,7 @@ func composeChildNamespace(ownerNamespace *utils.ObjectContext, subspace *utils.
 	labels := getParentAggragators(ownerNamespace)
 	labels[danav1.Aggragator+childNamespaceName] = "true"
 	labels[danav1.Hns] = "true"
-	labels[danav1.ResourcePool] = ownerResourcePooled
+	labels[danav1.ResourcePool] = subspace.Object.GetLabels()[danav1.ResourcePool]
 	labels[danav1.Parent] = ownerNamespace.Object.(*corev1.Namespace).Name
 
 	return utils.ComposeNamespace(childNamespaceName, labels, ann)

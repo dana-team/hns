@@ -37,7 +37,8 @@ type MigrationHierarchySpec struct {
 type MigrationHierarchyStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
-	Phase Phase `json:"phase,omitempty"`
+	Phase  Phase  `json:"phase,omitempty"`
+	Reason string `json:"reason,omitempty"`
 }
 
 // +kubebuilder:object:root=true

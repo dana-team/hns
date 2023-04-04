@@ -44,7 +44,7 @@ func AnnotateNSSecondaryRoot(ns string) {
 func CreateRootNS(nm string, rqDepth int) {
 	rootNS := generateRootNSManifest(nm, strconv.Itoa(rqDepth))
 	MustApplyYAML(rootNS)
-	labelTestingNs(nm)
+	LabelTestingNs(nm)
 	RunShouldContain(nm, propagationTime, "kubectl get ns", nm)
 }
 
@@ -62,11 +62,11 @@ func CreateSubnamespace(nm, nsnm string, isRp bool, args ...string) {
 	sns := generateSNSManifest(nm, nsnm, strconv.FormatBool(isRp), args...)
 	MustApplyYAML(sns)
 	RunShouldContain(nm, propagationTime, "kubectl get subnamespace -n", nsnm)
-	labelTestingNs(nm)
+	LabelTestingNs(nm)
 }
 
 // ShouldNotCreateSubnamespace should not be able to create the specified Subnamespace
-//in the parent namespace and with the given resources
+// in the parent namespace and with the given resources
 func ShouldNotCreateSubnamespace(nm, nsnm string, isRp bool, args ...string) {
 	sns := generateSNSManifest(nm, nsnm, strconv.FormatBool(isRp), args...)
 	MustNotApplyYAML(sns)
@@ -94,6 +94,24 @@ func CreateUpdateQuota(nm, nsnm, dsnm, user string, args ...string) {
 	RunShouldContain(nm, propagationTime, "kubectl get updatequota -n", nsnm)
 }
 
+// CreateMigrationHierarchy creates the specified MigrationHierarchy
+func CreateMigrationHierarchy(currentns, tons string) string {
+	name := "from" + currentns + "to" + tons
+	mh := generateMigrartionHierarchyManifest(name, currentns, tons)
+	MustApplyYAML(mh)
+	RunShouldContain(name, propagationTime, "kubectl get migrationhierarchy")
+	labelTestingMigrationHierarchies(name)
+	return name
+}
+
+// ShouldNotCreateMigrationHierarchy should not be able to create the specified MigrationHierarchy
+func ShouldNotCreateMigrationHierarchy(currentns, tons string) {
+	name := "from" + currentns + "to" + tons
+	mh := generateMigrartionHierarchyManifest(name, currentns, tons)
+	MustNotApplyYAML(mh)
+	RunShouldNotContain(name, propagationTime, "kubectl get migrationhierarchy")
+}
+
 // ShouldNotCreateUpdateQuota should not be able to create the specified UpdateQuota
 // in the parent namespace and with the given resources
 func ShouldNotCreateUpdateQuota(nm, nsnm, dsnm, user string, args ...string) {
@@ -115,12 +133,12 @@ func CreateUser(u string) {
 	labelTestingUsers(u)
 }
 
-// CreatePod creates a pod in the specified namespace
-func CreatePod(ns, name string) {
-	pod := generatePodManifest(ns, name)
+// CreatePod creates a pod in the specified namespace with the required cpu and memory(Gi)
+func CreatePod(ns, name, cpu, memory string) {
+	pod := generatePodManifest(ns, name, cpu, memory)
 	MustApplyYAML(pod)
 	RunShouldContain(name, propagationTime, "kubectl get pod -n", ns)
-	labelTestingNs(ns)
+	LabelTestingNs(ns)
 }
 
 // generateRootNSManifest generates a namespace manifest with the
@@ -184,6 +202,18 @@ spec:
     hard: ` + argsToResourceListString(4, args...)
 }
 
+// generateMigrartionHierarchyManifest generates an MigrartionHierarchy manifest
+func generateMigrartionHierarchyManifest(nm, currentns, tons string) string {
+	return `# temp file created by migrationhierarchy_test.go
+apiVersion: dana.hns.io/v1
+kind: MigrationHierarchy
+metadata:
+  name: ` + nm + `
+spec:
+  currentns: ` + currentns + `
+  tons: ` + tons
+}
+
 // generateUserManifest generates an User manifest
 func generateUserManifest(nm string) string {
 	return `# temp file created by user_test.go
@@ -196,7 +226,7 @@ groups:
 }
 
 // generatePodManifest generates an Pod manifest
-func generatePodManifest(ns, name string) string {
+func generatePodManifest(ns, name, cpu, memory string) string {
 	return `# temp file created by pod_test.go
 apiVersion: v1
 kind: Pod
@@ -209,6 +239,13 @@ spec:
     image: nginx:1.14.2
     ports:
     - containerPort: 80
+    resources:
+      requests:
+        cpu: ` + cpu + `
+        memory: ` + memory + `Gi
+      limits:
+        cpu: ` + cpu + `
+        memory: ` + memory + `Gi
 `
 }
 

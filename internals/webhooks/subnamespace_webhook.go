@@ -77,10 +77,8 @@ func (a *SubNamespaceAnnotator) Handle(ctx context.Context, req admission.Reques
 			return admission.Denied(denyMessageCreateResourcePool)
 		}
 
-		if utils.GetSnsResourcePooled(sns.Object) == "false" {
-			if isValid, err := ValidateAllResourceQuotaParamsValid(sns); !isValid {
-				return admission.Denied(err.Error())
-			}
+		if isValid, err := ValidateAllResourceQuotaParamsValid(sns); !isValid {
+			return admission.Denied(err.Error())
 		}
 
 		//validate the sns creation
@@ -162,7 +160,9 @@ func (a *SubNamespaceAnnotator) Handle(ctx context.Context, req admission.Reques
 			return admission.Allowed(allowMessageValidateQuotaObj)
 		}
 
-		if utils.GetSnsResourcePooled(sns.Object) == "false" && utils.GetSnsResourcePooled(oldSns.Object) == "false" {
+		// when updating subnamespace, we validate only if it is not resourcepool
+		// in case of resourcepool it will get quota according its children allocated resources
+		if utils.GetSnsResourcePooled(oldSns.Object) == "false" {
 			if isValid, err := ValidateAllResourceQuotaParamsValid(sns); !isValid {
 				return admission.Denied(err.Error())
 			}
@@ -286,31 +286,39 @@ func ValidateCreateSnsRequest(sns *utils.ObjectContext, parentQuotaObj *utils.Ob
 	return true, ""
 }
 
-// ValidateAllResourceQuotaParamsValid validates that all quota params: storage, cpu, memory, gpu exists and are positive
+// ValidateAllResourceQuotaParamsValid validates that in subnamespace all quota params: storage, cpu, memory, gpu exists and are positive
+// in reasourcepool validates that upper resource pool cannot be created with an empty quota
 // if one of the params is not valid, the function returns false with the relevant error
 func ValidateAllResourceQuotaParamsValid(sns *utils.ObjectContext) (bool, error) {
 	quotaSNS := utils.GetSnsQuotaSpec(sns.Object).Hard
 	resourceQuotaParams := danav1.ZeroedQuota.Hard
 	var missinsResources []string
 	var negativeResources []string
-	for res := range resourceQuotaParams {
-		requestedRes := quotaSNS[res]
-		if requestedRes.Format == "" {
-			missinsResources = append(missinsResources, res.String())
-		}
-
-		if requestedRes.Sign() == -1 {
-			negativeResources = append(negativeResources, res.String())
+	if utils.GetSnsResourcePooled(sns.Object) == "true" {
+		isUpperRp, _ := utils.IsUpperResourcePool(sns)
+		if isUpperRp && len(quotaSNS) == 0 {
+			return false, errors.New(denyMessageUpperRpMustHaveQuota)
 		}
 	}
-	if missinsResources != nil && negativeResources != nil {
-		return false, errors.New(denyMessageMissingAndNegativeResourceRequest + strings.Join(missinsResources, ", ") + ", " + strings.Join(negativeResources, ", "))
-	}
-	if missinsResources != nil {
-		return false, errors.New(denyMessageMissingResourceRequest + strings.Join(missinsResources, ", "))
-	}
-	if negativeResources != nil {
-		return false, errors.New(denyMessageNegativeResourceRequest + strings.Join(negativeResources, ", "))
+	if utils.GetSnsResourcePooled(sns.Object) == "false" {
+		for res := range resourceQuotaParams {
+			requestedRes := quotaSNS[res]
+			if requestedRes.Format == "" {
+				missinsResources = append(missinsResources, res.String())
+			}
+			if requestedRes.Sign() == -1 {
+				negativeResources = append(negativeResources, res.String())
+			}
+		}
+		if missinsResources != nil && negativeResources != nil {
+			return false, errors.New(denyMessageMissingAndNegativeResourceRequest + strings.Join(missinsResources, ", ") + ", " + strings.Join(negativeResources, ", "))
+		}
+		if missinsResources != nil {
+			return false, errors.New(denyMessageMissingResourceRequest + strings.Join(missinsResources, ", "))
+		}
+		if negativeResources != nil {
+			return false, errors.New(denyMessageNegativeResourceRequest + strings.Join(negativeResources, ", "))
+		}
 	}
 	return true, nil
 }

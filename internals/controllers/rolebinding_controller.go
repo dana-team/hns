@@ -302,42 +302,6 @@ func createRoleBindingFinalizer(roleBinding *utils.ObjectContext) error {
 	})
 }
 
-//func createClusterRole(roleBinding *utils.ObjectContext) error {
-//	ClusterRoleToCreate, err := utils.NewObjectContext(roleBinding.Ctx, roleBinding.Log, roleBinding.Client, types.NamespacedName{}, utils.ComposeClusterRole(roleBinding.Object))
-//	if err != nil {
-//		return err
-//	}
-//
-//	return ClusterRoleToCreate.EnsureCreateObject()
-//}
-//
-//func createSnsViewClusterRole(roleBinding *utils.ObjectContext) error {
-//	ClusterRoleToCreate, err := utils.NewObjectContext(roleBinding.Ctx, roleBinding.Log, roleBinding.Client, types.NamespacedName{}, utils.ComposeSnsViewClusterRole(roleBinding.Object))
-//	if err != nil {
-//		return err
-//	}
-//
-//	return ClusterRoleToCreate.EnsureCreateObject()
-//}
-//
-//func createSnsViewClusterRoleBinding(roleBinding *utils.ObjectContext) error {
-//	ClusterRoleBindingToCreate, err := utils.NewObjectContext(roleBinding.Ctx, roleBinding.Log, roleBinding.Client, types.NamespacedName{}, utils.ComposeClusterRoleBinding(roleBinding.Object, utils.GetRoleBindingSnsViewClusterRoleName(roleBinding.Object)))
-//	if err != nil {
-//		return err
-//	}
-//
-//	return ClusterRoleBindingToCreate.EnsureCreateObject()
-//}
-//
-//func createClusterRoleBinding(roleBinding *utils.ObjectContext) error {
-//	ClusterRoleBindingToCreate, err := utils.NewObjectContext(roleBinding.Ctx, roleBinding.Log, roleBinding.Client, types.NamespacedName{}, utils.ComposeClusterRoleBinding(roleBinding.Object, utils.GetRoleBindingClusterRoleName(roleBinding.Object)))
-//	if err != nil {
-//		return err
-//	}
-//
-//	return ClusterRoleBindingToCreate.EnsureCreateObject()
-//}
-
 func createRoleBindingsInSnsList(roleBinding *utils.ObjectContext, snsList *utils.ObjectContextList) error {
 
 	//create the roleBinding
