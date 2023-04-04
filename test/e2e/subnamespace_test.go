@@ -253,5 +253,4 @@ var _ = Describe("Subnamespaces", func() {
 		FieldShouldContain("subnamespace", nsA, nsB, ".status.total.allocated.pods", "30")
 		FieldShouldContain("subnamespace", nsA, nsB, ".status.total.free.pods", "10")
 	})
-
 })

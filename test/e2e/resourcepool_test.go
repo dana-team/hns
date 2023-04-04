@@ -2,7 +2,6 @@ package e2e
 
 import (
 	"fmt"
-
 	danav1 "github.com/dana-team/hns/api/v1"
 	. "github.com/dana-team/hns/pkg/testutils"
 	. "github.com/onsi/ginkgo/v2"
@@ -33,7 +32,7 @@ var _ = Describe("ResourcePool", func() {
 		CreateSubnamespace(nsC, nsB, true, storage, "10Gi", cpu, "10", memory, "10Gi", pods, "10", gpu, "10")
 
 		// verify
-		//FieldShouldContain("namespace", "", nsC, ".metadata.labels", danav1.ResourcePool+":true") # TODO: remove from comment after fixing bug
+		FieldShouldContain("namespace", "", nsC, ".metadata.labels", danav1.ResourcePool+":true")
 		FieldShouldContain("subnamespace", nsB, nsC, ".metadata.labels", danav1.ResourcePool+":true")
 		FieldShouldContain("subnamespace", nsB, nsC, ".metadata.annotations", danav1.IsRq+":"+danav1.False)
 		FieldShouldContain("subnamespace", nsB, nsC, ".metadata.annotations", danav1.IsUpperRp+":"+danav1.True)
@@ -56,7 +55,7 @@ var _ = Describe("ResourcePool", func() {
 
 		// verify
 		FieldShouldContain("subnamespace", nsC, nsD, ".metadata.labels", danav1.ResourcePool+":true")
-		//FieldShouldContain("subnamespace", nsC, nsD, ".metadata.annotations", danav1.IsRq+":"+danav1.False) # TODO: remove from comment after fixing bug
+		FieldShouldContain("subnamespace", nsC, nsD, ".metadata.annotations", danav1.IsRq+":"+danav1.False)
 		FieldShouldContain("subnamespace", nsC, nsD, ".metadata.annotations", danav1.IsUpperRp+":"+danav1.False)
 		FieldShouldContain("subnamespace", nsC, nsD, ".metadata.annotations", danav1.UpperRp+":"+nsC)
 	})
@@ -193,6 +192,7 @@ var _ = Describe("ResourcePool", func() {
 		RunShouldNotContain(nsI, propagationTime, "kubectl get clusterresourcequota")
 		RunShouldNotContain(nsJ, propagationTime, "kubectl get clusterresourcequota")
 	})
+
 	It("should turn only the upper resourcepool into a subnamespace when converting", func() {
 		nsA := GenerateE2EName("a")
 		nsB := GenerateE2EName("b")
@@ -211,9 +211,9 @@ var _ = Describe("ResourcePool", func() {
 
 		// create pods in leafs
 		podName := "example"
-		CreatePod(nsD, podName)
-		CreatePod(nsE, podName)
-		CreatePod(nsF, podName)
+		CreatePod(nsD, podName, "1", "1")
+		CreatePod(nsE, podName, "1", "1")
+		CreatePod(nsF, podName, "1", "1")
 
 		// make sure the pods are up
 		RunShouldContain(podName, propagationTime, "kubectl get pods -n"+nsD)
@@ -243,6 +243,7 @@ var _ = Describe("ResourcePool", func() {
 		ComplexFieldShouldContain("subnamespace", nsB, nsC, "'{{range.status.namespaces}}{{.namespace}}{{\"\\n\"}}{{end}}'", nsE)
 		ComplexFieldShouldContain("subnamespace", nsB, nsC, "'{{range.status.namespaces}}{{.namespace}}{{\"\\n\"}}{{end}}'", nsF)
 	})
+
 	It("should sum the children workloads correctly", func() {
 		nsA := GenerateE2EName("a")
 		nsB := GenerateE2EName("b")
@@ -271,18 +272,18 @@ var _ = Describe("ResourcePool", func() {
 
 		// create pods in leafs
 		podName := "example"
-		CreatePod(nsF, podName)
-		CreatePod(nsF, podName+"2")
-		CreatePod(nsF, podName+"3")
-		CreatePod(nsG, podName)
-		CreatePod(nsG, podName+"2")
-		CreatePod(nsH, podName)
-		CreatePod(nsI, podName)
-		CreatePod(nsI, podName+"2")
-		CreatePod(nsI, podName+"3")
-		CreatePod(nsJ, podName)
-		CreatePod(nsJ, podName+"2")
-		CreatePod(nsK, podName)
+		CreatePod(nsF, podName, "1", "1")
+		CreatePod(nsF, podName+"2", "1", "1")
+		CreatePod(nsF, podName+"3", "1", "1")
+		CreatePod(nsG, podName, "1", "1")
+		CreatePod(nsG, podName+"2", "1", "1")
+		CreatePod(nsH, podName, "1", "1")
+		CreatePod(nsI, podName, "1", "1")
+		CreatePod(nsI, podName+"2", "1", "1")
+		CreatePod(nsI, podName+"3", "1", "1")
+		CreatePod(nsJ, podName, "1", "1")
+		CreatePod(nsJ, podName+"2", "1", "1")
+		CreatePod(nsK, podName, "1", "1")
 
 		// make sure the pods are up
 		RunShouldContain(podName, propagationTime, "kubectl get pods -n"+nsF)
@@ -314,17 +315,17 @@ var _ = Describe("ResourcePool", func() {
 
 		// make sure the crqs has the proper values
 		FieldShouldContain("clusterresourcequota", "", nsD, ".spec.quota.hard.pods", fmt.Sprint(6))
-		FieldShouldContain("clusterresourcequota", "", nsD, ".spec.quota.hard.cpu", "600m")
-		FieldShouldContain("clusterresourcequota", "", nsD, ".spec.quota.hard.memory", "1200M")
+		FieldShouldContain("clusterresourcequota", "", nsD, ".spec.quota.hard.cpu", "6")
+		FieldShouldContain("clusterresourcequota", "", nsD, ".spec.quota.hard.memory", "6Gi")
 		FieldShouldContain("clusterresourcequota", "", nsE, ".spec.quota.hard.pods", fmt.Sprint(6))
-		FieldShouldContain("clusterresourcequota", "", nsE, ".spec.quota.hard.cpu", "600m")
-		FieldShouldContain("clusterresourcequota", "", nsE, ".spec.quota.hard.memory", "1200M")
+		FieldShouldContain("clusterresourcequota", "", nsE, ".spec.quota.hard.cpu", "6")
+		FieldShouldContain("clusterresourcequota", "", nsE, ".spec.quota.hard.memory", "6Gi")
 
 		// make sure the subnamespace has the upper resource pool in its status
 		ComplexFieldShouldContain("subnamespace", nsB, nsC, "'{{range.status.namespaces}}{{.namespace}}{{\"\\n\"}}{{end}}'", nsD)
 		ComplexFieldShouldContain("subnamespace", nsB, nsC, "'{{range.status.namespaces}}{{.namespace}}{{\"\\n\"}}{{end}}'", nsE)
-
 	})
+
 	It("should delete the crq and update annotations for upper resource pools when converting their father", func() {
 		nsA := GenerateE2EName("a")
 		nsB := GenerateE2EName("b")
@@ -353,18 +354,18 @@ var _ = Describe("ResourcePool", func() {
 
 		// create pods in leafs
 		podName := "example"
-		CreatePod(nsF, podName)
-		CreatePod(nsF, podName+"2")
-		CreatePod(nsF, podName+"3")
-		CreatePod(nsG, podName)
-		CreatePod(nsG, podName+"2")
-		CreatePod(nsH, podName)
-		CreatePod(nsI, podName)
-		CreatePod(nsI, podName+"2")
-		CreatePod(nsI, podName+"3")
-		CreatePod(nsJ, podName)
-		CreatePod(nsJ, podName+"2")
-		CreatePod(nsK, podName)
+		CreatePod(nsF, podName, "1", "1")
+		CreatePod(nsF, podName+"2", "1", "1")
+		CreatePod(nsF, podName+"3", "1", "1")
+		CreatePod(nsG, podName, "1", "1")
+		CreatePod(nsG, podName+"2", "1", "1")
+		CreatePod(nsH, podName, "1", "1")
+		CreatePod(nsI, podName, "1", "1")
+		CreatePod(nsI, podName+"2", "1", "1")
+		CreatePod(nsI, podName+"3", "1", "1")
+		CreatePod(nsJ, podName, "1", "1")
+		CreatePod(nsJ, podName+"2", "1", "1")
+		CreatePod(nsK, podName, "1", "1")
 
 		// make sure the pods are up
 		RunShouldContain(podName, propagationTime, "kubectl get pods -n"+nsF)
@@ -384,9 +385,9 @@ var _ = Describe("ResourcePool", func() {
 		CreateSubnamespace(nsC, nsB, false, storage, "25Gi", cpu, "25", memory, "25Gi", pods, "25", gpu, "25")
 
 		// convert it back
-		CreateSubnamespace(nsC, nsB, true)
+		CreateSubnamespace(nsC, nsB, true, storage, "25Gi", cpu, "25", memory, "25Gi", pods, "25", gpu, "25")
 
-		// make sure the upper resourcepool and its sons have the correct annotaions
+		// make sure the upper resourcepool and its sons have the correct annotations
 		FieldShouldContain("subnamespace", nsB, nsC, ".metadata.annotations", danav1.IsUpperRp+":"+danav1.True)
 		FieldShouldContain("subnamespace", nsC, nsD, ".metadata.annotations", danav1.IsUpperRp+":"+danav1.False)
 		FieldShouldContain("subnamespace", nsC, nsD, ".metadata.annotations", danav1.UpperRp+":"+nsC)
@@ -396,8 +397,8 @@ var _ = Describe("ResourcePool", func() {
 		// make sure the crqs were deleted
 		RunShouldNotContain(nsD, propagationTime, "kubectl get clusterresourcequota")
 		RunShouldNotContain(nsE, propagationTime, "kubectl get clusterresourcequota")
-
 	})
+
 	It("should not create a subnamespace under a resourcepool", func() {
 		nsA := GenerateE2EName("a")
 		nsB := GenerateE2EName("b")
@@ -410,6 +411,7 @@ var _ = Describe("ResourcePool", func() {
 
 		ShouldNotCreateSubnamespace(nsD, nsB, false, storage, "10Gi", cpu, "10", memory, "10Gi", pods, "10", gpu, "10")
 	})
+
 	It("should show an upper resource pool children", func() {
 		nsA := GenerateE2EName("a")
 		nsB := GenerateE2EName("b")
@@ -420,6 +422,5 @@ var _ = Describe("ResourcePool", func() {
 		CreateSubnamespace(nsC, nsB, true)
 
 		ComplexFieldShouldContain("subnamespace", nsA, nsB, "'{{range.status.namespaces}}{{.namespace}}{{\"\\n\"}}{{end}}'", nsC)
-
 	})
 })

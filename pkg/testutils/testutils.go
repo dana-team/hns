@@ -17,6 +17,8 @@ const eventuallyTimeout = 5
 
 // The testing label marked on all namespaces created using the testing phase, offering ease when doing cleanups
 const testingNamespaceLabel = "dana.hns.io/testNamespace"
+const testingMigrationHierarchyLabel = "dana.hns.io/testMigrationHierarchy"
+const testingUserLabel = "dana.hns.io/testUser"
 
 func FieldShouldContain(resource, ns, nm, field, want string) {
 	fieldShouldContainMultipleWithTimeout(1, resource, ns, nm, field, []string{want}, eventuallyTimeout)
@@ -163,8 +165,10 @@ func tryRunShouldContainMultiple(substrs []string, cmdln ...string) (string, err
 }
 
 // If any of the substrs are missing from teststring, returns a string of the form:
-//   did not output the expected substring(s): <string1>, <string2>, ...
-//   and instead output: teststring
+//
+//	did not output the expected substring(s): <string1>, <string2>, ...
+//	and instead output: teststring
+//
 // Otherwise returns the empty string.
 func missAny(substrs []string, teststring string) string {
 	var missing []string
@@ -266,17 +270,22 @@ func RunCommand(cmdln ...string) (string, error) {
 // to look up and delete later.
 func CreateNamespace(ns string) {
 	MustRun("kubectl create ns", ns)
-	labelTestingNs(ns)
+	LabelTestingNs(ns)
 }
 
-// labelTestingNs marks testing namespaces with a label for future search and lookup.
-func labelTestingNs(ns string) {
+// LabelTestingNs marks testing namespaces with a label for future search and lookup.
+func LabelTestingNs(ns string) {
 	MustRun("kubectl label --overwrite ns", ns, testingNamespaceLabel+"=true")
+}
+
+// labelTestingMigrationHierarchies marks testing migrationhierarchies with a label for future search and lookup.
+func labelTestingMigrationHierarchies(mh string) {
+	MustRun("kubectl label --overwrite migrationhierarchy", mh, testingMigrationHierarchyLabel+"=true")
 }
 
 // labelTestingUsers marks testing users with a label for future search and lookup.
 func labelTestingUsers(user string) {
-	MustRun("kubectl label --overwrite user", user, testingNamespaceLabel+"=true")
+	MustRun("kubectl label --overwrite user", user, testingUserLabel+"=true")
 }
 
 // CleanupTestNamespaces finds the list of namespaces labeled as test namespaces and delegates
@@ -296,19 +305,36 @@ func CleanupTestNamespaces() {
 	cleanupNamespaces(nses...)
 }
 
+// CleanupTestMigrationHierarchies finds the list of migrationhierarchies labeled as test migrationhierarchies and delegates
+// to cleanupMigrationHierarchies function.
+func CleanupTestMigrationHierarchies() {
+	mh := []string{}
+	EventuallyWithOffset(1, func() error {
+		LabelQuery := testingMigrationHierarchyLabel + "=true"
+		out, err := RunCommand("kubectl get migrationhierarchies -o custom-columns=:.metadata.name --no-headers=true", "-l", LabelQuery)
+		if err != nil {
+			return err
+		}
+		// reverse the order of the slice to ensure LIFO behavior in deletion
+		mh = reverseSlice(strings.Split(out, "\n"))
+		return nil
+	}).Should(Succeed(), "while getting list of migrationhierarchies to clean up")
+	cleanupMigrationHierarchies(mh...)
+}
+
 // CleanupTestUsers finds the list of users labeled as test namespaces and delegates
 // to cleanupUsers function
 func CleanupTestUsers() {
 	users := []string{}
 	EventuallyWithOffset(1, func() error {
-		LabelQuery := testingNamespaceLabel + "=true"
+		LabelQuery := testingUserLabel + "=true"
 		out, err := RunCommand("kubectl get users -o custom-columns=:.metadata.name --no-headers=true", "-l", LabelQuery)
 		if err != nil {
 			return err
 		}
 		users = strings.Split(out, "\n")
 		return nil
-	}).Should(Succeed(), "while getting list of namespaces to clean up")
+	}).Should(Succeed(), "while getting list of users to clean up")
 	cleanupUsers(users...)
 }
 
@@ -338,6 +364,25 @@ func cleanupNamespaces(nses ...string) {
 	// Now, actually delete them
 	for _, ns := range toDelete {
 		MustRunWithTimeout(cleanupTimeout, "kubectl delete ns", ns)
+	}
+}
+
+// cleanupMigrationHierarchies does everything it can to delete the passed-in migrationhierarchies
+func cleanupMigrationHierarchies(mhs ...string) {
+	const cleanupTimeout = 30
+
+	toDelete := []string{}
+	for _, mh := range mhs {
+
+		if err := TryRunQuietly("kubectl get migrationhierarchy", mh); err != nil {
+			continue
+		}
+		toDelete = append(toDelete, mh)
+	}
+
+	// Now, actually delete them
+	for _, mh := range toDelete {
+		MustRunWithTimeout(cleanupTimeout, "kubectl delete migrationhierarchy", mh)
 	}
 }
 
