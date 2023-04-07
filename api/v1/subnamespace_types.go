@@ -1,6 +1,4 @@
 /*
-
-
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
@@ -22,34 +20,57 @@ import (
 )
 
 type namespaceRef struct {
+	// Name is the name of the namespace that a Subnamespace is bound to
 	Name string `json:"name,omitempty"`
 }
 
 type Namespaces struct {
-	Namespace         string               `json:"namespace,omitempty"`
+	// Namespace is the name of a Subnamespace
+	Namespace string `json:"namespace,omitempty"`
+
+	// ResourceQuotaSpec represents the quota allocated to the Subnamespace
 	ResourceQuotaSpec v1.ResourceQuotaSpec `json:"resourcequota,omitempty"`
 }
 
 type Total struct {
+	// Allocated is a set of (resource name, quantity) pairs representing the total resources that
+	// are allocated to the children Subnamespaces of a Subnamespace.
 	Allocated v1.ResourceList `json:"allocated,omitempty"`
-	Free      v1.ResourceList `json:"free,omitempty"`
+
+	// Free is a set of (resource name, quantity) pairs representing the total free/available/allocatable
+	// resources that can still be allocated to the children Subnamespaces of a Subnamespace.
+	Free v1.ResourceList `json:"free,omitempty"`
 }
 
 // SubnamespaceSpec defines the desired state of Subnamespace
 type SubnamespaceSpec struct {
-	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
+	// ResourceQuotaSpec represents the limitations that are associated with the Subnamespace.
+	// This quota represents both the resources that can be allocated to children Subnamespaces
+	// and the overall maximum quota consumption of the current Subnamespace and its children.
 	ResourceQuotaSpec v1.ResourceQuotaSpec `json:"resourcequota,omitempty"`
-	NamespaceRef      namespaceRef         `json:"namespaceRef,omitempty"`
+
+	// The name of the namespace that this Subnamespace is bound to
+	NamespaceRef namespaceRef `json:"namespaceRef,omitempty"`
 }
 
 // SubnamespaceStatus defines the observed state of Subnamespace
 type SubnamespaceStatus struct {
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-	// Important: Run "make" to regeneraste code after modifying this file
-	Phase      Phase        `json:"phase,omitempty"`
+	// Phase acts like a state machine for the Subnamespace.
+	// It is a string and can be one of the following:
+	// "" (Empty) - state for a Subnameapce that is being reconciled for the first time.
+	// "Missing" - state for a Subnamespace that does not currently have a namespace bound to it
+	// "Created" - state for a Subnamespace that exists and has a namespace bound to it and is being synced
+	// "Migrated" - state for a Subnamespace that is currently undergoing migration to a different hierarchy
+	Phase Phase `json:"phase,omitempty"`
+
+	// Namespaces is an array of (name, ResourceQuotaSpec) pairs which are logically under the
+	// Subnamespace in the hierarchy.
 	Namespaces []Namespaces `json:"namespaces,omitempty"`
-	Total      Total        `json:"total,omitempty"`
+
+	// Total represents a summary of the resources allocated to children Subnamespaces
+	// and the resources that are still free to allocate, from the total resources made
+	// available in the ResourceQuotaSpec field in Spec
+	Total Total `json:"total,omitempty"`
 }
 
 // +kubebuilder:object:root=true

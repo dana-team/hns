@@ -1,6 +1,4 @@
 /*
-
-
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
@@ -21,24 +19,28 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
-// NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
-
 // UpdatequotaSpec defines the desired state of Updatequota
 type UpdatequotaSpec struct {
-	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
+	// ResourceQuotaSpec represents resources that need to be transferred
+	// from one Subnamespace to another
 	ResourceQuotaSpec v1.ResourceQuotaSpec `json:"resourcequota"`
-	DestNamespace     string               `json:"destns"`
-	SourceNamespace   string               `json:"sourcens"`
+
+	// DestNamespace is the name of the Subnamespace to which resources need to be transferred
+	DestNamespace string `json:"destns"`
+
+	// SourceNamespace is name of the Subnamespace from which resources need to be transferred
+	SourceNamespace string `json:"sourcens"`
 }
 
 // UpdatequotaStatus defines the observed state of Updatequota
 type UpdatequotaStatus struct {
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
+	// Phase acts like a state machine for the Updatequota.
+	// It is a string and can be one of the following:
+	// "Error" - state for a Updatequota indicating that the operation could not be completed due to an error
+	// "Complete" - state for a Updatequota indicating that the operation completed successfully
+	Phase Phase `json:"phase,omitempty"`
 
-	Phase  Phase  `json:"phase,omitempty"`
+	// Reason is a string explaining why an error occurred if it did; otherwise it’s empty
 	Reason string `json:"reason,omitempty"`
 }
 
