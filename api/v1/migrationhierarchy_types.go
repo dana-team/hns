@@ -1,6 +1,4 @@
 /*
-
-
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
@@ -20,24 +18,25 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
-// NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
-
 // MigrationHierarchySpec defines the desired state of MigrationHierarchy
 type MigrationHierarchySpec struct {
-	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
-
-	// Foo is an example field of MigrationHierarchy. Edit MigrationHierarchy_types.go to remove/update
+	// CurrentNamespace is name of the Subnamespace that is being migrated
 	CurrentNamespace string `json:"currentns"`
+
+	// ToNamespace is the name of the Subnamespace that represents the new parent 
+	// of the Subnamespace that needs to be migrated
 	ToNamespace      string `json:"tons"`
 }
 
 // MigrationHierarchyStatus defines the observed state of MigrationHierarchy
 type MigrationHierarchyStatus struct {
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
-	Phase  Phase  `json:"phase,omitempty"`
+	// Phase acts like a state machine for the Migrationhierarchy. 
+	// It is a string and can be one of the following:
+	// "Error" - state for a Migrationhierarchy indicating that the operation could not be completed due to an error
+	// "Complete" - state for a Migrationhierarchy indicating that the operation completed successfully
+	Phase Phase `json:"phase,omitempty"`
+
+	// Reason is a string explaining why an error occurred if it did; otherwise it’s empty
 	Reason string `json:"reason,omitempty"`
 }
 
