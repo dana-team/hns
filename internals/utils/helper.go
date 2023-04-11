@@ -140,14 +140,6 @@ func GetRqDepthFromSNS(sns *ObjectContext) (string, error) {
 	return rootns.Annotations[danav1.RqDepth], nil
 }
 
-func GetRqDepthFromNS(ns *ObjectContext) (string, error) {
-	rootns := corev1.Namespace{}
-	if err := ns.Client.Get(ns.Ctx, types.NamespacedName{Name: ns.Object.GetAnnotations()[danav1.RootCrqSelector]}, &rootns); err != nil {
-		return "", err
-	}
-	return rootns.Annotations[danav1.RqDepth], nil
-}
-
 func IsServiceAccount(roleBinding client.Object) bool {
 	if !IsValidRoleBinding(roleBinding) {
 		return false

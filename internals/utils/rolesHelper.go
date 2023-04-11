@@ -19,13 +19,6 @@ func isRoleBinding(sns client.Object) bool {
 	return false
 }
 
-func isClusterRoleBinding(sns client.Object) bool {
-	if reflect.TypeOf(sns) == reflect.TypeOf(&rbacv1.ClusterRoleBinding{}) {
-		return true
-	}
-	return false
-}
-
 func GetNamespaceRole(namespace client.Object) string {
 	if !isNamespace(namespace) {
 		return ""

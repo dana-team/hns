@@ -240,30 +240,6 @@ func snsResourcePoolChangedWhenParentIsResourcePool(oldSns *utils.ObjectContext,
 	return true, nil
 }
 
-func oneOfSnsDescendantIsResourcePool(oldSns *utils.ObjectContext, newSns *utils.ObjectContext) (bool, error) {
-	if utils.GetSnsResourcePooled(newSns.Object) == utils.GetSnsResourcePooled(oldSns.Object) || utils.GetSnsResourcePooled(oldSns.Object) == "true" {
-		return true, nil
-	}
-
-	namespaceList, err := utils.NewObjectContextList(newSns.Ctx, newSns.Log, newSns.Client, &corev1.NamespaceList{}, client.MatchingLabels{danav1.Aggragator + newSns.Object.GetName(): "true"})
-	if err != nil {
-		return false, err
-	}
-
-	for _, namespace := range namespaceList.Objects.(*corev1.NamespaceList).Items {
-		if namespace.Name != newSns.Object.GetName() {
-			namespace, err := utils.NewObjectContext(newSns.Ctx, newSns.Log, newSns.Client, types.NamespacedName{Name: namespace.GetName()}, &corev1.Namespace{})
-			if err != nil {
-				return false, err
-			}
-			if utils.GetNamespaceResourcePooled(namespace) == "true" {
-				return false, nil
-			}
-		}
-	}
-	return true, nil
-}
-
 func ValidateCreateSnsRequest(sns *utils.ObjectContext, parentQuotaObj *utils.ObjectContext) (bool, string) {
 	quotaParent := utils.GetQuotaObjSpec(parentQuotaObj.Object).Hard
 	quotaSNS := utils.GetSnsQuotaSpec(sns.Object).Hard

@@ -6,7 +6,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func ComposeNamespace(name string, labels map[string]string, annotations map[string]string) *corev1.Namespace {
@@ -101,43 +100,6 @@ func ComposeSns(name string, namespace string, quota corev1.ResourceList, labels
 	}
 }
 
-func ComposeClusterRoleBinding(roleBinding client.Object, name string) *rbacv1.ClusterRoleBinding {
-	if !isRoleBinding(roleBinding) {
-		return nil
-	}
-	//the name contain the crq name + the user name.
-	return &rbacv1.ClusterRoleBinding{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: name,
-		},
-		Subjects: roleBinding.(*rbacv1.RoleBinding).Subjects,
-		RoleRef: rbacv1.RoleRef{
-			APIGroup: "rbac.authorization.k8s.io",
-			Kind:     "ClusterRole",
-			Name:     name,
-		},
-	}
-}
-
-func ComposeSnsViewClusterRole(roleBinding client.Object) *rbacv1.ClusterRole {
-	if !isRoleBinding(roleBinding) {
-		return nil
-	}
-	name := roleBinding.(*rbacv1.RoleBinding).Namespace
-	//the name contain the crq name + the user name.
-	return &rbacv1.ClusterRole{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: GetRoleBindingSnsViewClusterRoleName(roleBinding),
-		},
-		Rules: []rbacv1.PolicyRule{{
-			Verbs:     []string{"get"},
-			APIGroups: []string{"dana.hns.io"},
-			Resources: []string{"subnamespaces"},
-			//the crq is always the same as the ns name
-			ResourceNames: []string{name}}},
-	}
-}
-
 func ComposeNsHnsViewClusterRole(namespaceName string) *rbacv1.ClusterRole {
 	return &rbacv1.ClusterRole{
 		ObjectMeta: metav1.ObjectMeta{
@@ -186,28 +148,5 @@ func ComposeNsHnsViewClusterRoleBinding(namespaceName string) *rbacv1.ClusterRol
 			Kind:     "ClusterRole",
 			Name:     name,
 		},
-	}
-}
-
-func ComposeClusterRole(roleBinding client.Object) *rbacv1.ClusterRole {
-	if !isRoleBinding(roleBinding) {
-		return nil
-	}
-	name := roleBinding.(*rbacv1.RoleBinding).Namespace
-	//the name contain the crq name + the user name.
-	return &rbacv1.ClusterRole{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: GetRoleBindingClusterRoleName(roleBinding),
-		},
-		Rules: []rbacv1.PolicyRule{{
-			Verbs:     []string{"get"},
-			APIGroups: []string{"quota.openshift.io"},
-			Resources: []string{"clusterresourcequotas"},
-			//the crq is always the same as the ns name
-			ResourceNames: []string{name}},
-
-			{Verbs: []string{"list"},
-				APIGroups: []string{"quota.openshift.io"},
-				Resources: []string{"clusterresourcequotas"}}},
 	}
 }
