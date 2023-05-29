@@ -2,11 +2,13 @@ package webhooks
 
 import (
 	"fmt"
+	"net/http"
+	"regexp"
+
 	danav1 "github.com/dana-team/hns/api/v1"
 	"github.com/dana-team/hns/internals/utils"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"net/http"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
@@ -14,6 +16,10 @@ import (
 // handleCreate implements the non-boilerplate logic of the validator, allowing it to be more easily unit
 // tested (i.e. without constructing a full admission.Request)
 func (a *SubnamespaceAnnotator) handleCreate(snsObject *utils.ObjectContext) admission.Response {
+	if response := a.validateSubnamespaceName(snsObject); !response.Allowed {
+		return response
+	}
+
 	if response := a.validateUniqueSNSName(snsObject); !response.Allowed {
 		return response
 	}
@@ -39,6 +45,21 @@ func (a *SubnamespaceAnnotator) handleCreate(snsObject *utils.ObjectContext) adm
 
 	if rsp := a.validateEnoughResourcesInParentSNS(snsObject); !rsp.Allowed {
 		return rsp
+	}
+
+	return admission.Allowed("")
+}
+
+// validateSubnamespaceName validate name for subnamespace according to RFC 1123, to match namespace name validation.
+func (a *SubnamespaceAnnotator) validateSubnamespaceName(snsObject *utils.ObjectContext) admission.Response {
+	snsName := snsObject.Object.GetName()
+	if len(snsName) > 63 {
+		message := fmt.Sprintf("Invalid value: %s: the subnamespace name should be at most 63 characters", snsName)
+		return admission.Denied(message)
+	}
+	if match, _ := regexp.MatchString("^[a-z0-9]([-a-z0-9]*[a-z0-9])?$", snsName); !match {
+		message := fmt.Sprintf("Invalid value: %s: a lowercase RFC 1123 label must consist of lower case alphanumeric characters or '-', and must start and end with an alphanumeric character (e.g. 'my-name', or '123-abc',", snsName)
+		return admission.Denied(message)
 	}
 
 	return admission.Allowed("")
