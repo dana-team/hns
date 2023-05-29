@@ -9,13 +9,7 @@ import (
 )
 
 const (
-	namspacePrefix = "e2e-test-"
-	// A 1s timeout was too short; 2s *seems* stable and also matches the Ginkgo default
-	defTimeout = 2
-	// For the operations that involves propagation, 5s seems to be a more stable time choice
-	propagationTime = 8
-	// For the operations that involves deletion, 10s seems to be a more stable time
-	cleanupTimeout = 10
+	propagationTime = 120
 )
 
 const (

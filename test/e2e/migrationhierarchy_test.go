@@ -7,87 +7,93 @@ import (
 )
 
 var _ = Describe("MigrationHierarchy", func() {
-	nsRoot := GenerateE2EName("root")
+	testPrefix := "mh-test"
+	var randPrefix string
+	var nsRoot string
 
 	BeforeEach(func() {
-		CleanupTestNamespaces()
-		CleanupTestMigrationHierarchies()
+		randPrefix = RandStr()
 
-		// set up root namespace
-		CreateRootNS(nsRoot, rqDepth)
+		CleanupTestNamespaces(randPrefix)
+		CleanupTestMigrationHierarchies(randPrefix)
+
+		nsRoot = GenerateE2EName("root", testPrefix, randPrefix)
+		CreateRootNS(nsRoot, randPrefix, rqDepth)
 		CreateResourceQuota(nsRoot, nsRoot, storage, "100Gi", cpu, "100", memory, "100Gi", pods, "100", gpu, "100")
 	})
 
 	AfterEach(func() {
-		CleanupTestNamespaces()
-		CleanupTestMigrationHierarchies()
+		CleanupTestNamespaces(randPrefix)
+		CleanupTestMigrationHierarchies(randPrefix)
 	})
 
 	It("should migrate subnamespace that have a CRQ or its direct parent have a CRQ,", func() {
-		nsA := GenerateE2EName("a")
-		nsB := GenerateE2EName("b")
-		nsC := GenerateE2EName("c")
-		nsD := GenerateE2EName("d")
-		nsE := GenerateE2EName("e")
-		nsF := GenerateE2EName("f")
+		nsA := GenerateE2EName("a", testPrefix, randPrefix)
+		nsB := GenerateE2EName("b", testPrefix, randPrefix)
+		nsC := GenerateE2EName("c", testPrefix, randPrefix)
+		nsD := GenerateE2EName("d", testPrefix, randPrefix)
+		nsE := GenerateE2EName("e", testPrefix, randPrefix)
+		nsF := GenerateE2EName("f", testPrefix, randPrefix)
 
 		// create hierarchy
-		CreateSubnamespace(nsA, nsRoot, false, storage, "50Gi", cpu, "50", memory, "50Gi", pods, "50", gpu, "50")
-		CreateSubnamespace(nsB, nsA, false, storage, "25Gi", cpu, "25", memory, "25Gi", pods, "25", gpu, "25")
-		CreateSubnamespace(nsC, nsB, false, storage, "10Gi", cpu, "10", memory, "10Gi", pods, "10", gpu, "10")
-		CreateSubnamespace(nsD, nsC, false, storage, "5Gi", cpu, "5", memory, "5Gi", pods, "5", gpu, "5")
-		CreateSubnamespace(nsE, nsC, false, storage, "5Gi", cpu, "5", memory, "5Gi", pods, "5", gpu, "5")
-		CreateSubnamespace(nsF, nsD, false, storage, "1Gi", cpu, "1", memory, "1Gi", pods, "1", gpu, "1")
+		CreateSubnamespace(nsA, nsRoot, randPrefix, false, storage, "50Gi", cpu, "50", memory, "50Gi", pods, "50", gpu, "50")
+		CreateSubnamespace(nsB, nsA, randPrefix, false, storage, "25Gi", cpu, "25", memory, "25Gi", pods, "25", gpu, "25")
+		CreateSubnamespace(nsC, nsB, randPrefix, false, storage, "10Gi", cpu, "10", memory, "10Gi", pods, "10", gpu, "10")
+		CreateSubnamespace(nsD, nsC, randPrefix, false, storage, "5Gi", cpu, "5", memory, "5Gi", pods, "5", gpu, "5")
+		CreateSubnamespace(nsE, nsC, randPrefix, false, storage, "5Gi", cpu, "5", memory, "5Gi", pods, "5", gpu, "5")
+		CreateSubnamespace(nsF, nsD, randPrefix, false, storage, "1Gi", cpu, "1", memory, "1Gi", pods, "1", gpu, "1")
 
-		CreateMigrationHierarchy(nsF, nsE)
+		mhName := CreateMigrationHierarchy(nsF, nsE)
 
 		// make sure the subnamespace was migrated and the parent was updated
 		FieldShouldContain("subnamespace", nsE, nsF, ".metadata.namespace", nsE)
 		FieldShouldContain("namespace", "", nsF, ".metadata.labels", danav1.Parent+":"+nsE)
 
-		// add test label to the migrated ns
-		LabelTestingNs(nsF)
+		// verify phase is complete before labeling it
+		FieldShouldContain("migrationhierarchy", "", mhName, ".status.phase", "Complete")
+		LabelTestingMigrationHierarchies(mhName, randPrefix)
 	})
 
 	It("should not migrate subnamespace that doesn't have a CRQ and their direct parent doesn't have a CRQ,", func() {
-		nsA := GenerateE2EName("a")
-		nsB := GenerateE2EName("b")
-		nsC := GenerateE2EName("c")
-		nsD := GenerateE2EName("d")
+		nsA := GenerateE2EName("a", testPrefix, randPrefix)
+		nsB := GenerateE2EName("b", testPrefix, randPrefix)
+		nsC := GenerateE2EName("c", testPrefix, randPrefix)
+		nsD := GenerateE2EName("d", testPrefix, randPrefix)
 
 		// create hierarchy
-		CreateSubnamespace(nsA, nsRoot, false, storage, "50Gi", cpu, "50", memory, "50Gi", pods, "50", gpu, "50")
-		CreateSubnamespace(nsB, nsA, false, storage, "25Gi", cpu, "25", memory, "25Gi", pods, "25", gpu, "25")
-		CreateSubnamespace(nsC, nsA, false, storage, "25Gi", cpu, "25", memory, "25Gi", pods, "25", gpu, "25")
-		CreateSubnamespace(nsD, nsB, false, storage, "10Gi", cpu, "10", memory, "10Gi", pods, "10", gpu, "10")
+		CreateSubnamespace(nsA, nsRoot, randPrefix, false, storage, "50Gi", cpu, "50", memory, "50Gi", pods, "50", gpu, "50")
+		CreateSubnamespace(nsB, nsA, randPrefix, false, storage, "25Gi", cpu, "25", memory, "25Gi", pods, "25", gpu, "25")
+		CreateSubnamespace(nsC, nsA, randPrefix, false, storage, "25Gi", cpu, "25", memory, "25Gi", pods, "25", gpu, "25")
+		CreateSubnamespace(nsD, nsB, randPrefix, false, storage, "10Gi", cpu, "10", memory, "10Gi", pods, "10", gpu, "10")
 
 		// make sure the subnamespace was not migrated and the parent has not been updated
 		ShouldNotCreateMigrationHierarchy(nsD, nsC)
+
 		FieldShouldContain("subnamespace", nsB, nsD, ".metadata.namespace", nsB)
 		FieldShouldContain("namespace", "", nsD, ".metadata.labels", danav1.Parent+":"+nsB)
 	})
 
 	It("should migrate subnamespace with children, including the children migration", func() {
-		nsA := GenerateE2EName("a")
-		nsB := GenerateE2EName("b")
-		nsC := GenerateE2EName("c")
-		nsD := GenerateE2EName("d")
-		nsE := GenerateE2EName("e")
-		nsF := GenerateE2EName("f")
-		nsG := GenerateE2EName("g")
-		nsH := GenerateE2EName("h")
+		nsA := GenerateE2EName("a", testPrefix, randPrefix)
+		nsB := GenerateE2EName("b", testPrefix, randPrefix)
+		nsC := GenerateE2EName("c", testPrefix, randPrefix)
+		nsD := GenerateE2EName("d", testPrefix, randPrefix)
+		nsE := GenerateE2EName("e", testPrefix, randPrefix)
+		nsF := GenerateE2EName("f", testPrefix, randPrefix)
+		nsG := GenerateE2EName("g", testPrefix, randPrefix)
+		nsH := GenerateE2EName("h", testPrefix, randPrefix)
 
 		// create hierarchy
-		CreateSubnamespace(nsA, nsRoot, false, storage, "50Gi", cpu, "50", memory, "50Gi", pods, "50", gpu, "50")
-		CreateSubnamespace(nsB, nsA, false, storage, "25Gi", cpu, "25", memory, "25Gi", pods, "25", gpu, "25")
-		CreateSubnamespace(nsC, nsB, false, storage, "10Gi", cpu, "10", memory, "10Gi", pods, "10", gpu, "10")
-		CreateSubnamespace(nsD, nsC, false, storage, "5Gi", cpu, "5", memory, "5Gi", pods, "5", gpu, "5")
-		CreateSubnamespace(nsE, nsC, false, storage, "5Gi", cpu, "5", memory, "5Gi", pods, "5", gpu, "5")
-		CreateSubnamespace(nsF, nsD, false, storage, "2Gi", cpu, "2", memory, "2Gi", pods, "2", gpu, "2")
-		CreateSubnamespace(nsG, nsF, false, storage, "1Gi", cpu, "1", memory, "1Gi", pods, "1", gpu, "1")
-		CreateSubnamespace(nsH, nsG, false, storage, "1Gi", cpu, "1", memory, "1Gi", pods, "1", gpu, "1")
+		CreateSubnamespace(nsA, nsRoot, randPrefix, false, storage, "50Gi", cpu, "50", memory, "50Gi", pods, "50", gpu, "50")
+		CreateSubnamespace(nsB, nsA, randPrefix, false, storage, "25Gi", cpu, "25", memory, "25Gi", pods, "25", gpu, "25")
+		CreateSubnamespace(nsC, nsB, randPrefix, false, storage, "10Gi", cpu, "10", memory, "10Gi", pods, "10", gpu, "10")
+		CreateSubnamespace(nsD, nsC, randPrefix, false, storage, "5Gi", cpu, "5", memory, "5Gi", pods, "5", gpu, "5")
+		CreateSubnamespace(nsE, nsC, randPrefix, false, storage, "5Gi", cpu, "5", memory, "5Gi", pods, "5", gpu, "5")
+		CreateSubnamespace(nsF, nsD, randPrefix, false, storage, "2Gi", cpu, "2", memory, "2Gi", pods, "2", gpu, "2")
+		CreateSubnamespace(nsG, nsF, randPrefix, false, storage, "1Gi", cpu, "1", memory, "1Gi", pods, "1", gpu, "1")
+		CreateSubnamespace(nsH, nsG, randPrefix, false, storage, "1Gi", cpu, "1", memory, "1Gi", pods, "1", gpu, "1")
 
-		CreateMigrationHierarchy(nsF, nsE)
+		mhName := CreateMigrationHierarchy(nsF, nsE)
 
 		// make sure the subnamespace was migrated and the parent was updated
 		FieldShouldContain("subnamespace", nsE, nsF, ".metadata.namespace", nsE)
@@ -100,109 +106,111 @@ var _ = Describe("MigrationHierarchy", func() {
 		FieldShouldContain("subnamespace", nsG, nsH, ".metadata.namespace", nsG)
 		FieldShouldContain("namespace", "", nsH, ".metadata.labels", danav1.Parent+":"+nsG)
 
-		// add test label to the migrated ns
-		LabelTestingNs(nsF)
-		LabelTestingNs(nsG)
-		LabelTestingNs(nsH)
+		// verify phase is complete before labeling it
+		FieldShouldContain("migrationhierarchy", "", mhName, ".status.phase", "Complete")
+		LabelTestingMigrationHierarchies(mhName, randPrefix)
 	})
 
 	It("should not migrate an empty resourcepool to be under subnamespace, should get error phase", func() {
-		nsA := GenerateE2EName("a")
-		nsB := GenerateE2EName("b")
-		nsC := GenerateE2EName("c")
-		nsD := GenerateE2EName("d")
-		nsE := GenerateE2EName("e")
-		nsF := GenerateE2EName("f")
-		nsG := GenerateE2EName("g")
+		nsA := GenerateE2EName("a", testPrefix, randPrefix)
+		nsB := GenerateE2EName("b", testPrefix, randPrefix)
+		nsC := GenerateE2EName("c", testPrefix, randPrefix)
+		nsD := GenerateE2EName("d", testPrefix, randPrefix)
+		nsE := GenerateE2EName("e", testPrefix, randPrefix)
+		nsF := GenerateE2EName("f", testPrefix, randPrefix)
+		nsG := GenerateE2EName("g", testPrefix, randPrefix)
 
 		// create hierarchy
-		CreateSubnamespace(nsA, nsRoot, false, storage, "50Gi", cpu, "50", memory, "50Gi", pods, "50", gpu, "50")
-		CreateSubnamespace(nsB, nsA, false, storage, "25Gi", cpu, "25", memory, "25Gi", pods, "25", gpu, "25")
-		CreateSubnamespace(nsC, nsB, false, storage, "10Gi", cpu, "10", memory, "10Gi", pods, "10", gpu, "10")
-		CreateSubnamespace(nsD, nsC, false, storage, "5Gi", cpu, "5", memory, "5Gi", pods, "5", gpu, "5")
-		CreateSubnamespace(nsE, nsC, false, storage, "5Gi", cpu, "5", memory, "5Gi", pods, "5", gpu, "5")
-		CreateSubnamespace(nsF, nsD, true, storage, "2Gi", cpu, "2", memory, "2Gi", pods, "2", gpu, "2")
-		CreateSubnamespace(nsG, nsF, true)
+		CreateSubnamespace(nsA, nsRoot, randPrefix, false, storage, "50Gi", cpu, "50", memory, "50Gi", pods, "50", gpu, "50")
+		CreateSubnamespace(nsB, nsA, randPrefix, false, storage, "25Gi", cpu, "25", memory, "25Gi", pods, "25", gpu, "25")
+		CreateSubnamespace(nsC, nsB, randPrefix, false, storage, "10Gi", cpu, "10", memory, "10Gi", pods, "10", gpu, "10")
+		CreateSubnamespace(nsD, nsC, randPrefix, false, storage, "5Gi", cpu, "5", memory, "5Gi", pods, "5", gpu, "5")
+		CreateSubnamespace(nsE, nsC, randPrefix, false, storage, "5Gi", cpu, "5", memory, "5Gi", pods, "5", gpu, "5")
+		CreateSubnamespace(nsF, nsD, randPrefix, true, storage, "2Gi", cpu, "2", memory, "2Gi", pods, "2", gpu, "2")
+		CreateSubnamespace(nsG, nsF, randPrefix, true)
 
 		// create the migration hierarchy and return name to mhname
-		mhname := CreateMigrationHierarchy(nsG, nsE)
+		mhName := CreateMigrationHierarchy(nsG, nsE)
 
 		// make sure the migration hierarchy was created in error phase and did not migrate the subnamespace
 		FieldShouldContain("subnamespace", nsF, nsG, ".metadata.namespace", nsF)
 		FieldShouldContain("namespace", "", nsG, ".metadata.labels", danav1.Parent+":"+nsF)
-		FieldShouldContain("migrationhierarchy", "", mhname, ".status.phase", "Error")
+		FieldShouldContain("migrationhierarchy", "", mhName, ".status.phase", "Error")
+
+		LabelTestingMigrationHierarchies(mhName, randPrefix)
 	})
 
-	It("should migrate depth 5 subnamespace or lower to depth 2 subnamespace", func() {
-		nsA := GenerateE2EName("a")
-		nsB := GenerateE2EName("b")
-		nsC := GenerateE2EName("c")
-		nsD := GenerateE2EName("d")
-		nsE := GenerateE2EName("e")
+	It("should migrate depth 5 subnamespace or lower to depth 3 subnamespace", func() {
+		nsA := GenerateE2EName("a", testPrefix, randPrefix)
+		nsB := GenerateE2EName("b", testPrefix, randPrefix)
+		nsC := GenerateE2EName("c", testPrefix, randPrefix)
+		nsD := GenerateE2EName("d", testPrefix, randPrefix)
+		nsE := GenerateE2EName("e", testPrefix, randPrefix)
 
 		// create hierarchy
-		CreateSubnamespace(nsA, nsRoot, false, storage, "50Gi", cpu, "50", memory, "50Gi", pods, "50", gpu, "50")
-		CreateSubnamespace(nsB, nsA, false, storage, "25Gi", cpu, "25", memory, "25Gi", pods, "25", gpu, "25")
-		CreateSubnamespace(nsC, nsA, false, storage, "25Gi", cpu, "25", memory, "25Gi", pods, "25", gpu, "25")
-		CreateSubnamespace(nsD, nsB, false, storage, "10Gi", cpu, "10", memory, "10Gi", pods, "10", gpu, "10")
-		CreateSubnamespace(nsE, nsD, false, storage, "5Gi", cpu, "5", memory, "5Gi", pods, "5", gpu, "5")
+		CreateSubnamespace(nsA, nsRoot, randPrefix, false, storage, "50Gi", cpu, "50", memory, "50Gi", pods, "50", gpu, "50")
+		CreateSubnamespace(nsB, nsA, randPrefix, false, storage, "25Gi", cpu, "25", memory, "25Gi", pods, "25", gpu, "25")
+		CreateSubnamespace(nsC, nsB, randPrefix, false, storage, "25Gi", cpu, "25", memory, "25Gi", pods, "25", gpu, "25")
+		CreateSubnamespace(nsD, nsC, randPrefix, false, storage, "10Gi", cpu, "10", memory, "10Gi", pods, "10", gpu, "10")
+		CreateSubnamespace(nsE, nsD, randPrefix, false, storage, "5Gi", cpu, "5", memory, "5Gi", pods, "5", gpu, "5")
 
-		CreateMigrationHierarchy(nsE, nsC)
+		mhName := CreateMigrationHierarchy(nsE, nsC)
 
 		// make sure the subnamespace was migrated and the parent was updated
 		FieldShouldContain("subnamespace", nsC, nsE, ".metadata.namespace", nsC)
 		FieldShouldContain("namespace", "", nsE, ".metadata.labels", danav1.Parent+":"+nsC)
 
-		// add test label to the migrated ns
-		LabelTestingNs(nsE)
-
+		// verify phase is complete before labeling it
+		FieldShouldContain("migrationhierarchy", "", mhName, ".status.phase", "Complete")
+		LabelTestingMigrationHierarchies(mhName, randPrefix)
 	})
 
 	It("should not migrate a subnamespaces to a resourcepool", func() {
-		nsA := GenerateE2EName("a")
-		nsB := GenerateE2EName("b")
-		nsC := GenerateE2EName("c")
-		nsD := GenerateE2EName("d")
-		nsE := GenerateE2EName("e")
-		nsF := GenerateE2EName("f")
-		nsG := GenerateE2EName("g")
+		nsA := GenerateE2EName("a", testPrefix, randPrefix)
+		nsB := GenerateE2EName("b", testPrefix, randPrefix)
+		nsC := GenerateE2EName("c", testPrefix, randPrefix)
+		nsD := GenerateE2EName("d", testPrefix, randPrefix)
+		nsE := GenerateE2EName("e", testPrefix, randPrefix)
+		nsF := GenerateE2EName("f", testPrefix, randPrefix)
+		nsG := GenerateE2EName("g", testPrefix, randPrefix)
 
 		// create hierarchy
-		CreateSubnamespace(nsA, nsRoot, false, storage, "50Gi", cpu, "50", memory, "50Gi", pods, "50", gpu, "50")
-		CreateSubnamespace(nsB, nsA, false, storage, "25Gi", cpu, "25", memory, "25Gi", pods, "25", gpu, "25")
-		CreateSubnamespace(nsC, nsB, false, storage, "10Gi", cpu, "10", memory, "10Gi", pods, "10", gpu, "10")
-		CreateSubnamespace(nsD, nsC, false, storage, "5Gi", cpu, "5", memory, "5Gi", pods, "5", gpu, "5")
-		CreateSubnamespace(nsE, nsC, false, storage, "5Gi", cpu, "5", memory, "5Gi", pods, "5", gpu, "5")
-		CreateSubnamespace(nsF, nsE, true, storage, "2Gi", cpu, "2", memory, "2Gi", pods, "2", gpu, "2")
-		CreateSubnamespace(nsG, nsD, false, storage, "2Gi", cpu, "2", memory, "2Gi", pods, "2", gpu, "2")
+		CreateSubnamespace(nsA, nsRoot, randPrefix, false, storage, "50Gi", cpu, "50", memory, "50Gi", pods, "50", gpu, "50")
+		CreateSubnamespace(nsB, nsA, randPrefix, false, storage, "25Gi", cpu, "25", memory, "25Gi", pods, "25", gpu, "25")
+		CreateSubnamespace(nsC, nsB, randPrefix, false, storage, "10Gi", cpu, "10", memory, "10Gi", pods, "10", gpu, "10")
+		CreateSubnamespace(nsD, nsC, randPrefix, false, storage, "5Gi", cpu, "5", memory, "5Gi", pods, "5", gpu, "5")
+		CreateSubnamespace(nsE, nsC, randPrefix, false, storage, "5Gi", cpu, "5", memory, "5Gi", pods, "5", gpu, "5")
+		CreateSubnamespace(nsF, nsE, randPrefix, true, storage, "2Gi", cpu, "2", memory, "2Gi", pods, "2", gpu, "2")
+		CreateSubnamespace(nsG, nsD, randPrefix, false, storage, "2Gi", cpu, "2", memory, "2Gi", pods, "2", gpu, "2")
 
 		// make sure the subnamespace was not migrated and the parent has not been updated
 		ShouldNotCreateMigrationHierarchy(nsG, nsF)
+
 		FieldShouldContain("subnamespace", nsD, nsG, ".metadata.namespace", nsD)
 		FieldShouldContain("namespace", "", nsG, ".metadata.labels", danav1.Parent+":"+nsD)
 	})
 
-	It("should migrate resourcepool with children to subnamespace, including the children migration. they all should remain resourcepools", func() {
-		nsA := GenerateE2EName("a")
-		nsB := GenerateE2EName("b")
-		nsC := GenerateE2EName("c")
-		nsD := GenerateE2EName("d")
-		nsE := GenerateE2EName("e")
-		nsF := GenerateE2EName("f")
-		nsG := GenerateE2EName("g")
-		nsH := GenerateE2EName("h")
+	It("should migrate resourcepool with children to subnamespace, including the children migration, they all should remain resourcepools", func() {
+		nsA := GenerateE2EName("a", testPrefix, randPrefix)
+		nsB := GenerateE2EName("b", testPrefix, randPrefix)
+		nsC := GenerateE2EName("c", testPrefix, randPrefix)
+		nsD := GenerateE2EName("d", testPrefix, randPrefix)
+		nsE := GenerateE2EName("e", testPrefix, randPrefix)
+		nsF := GenerateE2EName("f", testPrefix, randPrefix)
+		nsG := GenerateE2EName("g", testPrefix, randPrefix)
+		nsH := GenerateE2EName("h", testPrefix, randPrefix)
 
 		// create hierarchy
-		CreateSubnamespace(nsA, nsRoot, false, storage, "50Gi", cpu, "50", memory, "50Gi", pods, "50", gpu, "50")
-		CreateSubnamespace(nsB, nsA, false, storage, "25Gi", cpu, "25", memory, "25Gi", pods, "25", gpu, "25")
-		CreateSubnamespace(nsC, nsB, false, storage, "10Gi", cpu, "10", memory, "10Gi", pods, "10", gpu, "10")
-		CreateSubnamespace(nsD, nsC, false, storage, "5Gi", cpu, "5", memory, "5Gi", pods, "5", gpu, "5")
-		CreateSubnamespace(nsE, nsC, false, storage, "5Gi", cpu, "5", memory, "5Gi", pods, "5", gpu, "5")
-		CreateSubnamespace(nsF, nsD, true, storage, "2Gi", cpu, "2", memory, "2Gi", pods, "2", gpu, "2")
-		CreateSubnamespace(nsG, nsF, true)
-		CreateSubnamespace(nsH, nsG, true)
+		CreateSubnamespace(nsA, nsRoot, randPrefix, false, storage, "50Gi", cpu, "50", memory, "50Gi", pods, "50", gpu, "50")
+		CreateSubnamespace(nsB, nsA, randPrefix, false, storage, "25Gi", cpu, "25", memory, "25Gi", pods, "25", gpu, "25")
+		CreateSubnamespace(nsC, nsB, randPrefix, false, storage, "10Gi", cpu, "10", memory, "10Gi", pods, "10", gpu, "10")
+		CreateSubnamespace(nsD, nsC, randPrefix, false, storage, "5Gi", cpu, "5", memory, "5Gi", pods, "5", gpu, "5")
+		CreateSubnamespace(nsE, nsC, randPrefix, false, storage, "5Gi", cpu, "5", memory, "5Gi", pods, "5", gpu, "5")
+		CreateSubnamespace(nsF, nsD, randPrefix, true, storage, "2Gi", cpu, "2", memory, "2Gi", pods, "2", gpu, "2")
+		CreateSubnamespace(nsG, nsF, randPrefix, true)
+		CreateSubnamespace(nsH, nsG, randPrefix, true)
 
-		CreateMigrationHierarchy(nsF, nsE)
+		mhName := CreateMigrationHierarchy(nsF, nsE)
 
 		// make sure the subnamespace was migrated and the parent was updated
 		FieldShouldContain("subnamespace", nsE, nsF, ".metadata.namespace", nsE)
@@ -218,35 +226,34 @@ var _ = Describe("MigrationHierarchy", func() {
 		FieldShouldContain("namespace", "", nsH, ".metadata.labels", danav1.Parent+":"+nsG)
 		FieldShouldContain("subnamespace", nsG, nsH, ".metadata.labels", danav1.ResourcePool+":true")
 
-		// add test label to the migrated ns
-		LabelTestingNs(nsF)
-		LabelTestingNs(nsG)
-		LabelTestingNs(nsH)
+		// verify phase is complete before labeling it
+		FieldShouldContain("migrationhierarchy", "", mhName, ".status.phase", "Complete")
+		LabelTestingMigrationHierarchies(mhName, randPrefix)
 	})
 
 	It("should migrate resourcepool with children to resourcepool, including the children migration", func() {
-		nsA := GenerateE2EName("a")
-		nsB := GenerateE2EName("b")
-		nsC := GenerateE2EName("c")
-		nsD := GenerateE2EName("d")
-		nsE := GenerateE2EName("e")
-		nsF := GenerateE2EName("f")
-		nsG := GenerateE2EName("g")
-		nsH := GenerateE2EName("h")
-		nsI := GenerateE2EName("i")
+		nsA := GenerateE2EName("a", testPrefix, randPrefix)
+		nsB := GenerateE2EName("b", testPrefix, randPrefix)
+		nsC := GenerateE2EName("c", testPrefix, randPrefix)
+		nsD := GenerateE2EName("d", testPrefix, randPrefix)
+		nsE := GenerateE2EName("e", testPrefix, randPrefix)
+		nsF := GenerateE2EName("f", testPrefix, randPrefix)
+		nsG := GenerateE2EName("g", testPrefix, randPrefix)
+		nsH := GenerateE2EName("h", testPrefix, randPrefix)
+		nsI := GenerateE2EName("i", testPrefix, randPrefix)
 
 		// create hierarchy
-		CreateSubnamespace(nsA, nsRoot, false, storage, "50Gi", cpu, "50", memory, "50Gi", pods, "50", gpu, "50")
-		CreateSubnamespace(nsB, nsA, false, storage, "25Gi", cpu, "25", memory, "25Gi", pods, "25", gpu, "25")
-		CreateSubnamespace(nsC, nsB, false, storage, "10Gi", cpu, "10", memory, "10Gi", pods, "10", gpu, "10")
-		CreateSubnamespace(nsD, nsC, false, storage, "5Gi", cpu, "5", memory, "5Gi", pods, "5", gpu, "5")
-		CreateSubnamespace(nsE, nsC, false, storage, "5Gi", cpu, "5", memory, "5Gi", pods, "5", gpu, "5")
-		CreateSubnamespace(nsI, nsE, true, storage, "2Gi", cpu, "2", memory, "2Gi", pods, "2", gpu, "5")
-		CreateSubnamespace(nsF, nsD, true, storage, "2Gi", cpu, "2", memory, "2Gi", pods, "2", gpu, "2")
-		CreateSubnamespace(nsG, nsF, true)
-		CreateSubnamespace(nsH, nsG, true)
+		CreateSubnamespace(nsA, nsRoot, randPrefix, false, storage, "50Gi", cpu, "50", memory, "50Gi", pods, "50", gpu, "50")
+		CreateSubnamespace(nsB, nsA, randPrefix, false, storage, "25Gi", cpu, "25", memory, "25Gi", pods, "25", gpu, "25")
+		CreateSubnamespace(nsC, nsB, randPrefix, false, storage, "10Gi", cpu, "10", memory, "10Gi", pods, "10", gpu, "10")
+		CreateSubnamespace(nsD, nsC, randPrefix, false, storage, "5Gi", cpu, "5", memory, "5Gi", pods, "5", gpu, "5")
+		CreateSubnamespace(nsE, nsC, randPrefix, false, storage, "5Gi", cpu, "5", memory, "5Gi", pods, "5", gpu, "5")
+		CreateSubnamespace(nsI, nsE, randPrefix, true, storage, "2Gi", cpu, "2", memory, "2Gi", pods, "2", gpu, "5")
+		CreateSubnamespace(nsF, nsD, randPrefix, true, storage, "2Gi", cpu, "2", memory, "2Gi", pods, "2", gpu, "2")
+		CreateSubnamespace(nsG, nsF, randPrefix, true)
+		CreateSubnamespace(nsH, nsG, randPrefix, true)
 
-		CreateMigrationHierarchy(nsF, nsI)
+		mhName := CreateMigrationHierarchy(nsF, nsI)
 
 		// make sure the subnamespace was migrated and the parent was updated
 		FieldShouldContain("subnamespace", nsI, nsF, ".metadata.namespace", nsI)
@@ -262,23 +269,22 @@ var _ = Describe("MigrationHierarchy", func() {
 		FieldShouldContain("namespace", "", nsH, ".metadata.labels", danav1.Parent+":"+nsG)
 		FieldShouldContain("subnamespace", nsG, nsH, ".metadata.labels", danav1.ResourcePool+":true")
 
-		// add test label to the migrated ns
-		LabelTestingNs(nsF)
-		LabelTestingNs(nsG)
-		LabelTestingNs(nsH)
+		// verify phase is complete before labeling it
+		FieldShouldContain("migrationhierarchy", "", mhName, ".status.phase", "Complete")
+		LabelTestingMigrationHierarchies(mhName, randPrefix)
 	})
 
 	It("should not migrate subnamespaces to a different secondary root", func() {
-		nsA := GenerateE2EName("a")
-		nsB := GenerateE2EName("b")
-		nsC := GenerateE2EName("c")
-		nsD := GenerateE2EName("d")
+		nsA := GenerateE2EName("a", testPrefix, randPrefix)
+		nsB := GenerateE2EName("b", testPrefix, randPrefix)
+		nsC := GenerateE2EName("c", testPrefix, randPrefix)
+		nsD := GenerateE2EName("d", testPrefix, randPrefix)
 
 		// make sure the subnamespace was migrated and the parent was updated
-		CreateSubnamespace(nsA, nsRoot, false, storage, "50Gi", cpu, "50", memory, "50Gi", pods, "50", gpu, "50")
-		CreateSubnamespace(nsB, nsRoot, false, storage, "50Gi", cpu, "50", memory, "50Gi", pods, "50", gpu, "50")
-		CreateSubnamespace(nsC, nsA, true, storage, "25Gi", cpu, "25", memory, "25Gi", pods, "25", gpu, "25")
-		CreateSubnamespace(nsD, nsB, true, storage, "25Gi", cpu, "25", memory, "25Gi", pods, "25", gpu, "25")
+		CreateSubnamespace(nsA, nsRoot, randPrefix, false, storage, "50Gi", cpu, "50", memory, "50Gi", pods, "50", gpu, "50")
+		CreateSubnamespace(nsB, nsRoot, randPrefix, false, storage, "50Gi", cpu, "50", memory, "50Gi", pods, "50", gpu, "50")
+		CreateSubnamespace(nsC, nsA, randPrefix, true, storage, "25Gi", cpu, "25", memory, "25Gi", pods, "25", gpu, "25")
+		CreateSubnamespace(nsD, nsB, randPrefix, true, storage, "25Gi", cpu, "25", memory, "25Gi", pods, "25", gpu, "25")
 
 		// add secondary root annotation
 		AnnotateNSSecondaryRoot(nsA)
@@ -286,27 +292,28 @@ var _ = Describe("MigrationHierarchy", func() {
 
 		// make sure the subnamespace was not migrated and the parent was updated
 		ShouldNotCreateMigrationHierarchy(nsD, nsA)
+
 		FieldShouldContain("subnamespace", nsB, nsD, ".metadata.namespace", nsB)
 		FieldShouldContain("namespace", "", nsD, ".metadata.labels", danav1.Parent+":"+nsB)
 	})
 
 	It("should not migrate a subnamespace/resourcepool to a subnamespace without enough resources", func() {
-		nsA := GenerateE2EName("a")
-		nsB := GenerateE2EName("b")
-		nsC := GenerateE2EName("c")
-		nsD := GenerateE2EName("d")
-		nsE := GenerateE2EName("e")
-		nsF := GenerateE2EName("f")
-		nsH := GenerateE2EName("h")
+		nsA := GenerateE2EName("a", testPrefix, randPrefix)
+		nsB := GenerateE2EName("b", testPrefix, randPrefix)
+		nsC := GenerateE2EName("c", testPrefix, randPrefix)
+		nsD := GenerateE2EName("d", testPrefix, randPrefix)
+		nsE := GenerateE2EName("e", testPrefix, randPrefix)
+		nsF := GenerateE2EName("f", testPrefix, randPrefix)
+		nsG := GenerateE2EName("g", testPrefix, randPrefix)
 
 		// create hierarchy
-		CreateSubnamespace(nsA, nsRoot, false, storage, "50Gi", cpu, "50", memory, "50Gi", pods, "50", gpu, "50")
-		CreateSubnamespace(nsB, nsA, false, storage, "25Gi", cpu, "25", memory, "25Gi", pods, "25", gpu, "25")
-		CreateSubnamespace(nsC, nsB, false, storage, "10Gi", cpu, "10", memory, "10Gi", pods, "10", gpu, "10")
-		CreateSubnamespace(nsD, nsC, false, storage, "5Gi", cpu, "5", memory, "5Gi", pods, "5", gpu, "5")
-		CreateSubnamespace(nsE, nsC, false, storage, "1Gi", cpu, "1", memory, "1Gi", pods, "1", gpu, "1")
-		CreateSubnamespace(nsF, nsD, false, storage, "2Gi", cpu, "2", memory, "2Gi", pods, "2", gpu, "2")
-		CreateSubnamespace(nsH, nsF, true, storage, "2Gi", cpu, "2", memory, "2Gi", pods, "2", gpu, "2")
+		CreateSubnamespace(nsA, nsRoot, randPrefix, false, storage, "50Gi", cpu, "50", memory, "50Gi", pods, "50", gpu, "50")
+		CreateSubnamespace(nsB, nsA, randPrefix, false, storage, "25Gi", cpu, "25", memory, "25Gi", pods, "25", gpu, "25")
+		CreateSubnamespace(nsC, nsB, randPrefix, false, storage, "10Gi", cpu, "10", memory, "10Gi", pods, "10", gpu, "10")
+		CreateSubnamespace(nsD, nsC, randPrefix, false, storage, "5Gi", cpu, "5", memory, "5Gi", pods, "5", gpu, "5")
+		CreateSubnamespace(nsE, nsC, randPrefix, false, storage, "1Gi", cpu, "1", memory, "1Gi", pods, "1", gpu, "1")
+		CreateSubnamespace(nsF, nsD, randPrefix, false, storage, "2Gi", cpu, "2", memory, "2Gi", pods, "2", gpu, "2")
+		CreateSubnamespace(nsG, nsF, randPrefix, true, storage, "2Gi", cpu, "2", memory, "2Gi", pods, "2", gpu, "2")
 
 		// make sure the subnamespace was not migrated and the parent has not been updated
 		ShouldNotCreateMigrationHierarchy(nsF, nsE)
@@ -314,8 +321,8 @@ var _ = Describe("MigrationHierarchy", func() {
 		FieldShouldContain("namespace", "", nsF, ".metadata.labels", danav1.Parent+":"+nsD)
 
 		// make sure the subnamespace was not migrated and the parent has not been updated
-		ShouldNotCreateMigrationHierarchy(nsH, nsE)
-		FieldShouldContain("subnamespace", nsF, nsH, ".metadata.namespace", nsF)
-		FieldShouldContain("namespace", "", nsH, ".metadata.labels", danav1.Parent+":"+nsF)
+		ShouldNotCreateMigrationHierarchy(nsG, nsE)
+		FieldShouldContain("subnamespace", nsF, nsG, ".metadata.namespace", nsF)
+		FieldShouldContain("namespace", "", nsG, ".metadata.labels", danav1.Parent+":"+nsF)
 	})
 })

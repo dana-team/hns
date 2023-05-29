@@ -68,7 +68,7 @@ run: manifests generate fmt vet ## Run a controller from your host.
 	go run ./main.go
 
 .PHONY: docker-build
-docker-build: ## Build docker image with the manager.
+docker-build: fmt vet ## Build docker image with the manager.
 	docker build -t ${IMG} .
 
 .PHONY: docker-push
@@ -115,9 +115,9 @@ undev: manifests kustomize
 	rm config/webhookdev/hostname.env
 
 .PHONY: test-e2e
-test-e2e:
+test-e2e: ginkgo
 	go clean -testcache
-	go test -v -timeout 0 ./test/e2e/...
+	ginkgo -p ./test/e2e/...
 
 ##@ Build Dependencies
 
@@ -150,3 +150,8 @@ $(CONTROLLER_GEN): $(LOCALBIN)
 envtest: $(ENVTEST) ## Download envtest-setup locally if necessary.
 $(ENVTEST): $(LOCALBIN)
 	test -s $(LOCALBIN)/setup-envtest || GOBIN=$(LOCALBIN) go install sigs.k8s.io/controller-runtime/tools/setup-envtest@latest
+
+.PHONY: ginkgo
+ginkgo: $(ginkgo)
+$(ginkgo) : $(LOCALBIN)
+	test -s $(LOCALBIN)/ginkgo || GOBIN=$(LOCALBIN) go install github.com/onsi/ginkgo/v2/ginkgo

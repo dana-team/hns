@@ -86,7 +86,7 @@ rules:
   - patch
   - update
 - apiGroups:
-  - rbac.dana.sns.io
+  - rbac.authorization.k8s.io
   resources:
   - rolebindings
   verbs:
@@ -98,7 +98,7 @@ rules:
   - update
   - watch
 - apiGroups:
-  - rbac.dana.sns.io
+  - rbac.authorization.k8s.io
   resources:
   - rolebindings/status
   verbs:

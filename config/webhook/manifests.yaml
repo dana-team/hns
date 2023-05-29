@@ -90,7 +90,6 @@ webhooks:
     - v1
     operations:
     - DELETE
-    - CREATE
     resources:
     - rolebindings
   sideEffects: NoneOnDryRun

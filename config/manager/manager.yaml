@@ -16,7 +16,7 @@ spec:
   selector:
     matchLabels:
       control-plane: controller-manager
-  replicas: 3
+  replicas: 1
   template:
     metadata:
       labels:
@@ -32,16 +32,8 @@ spec:
         - command:
             - /manager
           env:
-            - name: ELASTIC_SERVER
-              value: lucy-log
-            - name: ELASTIC_PORT
-              value: "9200"
-            - name: ELASTIC_INDEX
-              value: danateam_hns
             - name: MAX_SNS_IN_HIERARCHY
-              value: "100"
-          args:
-            - --enable-leader-election
+              value: "250"
           image: controller:latest
           name: manager
           resources:

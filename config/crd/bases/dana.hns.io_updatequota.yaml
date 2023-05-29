@@ -36,10 +36,12 @@ spec:
             description: UpdatequotaSpec defines the desired state of Updatequota
             properties:
               destns:
+                description: DestNamespace is the name of the Subnamespace to which
+                  resources need to be transferred
                 type: string
               resourcequota:
-                description: 'INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-                  Important: Run "make" to regenerate code after modifying this file'
+                description: ResourceQuotaSpec represents resources that need to be
+                  transferred from one Subnamespace to another
                 properties:
                   hard:
                     additionalProperties:
@@ -102,6 +104,8 @@ spec:
                     type: array
                 type: object
               sourcens:
+                description: SourceNamespace is name of the Subnamespace from which
+                  resources need to be transferred
                 type: string
             required:
             - destns
@@ -112,8 +116,15 @@ spec:
             description: UpdatequotaStatus defines the observed state of Updatequota
             properties:
               phase:
+                description: 'Phase acts like a state machine for the Updatequota.
+                  It is a string and can be one of the following: "Error" - state
+                  for a Updatequota indicating that the operation could not be completed
+                  due to an error "Complete" - state for a Updatequota indicating
+                  that the operation completed successfully'
                 type: string
               reason:
+                description: Reason is a string explaining why an error occurred if
+                  it did; otherwise it’s empty
                 type: string
             type: object
         type: object
