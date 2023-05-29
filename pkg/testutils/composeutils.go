@@ -1,21 +1,26 @@
 package testutils
 
 import (
-	"strconv"
-	"strings"
-
 	danav1 "github.com/dana-team/hns/api/v1"
 	. "github.com/onsi/gomega"
+	"math/rand"
+	"strconv"
+	"strings"
+	"time"
 )
 
 const (
-	namspacePrefix  = "e2e-test-"
-	propagationTime = 5
+	namspacePrefix   = "e2e"
+	randStringLength = 8
+
+	// we use 120 seconds here because some tests run in parallel and there may be heavy load and time may be needed
+	propagationTime   = 120
+	eventuallyTimeout = 120
 )
 
-// GenerateName generates a name for a namespace and subnamespace
-func GenerateE2EName(nm string) string {
-	prefix := namspacePrefix + "subnamespace-"
+// GenerateE2EName generates a name for a namespace and subnamespace
+func GenerateE2EName(nm, testPrefix, randPrefix string) string {
+	prefix := namspacePrefix + "-" + testPrefix + "-" + randPrefix + "-"
 	snsName := prefix + nm
 
 	return snsName
@@ -23,10 +28,24 @@ func GenerateE2EName(nm string) string {
 
 // GenerateE2EUserName generates a name for a namespace and subnamespace
 func GenerateE2EUserName(nm string) string {
-	prefix := namspacePrefix + "user-"
+	prefix := namspacePrefix + "-" + RandStr() + "-user-"
 	snsName := prefix + nm
 
 	return snsName
+}
+
+// RandStr generates a random string
+func RandStr() string {
+	rand.Seed(time.Now().UnixNano())
+
+	var charset = []byte("abcdefghijklmnopqrstuvwxyz0123456789")
+
+	b := make([]byte, randStringLength)
+	for i := range b {
+		// randomly select 1 character from given charset
+		b[i] = charset[rand.Intn(len(charset))]
+	}
+	return string(b)
 }
 
 // GrantTestingUserAdmin gives admin rolebinding to a user on a namespace
@@ -41,11 +60,12 @@ func AnnotateNSSecondaryRoot(ns string) {
 
 // CreateRootNS creates/updates a root name with a given name
 // and with the required labels
-func CreateRootNS(nm string, rqDepth int) {
+func CreateRootNS(nm, randPrefix string, rqDepth int) {
 	rootNS := generateRootNSManifest(nm, strconv.Itoa(rqDepth))
 	MustApplyYAML(rootNS)
-	LabelTestingNs(nm)
 	RunShouldContain(nm, propagationTime, "kubectl get ns", nm)
+	LabelTestingNs(nm, randPrefix)
+
 }
 
 // CreateResourceQuota creates/updates a ResourceQuota object in a given
@@ -58,11 +78,13 @@ func CreateResourceQuota(nm, nsnm string, args ...string) {
 
 // CreateSubnamespace creates/updates the specified Subnamespace in the parent namespace with canned testing
 // labels making it easier to look up and delete later, and with the given resources
-func CreateSubnamespace(nm, nsnm string, isRp bool, args ...string) {
+func CreateSubnamespace(nm, nsnm, randPrefix string, isRp bool, args ...string) {
 	sns := generateSNSManifest(nm, nsnm, strconv.FormatBool(isRp), args...)
 	MustApplyYAML(sns)
 	RunShouldContain(nm, propagationTime, "kubectl get subnamespace -n", nsnm)
-	LabelTestingNs(nm)
+	RunShouldContain(nm, propagationTime, "kubectl get namespace")
+	FieldShouldContain("subnamespace", nsnm, nm, ".metadata.annotations", danav1.CrqPointer)
+	LabelTestingNs(nm, randPrefix)
 }
 
 // ShouldNotCreateSubnamespace should not be able to create the specified Subnamespace
@@ -100,7 +122,6 @@ func CreateMigrationHierarchy(currentns, tons string) string {
 	mh := generateMigrartionHierarchyManifest(name, currentns, tons)
 	MustApplyYAML(mh)
 	RunShouldContain(name, propagationTime, "kubectl get migrationhierarchy")
-	labelTestingMigrationHierarchies(name)
 	return name
 }
 
@@ -126,19 +147,19 @@ func ShouldNotCreateUpdateQuota(nm, nsnm, dsnm, user string, args ...string) {
 }
 
 // CreateUser creates the specified User
-func CreateUser(u string) {
+func CreateUser(u, randPrefix string) {
 	user := generateUserManifest(u)
 	MustApplyYAML(user)
 	RunShouldContain(u, propagationTime, "kubectl get users")
-	labelTestingUsers(u)
+	labelTestingUsers(u, randPrefix)
 }
 
 // CreatePod creates a pod in the specified namespace with the required cpu and memory(Gi)
-func CreatePod(ns, name, cpu, memory string) {
+func CreatePod(ns, name, randPrefix, cpu, memory string) {
 	pod := generatePodManifest(ns, name, cpu, memory)
 	MustApplyYAML(pod)
 	RunShouldContain(name, propagationTime, "kubectl get pod -n", ns)
-	LabelTestingNs(ns)
+	LabelTestingNs(ns, randPrefix)
 }
 
 // generateRootNSManifest generates a namespace manifest with the
@@ -150,10 +171,10 @@ kind: Namespace
 metadata:
   name: ` + nm + `
   labels:
-    ` + danav1.Aggragator + nm + `: ` + nm + `
     ` + danav1.Hns + `: "true"` + `
   annotations:
-    openshift.io/display-name: ` + nm + `
+    ` + danav1.DisplayName + `: ` + nm + `
+    ` + danav1.OpenShiftDisplayName + `: ` + nm + `
     ` + danav1.Role + `: ` + danav1.Root + `
     ` + danav1.RootCrqSelector + `: ` + nm + `
     ` + danav1.Depth + `: "0"` + `

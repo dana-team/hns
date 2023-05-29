@@ -8,28 +8,32 @@ import (
 )
 
 var _ = Describe("ResourcePool", func() {
-	nsRoot := GenerateE2EName("root")
+	testPrefix := "rp-test"
+	var randPrefix string
+	var nsRoot string
 
 	BeforeEach(func() {
-		CleanupTestNamespaces()
+		randPrefix = RandStr()
 
-		//set up root namespace
-		CreateRootNS(nsRoot, rqDepth)
+		CleanupTestNamespaces(randPrefix)
+
+		nsRoot = GenerateE2EName("root", testPrefix, randPrefix)
+		CreateRootNS(nsRoot, randPrefix, rqDepth)
 		CreateResourceQuota(nsRoot, nsRoot, storage, "100Gi", cpu, "100", memory, "100Gi", pods, "100", gpu, "100")
 	})
 
 	AfterEach(func() {
-		CleanupTestNamespaces()
+		CleanupTestNamespaces(randPrefix)
 	})
 
 	It("should create and delete a resourcepool under a subnamespace", func() {
-		nsA := GenerateE2EName("a")
-		nsB := GenerateE2EName("b")
-		nsC := GenerateE2EName("c")
+		nsA := GenerateE2EName("a", testPrefix, randPrefix)
+		nsB := GenerateE2EName("b", testPrefix, randPrefix)
+		nsC := GenerateE2EName("c", testPrefix, randPrefix)
 
-		CreateSubnamespace(nsA, nsRoot, false, storage, "50Gi", cpu, "50", memory, "50Gi", pods, "50", gpu, "50")
-		CreateSubnamespace(nsB, nsA, false, storage, "25Gi", cpu, "25", memory, "25Gi", pods, "25", gpu, "25")
-		CreateSubnamespace(nsC, nsB, true, storage, "10Gi", cpu, "10", memory, "10Gi", pods, "10", gpu, "10")
+		CreateSubnamespace(nsA, nsRoot, randPrefix, false, storage, "50Gi", cpu, "50", memory, "50Gi", pods, "50", gpu, "50")
+		CreateSubnamespace(nsB, nsA, randPrefix, false, storage, "25Gi", cpu, "25", memory, "25Gi", pods, "25", gpu, "25")
+		CreateSubnamespace(nsC, nsB, randPrefix, true, storage, "10Gi", cpu, "10", memory, "10Gi", pods, "10", gpu, "10")
 
 		// verify
 		FieldShouldContain("namespace", "", nsC, ".metadata.labels", danav1.ResourcePool+":true")
@@ -43,15 +47,15 @@ var _ = Describe("ResourcePool", func() {
 	})
 
 	It("should create a resourcepool under a resourcepool and update the labels accordingly", func() {
-		nsA := GenerateE2EName("a")
-		nsB := GenerateE2EName("b")
-		nsC := GenerateE2EName("c")
-		nsD := GenerateE2EName("d")
+		nsA := GenerateE2EName("a", testPrefix, randPrefix)
+		nsB := GenerateE2EName("b", testPrefix, randPrefix)
+		nsC := GenerateE2EName("c", testPrefix, randPrefix)
+		nsD := GenerateE2EName("d", testPrefix, randPrefix)
 
-		CreateSubnamespace(nsA, nsRoot, false, storage, "50Gi", cpu, "50", memory, "50Gi", pods, "50", gpu, "50")
-		CreateSubnamespace(nsB, nsA, false, storage, "25Gi", cpu, "25", memory, "25Gi", pods, "25", gpu, "25")
-		CreateSubnamespace(nsC, nsB, true, storage, "10Gi", cpu, "10", memory, "10Gi", pods, "10", gpu, "10")
-		CreateSubnamespace(nsD, nsC, true)
+		CreateSubnamespace(nsA, nsRoot, randPrefix, false, storage, "50Gi", cpu, "50", memory, "50Gi", pods, "50", gpu, "50")
+		CreateSubnamespace(nsB, nsA, randPrefix, false, storage, "25Gi", cpu, "25", memory, "25Gi", pods, "25", gpu, "25")
+		CreateSubnamespace(nsC, nsB, randPrefix, true, storage, "10Gi", cpu, "10", memory, "10Gi", pods, "10", gpu, "10")
+		CreateSubnamespace(nsD, nsC, randPrefix, true)
 
 		// verify
 		FieldShouldContain("subnamespace", nsC, nsD, ".metadata.labels", danav1.ResourcePool+":true")
@@ -61,50 +65,50 @@ var _ = Describe("ResourcePool", func() {
 	})
 
 	It("should update the resources of an upper resourcepool", func() {
-		nsA := GenerateE2EName("a")
-		nsB := GenerateE2EName("b")
-		nsC := GenerateE2EName("c")
-		nsD := GenerateE2EName("d")
+		nsA := GenerateE2EName("a", testPrefix, randPrefix)
+		nsB := GenerateE2EName("b", testPrefix, randPrefix)
+		nsC := GenerateE2EName("c", testPrefix, randPrefix)
+		nsD := GenerateE2EName("d", testPrefix, randPrefix)
 
-		CreateSubnamespace(nsA, nsRoot, false, storage, "50Gi", cpu, "50", memory, "50Gi", pods, "50", gpu, "50")
-		CreateSubnamespace(nsB, nsA, false, storage, "25Gi", cpu, "25", memory, "25Gi", pods, "25", gpu, "25")
-		CreateSubnamespace(nsC, nsB, true, storage, "10Gi", cpu, "10", memory, "10Gi", pods, "10", gpu, "10")
-		CreateSubnamespace(nsD, nsC, true)
+		CreateSubnamespace(nsA, nsRoot, randPrefix, false, storage, "50Gi", cpu, "50", memory, "50Gi", pods, "50", gpu, "50")
+		CreateSubnamespace(nsB, nsA, randPrefix, false, storage, "25Gi", cpu, "25", memory, "25Gi", pods, "25", gpu, "25")
+		CreateSubnamespace(nsC, nsB, randPrefix, true, storage, "10Gi", cpu, "10", memory, "10Gi", pods, "10", gpu, "10")
+		CreateSubnamespace(nsD, nsC, randPrefix, true)
 
 		// verify before update
 		FieldShouldContain("subnamespace", nsB, nsC, ".status.total.free.pods", "10")
 
 		// update
-		CreateSubnamespace(nsC, nsB, true, storage, "10Gi", cpu, "10", memory, "10Gi", pods, "20", gpu, "10")
+		CreateSubnamespace(nsC, nsB, randPrefix, true, storage, "10Gi", cpu, "10", memory, "10Gi", pods, "20", gpu, "10")
 
 		// verify after update
 		FieldShouldContain("subnamespace", nsB, nsC, ".status.total.free.pods", "20")
 	})
 
 	It("should delete a resourcepool if it's a leaf", func() {
-		nsA := GenerateE2EName("a")
-		nsB := GenerateE2EName("b")
-		nsC := GenerateE2EName("c")
-		nsD := GenerateE2EName("d")
+		nsA := GenerateE2EName("a", testPrefix, randPrefix)
+		nsB := GenerateE2EName("b", testPrefix, randPrefix)
+		nsC := GenerateE2EName("c", testPrefix, randPrefix)
+		nsD := GenerateE2EName("d", testPrefix, randPrefix)
 
-		CreateSubnamespace(nsA, nsRoot, false, storage, "50Gi", cpu, "50", memory, "50Gi", pods, "50", gpu, "50")
-		CreateSubnamespace(nsB, nsA, false, storage, "25Gi", cpu, "25", memory, "25Gi", pods, "25", gpu, "25")
-		CreateSubnamespace(nsC, nsB, true, storage, "10Gi", cpu, "10", memory, "10Gi", pods, "10", gpu, "10")
-		CreateSubnamespace(nsD, nsC, true)
+		CreateSubnamespace(nsA, nsRoot, randPrefix, false, storage, "50Gi", cpu, "50", memory, "50Gi", pods, "50", gpu, "50")
+		CreateSubnamespace(nsB, nsA, randPrefix, false, storage, "25Gi", cpu, "25", memory, "25Gi", pods, "25", gpu, "25")
+		CreateSubnamespace(nsC, nsB, randPrefix, true, storage, "10Gi", cpu, "10", memory, "10Gi", pods, "10", gpu, "10")
+		CreateSubnamespace(nsD, nsC, randPrefix, true)
 
 		MustRun("kubectl delete subnamespace -n", nsC, nsD)
 	})
 
 	It("should create a clusterresourcequota for a resourcepool regardless of its depth only if it's upper", func() {
-		nsA := GenerateE2EName("a")
-		nsB := GenerateE2EName("b")
-		nsC := GenerateE2EName("c")
-		nsD := GenerateE2EName("d")
+		nsA := GenerateE2EName("a", testPrefix, randPrefix)
+		nsB := GenerateE2EName("b", testPrefix, randPrefix)
+		nsC := GenerateE2EName("c", testPrefix, randPrefix)
+		nsD := GenerateE2EName("d", testPrefix, randPrefix)
 
-		CreateSubnamespace(nsA, nsRoot, false, storage, "50Gi", cpu, "50", memory, "50Gi", pods, "50", gpu, "50")
-		CreateSubnamespace(nsB, nsA, true, storage, "25Gi", cpu, "25", memory, "25Gi", pods, "25", gpu, "25")
-		CreateSubnamespace(nsC, nsB, true)
-		CreateSubnamespace(nsD, nsC, true)
+		CreateSubnamespace(nsA, nsRoot, randPrefix, false, storage, "50Gi", cpu, "50", memory, "50Gi", pods, "50", gpu, "50")
+		CreateSubnamespace(nsB, nsA, randPrefix, true, storage, "25Gi", cpu, "25", memory, "25Gi", pods, "25", gpu, "25")
+		CreateSubnamespace(nsC, nsB, randPrefix, true)
+		CreateSubnamespace(nsD, nsC, randPrefix, true)
 
 		RunShouldNotContain(nsA, propagationTime, "kubectl get clusterresourcequota")
 		FieldShouldContain("clusterresourcequota", "", nsB, ".metadata.name", nsB)
@@ -113,27 +117,27 @@ var _ = Describe("ResourcePool", func() {
 	})
 
 	It("should turn all descendants of a subnamespace to resourcepool when the sns turns to resourcepool", func() {
-		nsA := GenerateE2EName("a")
-		nsB := GenerateE2EName("b")
-		nsC := GenerateE2EName("c")
-		nsD := GenerateE2EName("d")
-		nsE := GenerateE2EName("e")
-		nsF := GenerateE2EName("f")
-		nsG := GenerateE2EName("g")
-		nsH := GenerateE2EName("h")
-		nsI := GenerateE2EName("i")
-		nsJ := GenerateE2EName("i")
+		nsA := GenerateE2EName("a", testPrefix, randPrefix)
+		nsB := GenerateE2EName("b", testPrefix, randPrefix)
+		nsC := GenerateE2EName("c", testPrefix, randPrefix)
+		nsD := GenerateE2EName("d", testPrefix, randPrefix)
+		nsE := GenerateE2EName("e", testPrefix, randPrefix)
+		nsF := GenerateE2EName("f", testPrefix, randPrefix)
+		nsG := GenerateE2EName("g", testPrefix, randPrefix)
+		nsH := GenerateE2EName("h", testPrefix, randPrefix)
+		nsI := GenerateE2EName("i", testPrefix, randPrefix)
+		nsJ := GenerateE2EName("i", testPrefix, randPrefix)
 
-		CreateSubnamespace(nsA, nsRoot, false, storage, "50Gi", cpu, "50", memory, "50Gi", pods, "50", gpu, "50")
-		CreateSubnamespace(nsB, nsA, false, storage, "25Gi", cpu, "25", memory, "25Gi", pods, "25", gpu, "25")
-		CreateSubnamespace(nsC, nsB, false, storage, "10Gi", cpu, "10", memory, "10Gi", pods, "10", gpu, "10")
-		CreateSubnamespace(nsD, nsC, false, storage, "10Gi", cpu, "10", memory, "10Gi", pods, "10", gpu, "10")
-		CreateSubnamespace(nsE, nsD, false, storage, "5Gi", cpu, "5", memory, "5Gi", pods, "5", gpu, "5")
-		CreateSubnamespace(nsF, nsD, false, storage, "5Gi", cpu, "5", memory, "5Gi", pods, "5", gpu, "5")
-		CreateSubnamespace(nsG, nsE, false, storage, "2Gi", cpu, "2", memory, "2Gi", pods, "2", gpu, "2")
-		CreateSubnamespace(nsH, nsE, false, storage, "2Gi", cpu, "2", memory, "2Gi", pods, "2", gpu, "2")
-		CreateSubnamespace(nsI, nsF, false, storage, "2Gi", cpu, "2", memory, "2Gi", pods, "2", gpu, "2")
-		CreateSubnamespace(nsJ, nsF, false, storage, "2Gi", cpu, "2", memory, "2Gi", pods, "2", gpu, "2")
+		CreateSubnamespace(nsA, nsRoot, randPrefix, false, storage, "50Gi", cpu, "50", memory, "50Gi", pods, "50", gpu, "50")
+		CreateSubnamespace(nsB, nsA, randPrefix, false, storage, "25Gi", cpu, "25", memory, "25Gi", pods, "25", gpu, "25")
+		CreateSubnamespace(nsC, nsB, randPrefix, false, storage, "10Gi", cpu, "10", memory, "10Gi", pods, "10", gpu, "10")
+		CreateSubnamespace(nsD, nsC, randPrefix, false, storage, "10Gi", cpu, "10", memory, "10Gi", pods, "10", gpu, "10")
+		CreateSubnamespace(nsE, nsD, randPrefix, false, storage, "5Gi", cpu, "5", memory, "5Gi", pods, "5", gpu, "5")
+		CreateSubnamespace(nsF, nsD, randPrefix, false, storage, "5Gi", cpu, "5", memory, "5Gi", pods, "5", gpu, "5")
+		CreateSubnamespace(nsG, nsE, randPrefix, false, storage, "2Gi", cpu, "2", memory, "2Gi", pods, "2", gpu, "2")
+		CreateSubnamespace(nsH, nsE, randPrefix, false, storage, "2Gi", cpu, "2", memory, "2Gi", pods, "2", gpu, "2")
+		CreateSubnamespace(nsI, nsF, randPrefix, false, storage, "2Gi", cpu, "2", memory, "2Gi", pods, "2", gpu, "2")
+		CreateSubnamespace(nsJ, nsF, randPrefix, false, storage, "2Gi", cpu, "2", memory, "2Gi", pods, "2", gpu, "2")
 
 		// verify before change
 		FieldShouldContain("subnamespace", nsC, nsD, ".metadata.labels", danav1.ResourcePool+":false")
@@ -153,7 +157,7 @@ var _ = Describe("ResourcePool", func() {
 		FieldShouldContain("clusterresourcequota", "", nsJ, ".metadata.name", nsJ)
 
 		// turn nsD to ResourcePool
-		CreateSubnamespace(nsD, nsC, true, storage, "10Gi", cpu, "10", memory, "10Gi", pods, "10", gpu, "10")
+		CreateSubnamespace(nsD, nsC, randPrefix, true, storage, "10Gi", cpu, "10", memory, "10Gi", pods, "10", gpu, "10")
 
 		// verify labels and annotations after change
 		FieldShouldContain("subnamespace", nsC, nsD, ".metadata.labels", danav1.ResourcePool+":true")
@@ -194,26 +198,26 @@ var _ = Describe("ResourcePool", func() {
 	})
 
 	It("should turn only the upper resourcepool into a subnamespace when converting", func() {
-		nsA := GenerateE2EName("a")
-		nsB := GenerateE2EName("b")
-		nsC := GenerateE2EName("c")
-		nsD := GenerateE2EName("d")
-		nsE := GenerateE2EName("e")
-		nsF := GenerateE2EName("f")
+		nsA := GenerateE2EName("a", testPrefix, randPrefix)
+		nsB := GenerateE2EName("b", testPrefix, randPrefix)
+		nsC := GenerateE2EName("c", testPrefix, randPrefix)
+		nsD := GenerateE2EName("d", testPrefix, randPrefix)
+		nsE := GenerateE2EName("e", testPrefix, randPrefix)
+		nsF := GenerateE2EName("f", testPrefix, randPrefix)
 
 		// create hierarchy
-		CreateSubnamespace(nsA, nsRoot, false, storage, "50Gi", cpu, "50", memory, "50Gi", pods, "50", gpu, "50")
-		CreateSubnamespace(nsB, nsA, false, storage, "25Gi", cpu, "25", memory, "25Gi", pods, "25", gpu, "25")
-		CreateSubnamespace(nsC, nsB, true, storage, "10Gi", cpu, "10", memory, "10Gi", pods, "10", gpu, "10")
-		CreateSubnamespace(nsD, nsC, true)
-		CreateSubnamespace(nsE, nsC, true)
-		CreateSubnamespace(nsF, nsC, true)
+		CreateSubnamespace(nsA, nsRoot, randPrefix, false, storage, "50Gi", cpu, "50", memory, "50Gi", pods, "50", gpu, "50")
+		CreateSubnamespace(nsB, nsA, randPrefix, false, storage, "25Gi", cpu, "25", memory, "25Gi", pods, "25", gpu, "25")
+		CreateSubnamespace(nsC, nsB, randPrefix, true, storage, "10Gi", cpu, "10", memory, "10Gi", pods, "10", gpu, "10")
+		CreateSubnamespace(nsD, nsC, randPrefix, true)
+		CreateSubnamespace(nsE, nsC, randPrefix, true)
+		CreateSubnamespace(nsF, nsC, randPrefix, true)
 
 		// create pods in leafs
 		podName := "example"
-		CreatePod(nsD, podName, "1", "1")
-		CreatePod(nsE, podName, "1", "1")
-		CreatePod(nsF, podName, "1", "1")
+		CreatePod(nsD, podName, randPrefix, "1", "1")
+		CreatePod(nsE, podName, randPrefix, "1", "1")
+		CreatePod(nsF, podName, randPrefix, "1", "1")
 
 		// make sure the pods are up
 		RunShouldContain(podName, propagationTime, "kubectl get pods -n"+nsD)
@@ -221,7 +225,7 @@ var _ = Describe("ResourcePool", func() {
 		RunShouldContain(podName, propagationTime, "kubectl get pods -n"+nsF)
 
 		// convert upper resource pool to subnamespace
-		CreateSubnamespace(nsC, nsB, false, storage, "10Gi", cpu, "10", memory, "10Gi", pods, "10", gpu, "10")
+		CreateSubnamespace(nsC, nsB, randPrefix, false, storage, "10Gi", cpu, "10", memory, "10Gi", pods, "10", gpu, "10")
 
 		// make sure the subnamespace was converted and its children weren't
 		FieldShouldContain("subnamespace", nsB, nsC, ".metadata.labels", danav1.ResourcePool+":false")
@@ -245,45 +249,45 @@ var _ = Describe("ResourcePool", func() {
 	})
 
 	It("should sum the children workloads correctly", func() {
-		nsA := GenerateE2EName("a")
-		nsB := GenerateE2EName("b")
-		nsC := GenerateE2EName("c")
-		nsD := GenerateE2EName("d")
-		nsE := GenerateE2EName("e")
-		nsF := GenerateE2EName("f")
-		nsG := GenerateE2EName("g")
-		nsH := GenerateE2EName("h")
-		nsI := GenerateE2EName("i")
-		nsJ := GenerateE2EName("j")
-		nsK := GenerateE2EName("k")
+		nsA := GenerateE2EName("a", testPrefix, randPrefix)
+		nsB := GenerateE2EName("b", testPrefix, randPrefix)
+		nsC := GenerateE2EName("c", testPrefix, randPrefix)
+		nsD := GenerateE2EName("d", testPrefix, randPrefix)
+		nsE := GenerateE2EName("e", testPrefix, randPrefix)
+		nsF := GenerateE2EName("f", testPrefix, randPrefix)
+		nsG := GenerateE2EName("g", testPrefix, randPrefix)
+		nsH := GenerateE2EName("h", testPrefix, randPrefix)
+		nsI := GenerateE2EName("i", testPrefix, randPrefix)
+		nsJ := GenerateE2EName("j", testPrefix, randPrefix)
+		nsK := GenerateE2EName("k", testPrefix, randPrefix)
 
 		// create hierarchy
-		CreateSubnamespace(nsA, nsRoot, false, storage, "100Gi", cpu, "100", memory, "100Gi", pods, "100", gpu, "100")
-		CreateSubnamespace(nsB, nsA, false, storage, "50Gi", cpu, "50", memory, "50Gi", pods, "50", gpu, "50")
-		CreateSubnamespace(nsC, nsB, true, storage, "25Gi", cpu, "25", memory, "25Gi", pods, "25", gpu, "25")
-		CreateSubnamespace(nsD, nsC, true)
-		CreateSubnamespace(nsE, nsC, true)
-		CreateSubnamespace(nsF, nsD, true)
-		CreateSubnamespace(nsG, nsD, true)
-		CreateSubnamespace(nsH, nsD, true)
-		CreateSubnamespace(nsI, nsE, true)
-		CreateSubnamespace(nsJ, nsE, true)
-		CreateSubnamespace(nsK, nsE, true)
+		CreateSubnamespace(nsA, nsRoot, randPrefix, false, storage, "100Gi", cpu, "100", memory, "100Gi", pods, "100", gpu, "100")
+		CreateSubnamespace(nsB, nsA, randPrefix, false, storage, "50Gi", cpu, "50", memory, "50Gi", pods, "50", gpu, "50")
+		CreateSubnamespace(nsC, nsB, randPrefix, true, storage, "25Gi", cpu, "25", memory, "25Gi", pods, "25", gpu, "25")
+		CreateSubnamespace(nsD, nsC, randPrefix, true)
+		CreateSubnamespace(nsE, nsC, randPrefix, true)
+		CreateSubnamespace(nsF, nsD, randPrefix, true)
+		CreateSubnamespace(nsG, nsD, randPrefix, true)
+		CreateSubnamespace(nsH, nsD, randPrefix, true)
+		CreateSubnamespace(nsI, nsE, randPrefix, true)
+		CreateSubnamespace(nsJ, nsE, randPrefix, true)
+		CreateSubnamespace(nsK, nsE, randPrefix, true)
 
 		// create pods in leafs
 		podName := "example"
-		CreatePod(nsF, podName, "1", "1")
-		CreatePod(nsF, podName+"2", "1", "1")
-		CreatePod(nsF, podName+"3", "1", "1")
-		CreatePod(nsG, podName, "1", "1")
-		CreatePod(nsG, podName+"2", "1", "1")
-		CreatePod(nsH, podName, "1", "1")
-		CreatePod(nsI, podName, "1", "1")
-		CreatePod(nsI, podName+"2", "1", "1")
-		CreatePod(nsI, podName+"3", "1", "1")
-		CreatePod(nsJ, podName, "1", "1")
-		CreatePod(nsJ, podName+"2", "1", "1")
-		CreatePod(nsK, podName, "1", "1")
+		CreatePod(nsF, podName, randPrefix, "1", "1")
+		CreatePod(nsF, podName+"2", randPrefix, "1", "1")
+		CreatePod(nsF, podName+"3", randPrefix, "1", "1")
+		CreatePod(nsG, podName, randPrefix, "1", "1")
+		CreatePod(nsG, podName+"2", randPrefix, "1", "1")
+		CreatePod(nsH, podName, randPrefix, "1", "1")
+		CreatePod(nsI, podName, randPrefix, "1", "1")
+		CreatePod(nsI, podName+"2", randPrefix, "1", "1")
+		CreatePod(nsI, podName+"3", randPrefix, "1", "1")
+		CreatePod(nsJ, podName, randPrefix, "1", "1")
+		CreatePod(nsJ, podName+"2", randPrefix, "1", "1")
+		CreatePod(nsK, podName, randPrefix, "1", "1")
 
 		// make sure the pods are up
 		RunShouldContain(podName, propagationTime, "kubectl get pods -n"+nsF)
@@ -300,7 +304,7 @@ var _ = Describe("ResourcePool", func() {
 		RunShouldContain(podName, propagationTime, "kubectl get pods -n"+nsK)
 
 		// convert upper resource pool to subnamespace
-		CreateSubnamespace(nsC, nsB, false, storage, "25Gi", cpu, "25", memory, "25Gi", pods, "25", gpu, "25")
+		CreateSubnamespace(nsC, nsB, randPrefix, false, storage, "25Gi", cpu, "25", memory, "25Gi", pods, "25", gpu, "25")
 
 		// make sure the subnamespaces was converted and its children weren't
 		FieldShouldContain("subnamespace", nsB, nsC, ".metadata.labels", danav1.ResourcePool+":false")
@@ -327,45 +331,45 @@ var _ = Describe("ResourcePool", func() {
 	})
 
 	It("should delete the crq and update annotations for upper resource pools when converting their father", func() {
-		nsA := GenerateE2EName("a")
-		nsB := GenerateE2EName("b")
-		nsC := GenerateE2EName("c")
-		nsD := GenerateE2EName("d")
-		nsE := GenerateE2EName("e")
-		nsF := GenerateE2EName("f")
-		nsG := GenerateE2EName("g")
-		nsH := GenerateE2EName("h")
-		nsI := GenerateE2EName("i")
-		nsJ := GenerateE2EName("j")
-		nsK := GenerateE2EName("k")
+		nsA := GenerateE2EName("a", testPrefix, randPrefix)
+		nsB := GenerateE2EName("b", testPrefix, randPrefix)
+		nsC := GenerateE2EName("c", testPrefix, randPrefix)
+		nsD := GenerateE2EName("d", testPrefix, randPrefix)
+		nsE := GenerateE2EName("e", testPrefix, randPrefix)
+		nsF := GenerateE2EName("f", testPrefix, randPrefix)
+		nsG := GenerateE2EName("g", testPrefix, randPrefix)
+		nsH := GenerateE2EName("h", testPrefix, randPrefix)
+		nsI := GenerateE2EName("i", testPrefix, randPrefix)
+		nsJ := GenerateE2EName("j", testPrefix, randPrefix)
+		nsK := GenerateE2EName("k", testPrefix, randPrefix)
 
 		// create hierarchy
-		CreateSubnamespace(nsA, nsRoot, false, storage, "100Gi", cpu, "100", memory, "100Gi", pods, "100", gpu, "100")
-		CreateSubnamespace(nsB, nsA, false, storage, "50Gi", cpu, "50", memory, "50Gi", pods, "50", gpu, "50")
-		CreateSubnamespace(nsC, nsB, true, storage, "25Gi", cpu, "25", memory, "25Gi", pods, "25", gpu, "25")
-		CreateSubnamespace(nsD, nsC, true)
-		CreateSubnamespace(nsE, nsC, true)
-		CreateSubnamespace(nsF, nsD, true)
-		CreateSubnamespace(nsG, nsD, true)
-		CreateSubnamespace(nsH, nsD, true)
-		CreateSubnamespace(nsI, nsE, true)
-		CreateSubnamespace(nsJ, nsE, true)
-		CreateSubnamespace(nsK, nsE, true)
+		CreateSubnamespace(nsA, nsRoot, randPrefix, false, storage, "100Gi", cpu, "100", memory, "100Gi", pods, "100", gpu, "100")
+		CreateSubnamespace(nsB, nsA, randPrefix, false, storage, "50Gi", cpu, "50", memory, "50Gi", pods, "50", gpu, "50")
+		CreateSubnamespace(nsC, nsB, randPrefix, true, storage, "25Gi", cpu, "25", memory, "25Gi", pods, "25", gpu, "25")
+		CreateSubnamespace(nsD, nsC, randPrefix, true)
+		CreateSubnamespace(nsE, nsC, randPrefix, true)
+		CreateSubnamespace(nsF, nsD, randPrefix, true)
+		CreateSubnamespace(nsG, nsD, randPrefix, true)
+		CreateSubnamespace(nsH, nsD, randPrefix, true)
+		CreateSubnamespace(nsI, nsE, randPrefix, true)
+		CreateSubnamespace(nsJ, nsE, randPrefix, true)
+		CreateSubnamespace(nsK, nsE, randPrefix, true)
 
 		// create pods in leafs
 		podName := "example"
-		CreatePod(nsF, podName, "1", "1")
-		CreatePod(nsF, podName+"2", "1", "1")
-		CreatePod(nsF, podName+"3", "1", "1")
-		CreatePod(nsG, podName, "1", "1")
-		CreatePod(nsG, podName+"2", "1", "1")
-		CreatePod(nsH, podName, "1", "1")
-		CreatePod(nsI, podName, "1", "1")
-		CreatePod(nsI, podName+"2", "1", "1")
-		CreatePod(nsI, podName+"3", "1", "1")
-		CreatePod(nsJ, podName, "1", "1")
-		CreatePod(nsJ, podName+"2", "1", "1")
-		CreatePod(nsK, podName, "1", "1")
+		CreatePod(nsF, podName, randPrefix, "1", "1")
+		CreatePod(nsF, podName+"2", randPrefix, "1", "1")
+		CreatePod(nsF, podName+"3", randPrefix, "1", "1")
+		CreatePod(nsG, podName, randPrefix, "1", "1")
+		CreatePod(nsG, podName+"2", randPrefix, "1", "1")
+		CreatePod(nsH, podName, randPrefix, "1", "1")
+		CreatePod(nsI, podName, randPrefix, "1", "1")
+		CreatePod(nsI, podName+"2", randPrefix, "1", "1")
+		CreatePod(nsI, podName+"3", randPrefix, "1", "1")
+		CreatePod(nsJ, podName, randPrefix, "1", "1")
+		CreatePod(nsJ, podName+"2", randPrefix, "1", "1")
+		CreatePod(nsK, podName, randPrefix, "1", "1")
 
 		// make sure the pods are up
 		RunShouldContain(podName, propagationTime, "kubectl get pods -n"+nsF)
@@ -382,10 +386,10 @@ var _ = Describe("ResourcePool", func() {
 		RunShouldContain(podName, propagationTime, "kubectl get pods -n"+nsK)
 
 		// convert upper resource pool to subnamespace
-		CreateSubnamespace(nsC, nsB, false, storage, "25Gi", cpu, "25", memory, "25Gi", pods, "25", gpu, "25")
+		CreateSubnamespace(nsC, nsB, randPrefix, false, storage, "25Gi", cpu, "25", memory, "25Gi", pods, "25", gpu, "25")
 
 		// convert it back
-		CreateSubnamespace(nsC, nsB, true, storage, "25Gi", cpu, "25", memory, "25Gi", pods, "25", gpu, "25")
+		CreateSubnamespace(nsC, nsB, randPrefix, true, storage, "25Gi", cpu, "25", memory, "25Gi", pods, "25", gpu, "25")
 
 		// make sure the upper resourcepool and its sons have the correct annotations
 		FieldShouldContain("subnamespace", nsB, nsC, ".metadata.annotations", danav1.IsUpperRp+":"+danav1.True)
@@ -400,26 +404,26 @@ var _ = Describe("ResourcePool", func() {
 	})
 
 	It("should not create a subnamespace under a resourcepool", func() {
-		nsA := GenerateE2EName("a")
-		nsB := GenerateE2EName("b")
-		nsC := GenerateE2EName("c")
-		nsD := GenerateE2EName("d")
+		nsA := GenerateE2EName("a", testPrefix, randPrefix)
+		nsB := GenerateE2EName("b", testPrefix, randPrefix)
+		nsC := GenerateE2EName("c", testPrefix, randPrefix)
+		nsD := GenerateE2EName("d", testPrefix, randPrefix)
 
-		CreateSubnamespace(nsA, nsRoot, false, storage, "50Gi", cpu, "50", memory, "50Gi", pods, "50", gpu, "50")
-		CreateSubnamespace(nsB, nsA, true, storage, "25Gi", cpu, "25", memory, "25Gi", pods, "25", gpu, "25")
-		CreateSubnamespace(nsC, nsB, true)
+		CreateSubnamespace(nsA, nsRoot, randPrefix, false, storage, "50Gi", cpu, "50", memory, "50Gi", pods, "50", gpu, "50")
+		CreateSubnamespace(nsB, nsA, randPrefix, true, storage, "25Gi", cpu, "25", memory, "25Gi", pods, "25", gpu, "25")
+		CreateSubnamespace(nsC, nsB, randPrefix, true)
 
 		ShouldNotCreateSubnamespace(nsD, nsB, false, storage, "10Gi", cpu, "10", memory, "10Gi", pods, "10", gpu, "10")
 	})
 
 	It("should show an upper resource pool children", func() {
-		nsA := GenerateE2EName("a")
-		nsB := GenerateE2EName("b")
-		nsC := GenerateE2EName("c")
+		nsA := GenerateE2EName("a", testPrefix, randPrefix)
+		nsB := GenerateE2EName("b", testPrefix, randPrefix)
+		nsC := GenerateE2EName("c", testPrefix, randPrefix)
 
-		CreateSubnamespace(nsA, nsRoot, false, storage, "50Gi", cpu, "50", memory, "50Gi", pods, "50", gpu, "50")
-		CreateSubnamespace(nsB, nsA, true, storage, "25Gi", cpu, "25", memory, "25Gi", pods, "25", gpu, "25")
-		CreateSubnamespace(nsC, nsB, true)
+		CreateSubnamespace(nsA, nsRoot, randPrefix, false, storage, "50Gi", cpu, "50", memory, "50Gi", pods, "50", gpu, "50")
+		CreateSubnamespace(nsB, nsA, randPrefix, true, storage, "25Gi", cpu, "25", memory, "25Gi", pods, "25", gpu, "25")
+		CreateSubnamespace(nsC, nsB, randPrefix, true)
 
 		ComplexFieldShouldContain("subnamespace", nsA, nsB, "'{{range.status.namespaces}}{{.namespace}}{{\"\\n\"}}{{end}}'", nsC)
 	})

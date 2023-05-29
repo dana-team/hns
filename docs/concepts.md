@@ -34,7 +34,6 @@ apiVersion: v1
 metadata:
   name: <root namespace name>
   labels:
-    dana-hns.io/aggragtor-<root namespace name>: 'true'
     dana.hns.io/subnamespace: 'true'
   annotations:
     dana.hns.io/role: root
@@ -178,14 +177,10 @@ metadata:
   name: brazil
   labels:
     dana.hns.io/role: leaf
-    dana.hns.io/aggragator-brazil: 'true'
     dana.hns.io/subnamespace: 'true'
     kubernetes.io/metadata.name: brazil
     dana.hns.io/parent: south-america
     dana.hns.io/resourcepool: 'false'
-    dana.hns.io/aggragator-america: 'true'
-    dana.hns.io/aggragator-south-america: 'true'
-    dana.hns.io/aggragator-world: 'true'
   annotations:
     dana.hns.io/role: leaf
     openshift.io/display-name: fack/world/america/south-america/brazil
@@ -231,13 +226,14 @@ Labels and Annotations are added by `HNS` to both the `subnamespace` and the `na
 | `dana.hns.io/subnamespace`     | If `true` it indicates that this namespace is managed by `HNS` |
 
 ## Annotations
-| Name                           | Explanation     |
-| ---                            | ---             |
-| `dana.hns.io/role`             | Can be one of `root` (to indicate a root namespace), `none` (to indicate the `Subnamespace` this namespace is bound to has children), and `leaf` (to indicate the `Subnamespace` this namespace is bound to has no children).
-| `openshift.io/display-name`    | The hierarchial display-name of the namespace: `X/Y/Z` |
-| `dana.hns.io/crq-selector-<X>` | The selector of a `ClusterResourceQuota` this namespace is managed by. There may be several annotations like this, possibly as many as the `depth` of the namespace  |
-| `dana.hns.io/depth`            | The distance of the `namespace` from the root namespace, which is of depth 0 |
-| `dana.hns.io/sns-pointer`      | The name of the `Subnamespace` this namespace is bound to |
+| Name                            | Explanation                                                                                                                                                                                                                   |
+|---------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `dana.hns.io/role`              | Can be one of `root` (to indicate a root namespace), `none` (to indicate the `Subnamespace` this namespace is bound to has children), and `leaf` (to indicate the `Subnamespace` this namespace is bound to has no children). 
+| `openshift.io/display-name`     | The hierarchial display-name of the namespace: `X/Y/Z`                                                                                                                                                                        |
+| `dana.hns.io/crq-selector-<X>`  | The selector of a `ClusterResourceQuota` this namespace is managed by. There may be several annotations like this, possibly as many as the `depth` of the namespace                                                           |
+| `dana.hns.io/depth`             | The distance of the `namespace` from the root namespace, which is of depth 0                                                                                                                                                  |
+| `dana.hns.io/sns-pointer`       | The name of the `Subnamespace` this namespace is bound to                                                                                                                                                                     |
+| `dana.hns.io/is-secondary-root` | Indicates whether the namespace is a secondary root |                                                                                                                                                                          |
 
 ### UpdateQuota
 `Updatequota` is a CRD that allows moving resources between `Subnamespaces`. An `Updatequota` is an object inside the namespace of the SNS from which resources are moved. For example, an `Updatequota` object called `moveCPUFromXtoY` would live inside the namespace `X`.

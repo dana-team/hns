@@ -36,13 +36,20 @@ spec:
             description: SubnamespaceSpec defines the desired state of Subnamespace
             properties:
               namespaceRef:
+                description: The name of the namespace that this Subnamespace is bound
+                  to
                 properties:
                   name:
+                    description: Name is the name of the namespace that a Subnamespace
+                      is bound to
                     type: string
                 type: object
               resourcequota:
-                description: 'INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-                  Important: Run "make" to regenerate code after modifying this file'
+                description: ResourceQuotaSpec represents the limitations that are
+                  associated with the Subnamespace. This quota represents both the
+                  resources that can be allocated to children Subnamespaces and the
+                  overall maximum quota consumption of the current Subnamespace and
+                  its children.
                 properties:
                   hard:
                     additionalProperties:
@@ -109,13 +116,16 @@ spec:
             description: SubnamespaceStatus defines the observed state of Subnamespace
             properties:
               namespaces:
+                description: Namespaces is an array of (name, ResourceQuotaSpec) pairs
+                  which are logically under the Subnamespace in the hierarchy.
                 items:
                   properties:
                     namespace:
+                      description: Namespace is the name of a Subnamespace
                       type: string
                     resourcequota:
-                      description: ResourceQuotaSpec defines the desired hard limits
-                        to enforce for Quota.
+                      description: ResourceQuotaSpec represents the quota allocated
+                        to the Subnamespace
                       properties:
                         hard:
                           additionalProperties:
@@ -181,11 +191,20 @@ spec:
                   type: object
                 type: array
               phase:
-                description: 'INSERT ADDITIONAL STATUS FIELD - define observed state
-                  of cluster Important: Run "make" to regeneraste code after modifying
-                  this file'
+                description: 'Phase acts like a state machine for the Subnamespace.
+                  It is a string and can be one of the following: "" (Empty) - state
+                  for a Subnameapce that is being reconciled for the first time. "Missing"
+                  - state for a Subnamespace that does not currently have a namespace
+                  bound to it "Created" - state for a Subnamespace that exists and
+                  has a namespace bound to it and is being synced "Migrated" - state
+                  for a Subnamespace that is currently undergoing migration to a different
+                  hierarchy'
                 type: string
               total:
+                description: Total represents a summary of the resources allocated
+                  to children Subnamespaces and the resources that are still free
+                  to allocate, from the total resources made available in the ResourceQuotaSpec
+                  field in Spec
                 properties:
                   allocated:
                     additionalProperties:
@@ -194,8 +213,9 @@ spec:
                       - type: string
                       pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
                       x-kubernetes-int-or-string: true
-                    description: ResourceList is a set of (resource name, quantity)
-                      pairs.
+                    description: Allocated is a set of (resource name, quantity) pairs
+                      representing the total resources that are allocated to the children
+                      Subnamespaces of a Subnamespace.
                     type: object
                   free:
                     additionalProperties:
@@ -204,8 +224,10 @@ spec:
                       - type: string
                       pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
                       x-kubernetes-int-or-string: true
-                    description: ResourceList is a set of (resource name, quantity)
-                      pairs.
+                    description: Free is a set of (resource name, quantity) pairs
+                      representing the total free/available/allocatable resources
+                      that can still be allocated to the children Subnamespaces of
+                      a Subnamespace.
                     type: object
                 type: object
             type: object

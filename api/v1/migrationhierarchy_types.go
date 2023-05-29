@@ -23,14 +23,14 @@ type MigrationHierarchySpec struct {
 	// CurrentNamespace is name of the Subnamespace that is being migrated
 	CurrentNamespace string `json:"currentns"`
 
-	// ToNamespace is the name of the Subnamespace that represents the new parent 
+	// ToNamespace is the name of the Subnamespace that represents the new parent
 	// of the Subnamespace that needs to be migrated
-	ToNamespace      string `json:"tons"`
+	ToNamespace string `json:"tons"`
 }
 
 // MigrationHierarchyStatus defines the observed state of MigrationHierarchy
 type MigrationHierarchyStatus struct {
-	// Phase acts like a state machine for the Migrationhierarchy. 
+	// Phase acts like a state machine for the Migrationhierarchy.
 	// It is a string and can be one of the following:
 	// "Error" - state for a Migrationhierarchy indicating that the operation could not be completed due to an error
 	// "Complete" - state for a Migrationhierarchy indicating that the operation completed successfully
