@@ -58,7 +58,7 @@ func (r *RoleBindingReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		return err
 	}
 	return ctrl.NewControllerManagedBy(mgr).
-		WithEventFilter(danav1.HNSPredicate{Funcs: predicate.NewPredicateFuncs(func(object client.Object) bool {
+		WithEventFilter(predicate.NewPredicateFuncs(func(object client.Object) bool {
 			// get the Namespace object associated with the RoleBinding
 			var rbNs corev1.Namespace
 			if err := r.Get(context.Background(), types.NamespacedName{Name: object.GetNamespace()}, &rbNs); err != nil {
@@ -71,7 +71,7 @@ func (r *RoleBindingReconciler) SetupWithManager(mgr ctrl.Manager) error {
 				return true
 			}
 			return false
-		})}).
+		})).
 		For(&rbacv1.RoleBinding{}).
 		Complete(r)
 }

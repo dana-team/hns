@@ -53,7 +53,7 @@ func (r *NamespaceReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&corev1.Namespace{}).
 		Watches(&source.Channel{Source: r.NSEvents}, &handler.EnqueueRequestForObject{}).
-		WithEventFilter(danav1.HNSPredicate{Funcs: predicate.NewPredicateFuncs(func(object client.Object) bool {
+		WithEventFilter(predicate.NewPredicateFuncs(func(object client.Object) bool {
 			if reflect.TypeOf(object) == reflect.TypeOf(&danav1.Subnamespace{}) {
 				return true
 			}
@@ -64,7 +64,7 @@ func (r *NamespaceReconciler) SetupWithManager(mgr ctrl.Manager) error {
 			}
 
 			return false
-		})}).
+		})).
 		// reconcile when subnamespace is changed
 		Owns(&danav1.Subnamespace{}).
 		Complete(r)
