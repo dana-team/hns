@@ -1,14 +1,10 @@
+// +kubebuilder:object:generate=true
 package v1
 
 import (
 	"os"
-	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"strconv"
 )
-
-type HNSPredicate struct {
-	predicate.Funcs
-}
 
 type Phase string
 
