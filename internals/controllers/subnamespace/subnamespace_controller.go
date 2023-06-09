@@ -48,7 +48,7 @@ type snsPhaseFunc func(*utils.ObjectContext, *utils.ObjectContext) (ctrl.Result,
 // associated object
 func (r *SubnamespaceReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		Watches(&source.Channel{Source: r.SNSEvents}, &handler.EnqueueRequestForObject{}).
+		WatchesRawSource(&source.Channel{Source: r.SNSEvents}, &handler.EnqueueRequestForObject{}).
 		For(&danav1.Subnamespace{}).
 		Complete(r)
 }

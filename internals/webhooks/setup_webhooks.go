@@ -20,7 +20,8 @@ import (
 func SetupWebhooks(mgr manager.Manager, ndb *namespaceDB.NamespaceDB, scheme *runtime.Scheme) {
 	hookServer := mgr.GetWebhookServer()
 
-	decoder, _ := admission.NewDecoder(scheme)
+	decoder := admission.NewDecoder(scheme)
+
 	hookServer.Register("/validate-v1-namespace", &webhook.Admission{Handler: &NamespaceAnnotator{
 		Client:  mgr.GetClient(),
 		Decoder: decoder,

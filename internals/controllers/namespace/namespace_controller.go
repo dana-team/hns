@@ -52,7 +52,7 @@ type NamespaceReconciler struct {
 func (r *NamespaceReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&corev1.Namespace{}).
-		Watches(&source.Channel{Source: r.NSEvents}, &handler.EnqueueRequestForObject{}).
+		WatchesRawSource(&source.Channel{Source: r.NSEvents}, &handler.EnqueueRequestForObject{}).
 		WithEventFilter(predicate.NewPredicateFuncs(func(object client.Object) bool {
 			if reflect.TypeOf(object) == reflect.TypeOf(&danav1.Subnamespace{}) {
 				return true
