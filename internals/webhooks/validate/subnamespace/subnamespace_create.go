@@ -77,10 +77,10 @@ func (a *SubnamespaceAnnotator) validateUniqueSNSName(snsObject *utils.ObjectCon
 	}
 
 	if exists {
-		message := fmt.Sprintf("it's forbidden to create a subnamespace with a name that already exists. A subnamespace"+
+		message := fmt.Sprintf("it's forbidden to create a subnamespace with a name that already exists. A subnamespace "+
 			"name must be unique across the cluster, and a namespace of name '%s' already exists; change "+
 			"the subnamespace name and try again", snsName)
-		admission.Denied(message)
+		return admission.Denied(message)
 	}
 
 	return admission.Allowed("")
