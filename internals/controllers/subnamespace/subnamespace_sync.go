@@ -2,7 +2,9 @@ package controllers
 
 import (
 	"fmt"
+
 	danav1 "github.com/dana-team/hns/api/v1"
+	controllers "github.com/dana-team/hns/internals/controllers/subnamespace/defaults"
 	"github.com/dana-team/hns/internals/utils"
 	"github.com/go-logr/logr"
 	quotav1 "github.com/openshift/api/quota/v1"
@@ -410,22 +412,20 @@ func NamespacesEqual(nsA, nsB []danav1.Namespaces) bool {
 
 // ResourceListEqual gets two ResourceLists and returns whether their specs are equal
 func ResourceListEqual(resourceListA, resourceListB corev1.ResourceList) bool {
-	if !resourceListB.Cpu().Equal(*resourceListA.Cpu()) ||
-		!resourceListB.Memory().Equal(*resourceListA.Memory()) ||
-		!resourceListB.Pods().Equal(*resourceListA.Pods()) ||
-		!resourceListB.Storage().Equal(*resourceListA.Storage()) {
-		return false
+	for resourceName := range controllers.ZeroedQuota.Hard {
+		if resourceListB.Name(resourceName, resource.DecimalSI) != resourceListA.Name(resourceName, resource.DecimalSI) {
+			return false
+		}
 	}
 	return true
 }
 
 // ResourceQuotaSpecEqual gets two ResourceQuotaSpecs and returns whether their specs are equal
 func ResourceQuotaSpecEqual(resourceQuotaSpecA, resourceQuotaSpecB corev1.ResourceQuotaSpec) bool {
-	if *resourceQuotaSpecB.Hard.Cpu() != *resourceQuotaSpecA.Hard.Cpu() ||
-		*resourceQuotaSpecB.Hard.Memory() != *resourceQuotaSpecA.Hard.Memory() ||
-		*resourceQuotaSpecB.Hard.Pods() != *resourceQuotaSpecA.Hard.Pods() ||
-		*resourceQuotaSpecB.Hard.Storage() != *resourceQuotaSpecA.Hard.Storage() {
-		return false
+	for resourceName := range controllers.ZeroedQuota.Hard {
+		if resourceQuotaSpecB.Hard.Name(resourceName, resource.DecimalSI) != resourceQuotaSpecA.Hard.Name(resourceName, resource.DecimalSI) {
+			return false
+		}
 	}
 	return true
 }
