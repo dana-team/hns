@@ -7,7 +7,7 @@ require (
 	github.com/go-logr/zapr v1.2.4
 	github.com/onsi/ginkgo/v2 v2.10.0
 	github.com/onsi/gomega v1.27.8
-	github.com/openshift/api v3.9.0+incompatible
+	github.com/openshift/api v0.0.0-20230607151152-bdd886567621
 	go.elastic.co/ecszap v1.0.1
 	go.uber.org/zap v1.24.0
 	k8s.io/api v0.27.2
