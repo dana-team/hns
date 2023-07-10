@@ -2,6 +2,7 @@ package utils
 
 import (
 	danav1 "github.com/dana-team/hns/api/v1"
+	"golang.org/x/exp/slices"
 	corev1 "k8s.io/api/core/v1"
 	"reflect"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -68,6 +69,7 @@ func GetNSLabelsAnnotationsBasedOnParent(parentNS *ObjectContext, nsName string)
 	labels[danav1.Hns] = "true"
 
 	annotations := GetNSCrqSelectors(parentNS)
+	GetNSDefaultAnnotations(parentNS, annotations)
 
 	annotations[danav1.Depth] = childNamespaceDepth
 	annotations[danav1.DisplayName] = parentDisplayName + "/" + nsName
@@ -88,6 +90,15 @@ func GetNSCrqSelectors(ns *ObjectContext) map[string]string {
 		}
 	}
 	return selectors
+}
+
+// GetNSDefaultAnnotations updates the map of the ns annotations with the DefaultAnnotations
+func GetNSDefaultAnnotations(ns *ObjectContext, annotations map[string]string) {
+	for key, value := range ns.Object.GetAnnotations() {
+		if slices.Contains(danav1.DefaultAnnotations, key) {
+			annotations[key] = value
+		}
+	}
 }
 
 // GetNamespaceDepth returns the depth of a namespace from its annotation

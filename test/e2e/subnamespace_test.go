@@ -267,4 +267,17 @@ var _ = Describe("Subnamespaces", func() {
 		FieldShouldContain("subnamespace", nsA, nsB, ".status.total.allocated.pods", "30")
 		FieldShouldContain("subnamespace", nsA, nsB, ".status.total.free.pods", "10")
 	})
+
+	It("should update the child namespace with the default annotations of its parent", func() {
+		nsA := GenerateE2EName("a", testPrefix, randPrefix)
+		nsB := GenerateE2EName("b", testPrefix, randPrefix)
+
+		CreateSubnamespace(nsA, nsRoot, randPrefix, false, storage, "50Gi", cpu, "50", memory, "50Gi", pods, "50", gpu, "50")
+		AnnotateNSDefaultAnnotation(nsA)
+		CreateSubnamespace(nsB, nsA, randPrefix, false, storage, "25Gi", cpu, "25", memory, "25Gi", pods, "25", gpu, "25")
+		for i := range danav1.DefaultAnnotations {
+			FieldShouldContain("namespace", "", nsB, ".metadata.annotations", danav1.DefaultAnnotations[i])
+		}
+	})
+
 })

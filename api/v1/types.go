@@ -11,6 +11,8 @@ const MetaGroup = "dana.hns.io/"
 
 var MaxSNS, _ = strconv.Atoi(os.Getenv("MAX_SNS_IN_HIERARCHY"))
 
+var DefaultAnnotations = []string{"scheduler.alpha.kubernetes.io/defaultTolerations", "openshift.io/node-selector"}
+
 const (
 	Missing  Phase = "Missing"
 	Created  Phase = "Created"
