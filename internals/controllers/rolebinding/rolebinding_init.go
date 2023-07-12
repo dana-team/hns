@@ -34,7 +34,7 @@ func (r *RoleBindingReconciler) init(rbObject *utils.ObjectContext, snsList *uti
 	}
 	logger.Info("successfully created RoleBinding in every child of namespace", "roleBinding namespace", rbNamespace)
 
-	if !isRoleBindingHNSRelated(rbObject.Object) {
+	if !isServiceAccount(rbObject.Object) {
 		if err := addSubjectsToHNSViewClusterRoleBinding(rbObject); err != nil {
 			return fmt.Errorf("failed to add subjects from roleBinding '%s' to HNS View ClusterRoleBinding: "+err.Error(), rbName)
 		}
