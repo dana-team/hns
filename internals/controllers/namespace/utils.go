@@ -66,12 +66,12 @@ func composeNsHnsViewClusterRole(namespaceName string) *rbacv1.ClusterRole {
 
 				ResourceNames: []string{namespaceName}}, {
 				Verbs:     []string{"get"},
-				APIGroups: []string{"core"},
+				APIGroups: []string{""},
 				Resources: []string{"resourcequotas"},
 
 				ResourceNames: []string{namespaceName}}, {
 				Verbs:     []string{"list"},
-				APIGroups: []string{"core"},
+				APIGroups: []string{""},
 				Resources: []string{"resourcequotas"},
 			},
 		},

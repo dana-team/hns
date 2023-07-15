@@ -44,6 +44,8 @@ type NamespaceReconciler struct {
 
 // +kubebuilder:rbac:groups=core,resources=namespaces,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=core,resources=namespaces/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups="rbac.authorization.k8s.io",resources=clusterrolebindings,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups="rbac.authorization.k8s.io",resources=clusterroles,verbs=get;list;watch;create;update;patch;delete;escalate;bind
 
 // SetupWithManager sets up the controller by specifying the following: controller is managing the reconciliation
 // of Namespace objects, it is watching for changes to the NSEvents channel and enqueues requests for the

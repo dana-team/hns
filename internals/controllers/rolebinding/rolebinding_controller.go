@@ -39,6 +39,7 @@ type RoleBindingReconciler struct {
 
 // +kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=rolebindings,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=rbac.authorization.k8s.io,resources=rolebindings/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups="rbac.authorization.k8s.io",resources=roles,verbs=get;list;watch;create;update;patch;delete;bind
 
 // SetupWithManager sets up the controller by specifying the following: indexes the "rb.propagate" field for
 // RoleBindings, filters events to only include RoleBindings that are part of a namespace with
