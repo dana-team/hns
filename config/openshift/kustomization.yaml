@@ -1,0 +1,3 @@
+resources:
+- prometheus_k8s_role.yaml
+- prometheus_k8s_rolebinding.yaml
