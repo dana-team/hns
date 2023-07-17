@@ -42,6 +42,11 @@ type snsPhaseFunc func(*utils.ObjectContext, *utils.ObjectContext) (ctrl.Result,
 
 // +kubebuilder:rbac:groups=dana.hns.io,resources=subnamespaces,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=dana.hns.io,resources=subnamespaces/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=dana.hns.io,resources=subnamespaces/finalizers,verbs=update
+// +kubebuilder:rbac:groups="",resources=namespaces/finalizers,verbs=update
+// +kubebuilder:rbac:groups="",resources=resourcequotas,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups="quota.openshift.io",resources=clusterresourcequotas,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups="",resources=limitranges,verbs=get;list;watch;create;update;patch;delete
 
 // SetupWithManager sets up the controller by specifying the following: controller is managing the reconciliation
 // of subnamespace objects and is watching for changes to the SNSEvents channel and enqueues requests for the

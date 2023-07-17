@@ -47,6 +47,7 @@ type MigrationHierarchyReconciler struct {
 
 // +kubebuilder:rbac:groups=dana.hns.io,resources=migrationhierarchies,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=dana.hns.io,resources=migrationhierarchies/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups="",resources=users,verbs=impersonate
 
 func (r *MigrationHierarchyReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
