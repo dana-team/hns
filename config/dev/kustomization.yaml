@@ -25,6 +25,7 @@ bases:
 #- ../prometheus
 #- ../templates
 - ../server
+- ../openshift
 
 patchesStrategicMerge:
   # Protect the /metrics endpoint by putting it behind auth.
