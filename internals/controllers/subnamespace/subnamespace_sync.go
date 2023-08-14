@@ -12,6 +12,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/utils/strings/slices"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/event"
@@ -412,20 +413,59 @@ func NamespacesEqual(nsA, nsB []danav1.Namespaces) bool {
 
 // ResourceListEqual gets two ResourceLists and returns whether their specs are equal
 func ResourceListEqual(resourceListA, resourceListB corev1.ResourceList) bool {
-	for resourceName := range controllers.ZeroedQuota.Hard {
-		if resourceListB.Name(resourceName, resource.DecimalSI) != resourceListA.Name(resourceName, resource.DecimalSI) {
+	if len(resourceListA) != len(resourceListB) {
+		return false
+	}
+
+	for key, value1 := range resourceListA {
+		value2, found := resourceListB[key]
+		if !found {
+			return false
+		}
+		if value1.Cmp(value2) != 0 {
 			return false
 		}
 	}
+
 	return true
 }
 
 // ResourceQuotaSpecEqual gets two ResourceQuotaSpecs and returns whether their specs are equal
 func ResourceQuotaSpecEqual(resourceQuotaSpecA, resourceQuotaSpecB corev1.ResourceQuotaSpec) bool {
+	var resources []string
+
 	for resourceName := range controllers.ZeroedQuota.Hard {
-		if resourceQuotaSpecB.Hard.Name(resourceName, resource.DecimalSI) != resourceQuotaSpecA.Hard.Name(resourceName, resource.DecimalSI) {
-			return false
+		resources = append(resources, resourceName.String())
+	}
+
+	resourceQuotaSpecAFiltered := filterResources(resourceQuotaSpecA.Hard, resources)
+	resourceQuotaSpecBFiltered := filterResources(resourceQuotaSpecB.Hard, resources)
+
+	return ResourceListEqual(resourceQuotaSpecAFiltered, resourceQuotaSpecBFiltered)
+}
+
+// filterResources filters the given resourceList and returns a new resourceList
+// that contains only the resources specified in the controlled resources list.
+func filterResources(resourcesList corev1.ResourceList, resources []string) corev1.ResourceList {
+	filteredList := corev1.ResourceList{}
+
+	for resourceName, quantity := range resourcesList {
+		if slices.Contains(resources, resourceName.String()) {
+			addResourcesToList(&filteredList, quantity, resourceName.String())
 		}
 	}
-	return true
+	return filteredList
+}
+
+// addResourcesToList adds the given quantity of a resource with the specified name to the resource list.
+// If the resource with the same name already exists in the list, it adds the quantity to the existing resource.
+func addResourcesToList(resourcesList *corev1.ResourceList, quantity resource.Quantity, name string) {
+	for resourceName, resourceQuantity := range *resourcesList {
+		if name == string(resourceName) {
+			resourceQuantity.Add(quantity)
+			(*resourcesList)[resourceName] = resourceQuantity
+			return
+		}
+	}
+	(*resourcesList)[corev1.ResourceName(name)] = quantity
 }
