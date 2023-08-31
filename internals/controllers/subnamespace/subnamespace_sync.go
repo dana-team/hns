@@ -74,7 +74,7 @@ func (r *SubnamespaceReconciler) sync(snsParentNS, snsObject *utils.ObjectContex
 			}
 		}
 
-		if res, err := syncquotaObject(snsObject, rqFlag); err != nil {
+		if res, err := syncQuotaObject(snsObject, rqFlag); err != nil {
 			return ctrl.Result{}, fmt.Errorf("failed to sync quota object for subnamespace '%s': "+err.Error(), snsName)
 		} else if !res.IsZero() {
 			return res, nil
@@ -296,9 +296,9 @@ func deleteNonUpperResourcePoolCRQ(snsObject *utils.ObjectContext) error {
 	return nil
 }
 
-// syncquotaObject syncs between the resources in the spec of the subnamespace and the quota object
+// syncQuotaObject syncs between the resources in the spec of the subnamespace and the quota object
 // or creates the quota object if it does not exist
-func syncquotaObject(snsObject *utils.ObjectContext, isRq bool) (ctrl.Result, error) {
+func syncQuotaObject(snsObject *utils.ObjectContext, isRq bool) (ctrl.Result, error) {
 	if exists, quotaObject, err := utils.DoesSNSQuotaObjectExist(snsObject); err != nil {
 		return ctrl.Result{}, err
 	} else if exists {

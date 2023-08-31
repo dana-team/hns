@@ -14,12 +14,13 @@ var MaxSNS, _ = strconv.Atoi(os.Getenv("MAX_SNS_IN_HIERARCHY"))
 var DefaultAnnotations = []string{"scheduler.alpha.kubernetes.io/defaultTolerations", "openshift.io/node-selector"}
 
 const (
-	Missing  Phase = "Missing"
-	Created  Phase = "Created"
-	None     Phase = ""
-	Migrated Phase = "Migrated"
-	Complete Phase = "Complete"
-	Error    Phase = "Error"
+	Missing    Phase = "Missing"
+	Created    Phase = "Created"
+	None       Phase = ""
+	Migrated   Phase = "Migrated"
+	Complete   Phase = "Complete"
+	InProgress Phase = "InProgress"
+	Error      Phase = "Error"
 )
 
 const (
@@ -60,6 +61,7 @@ const (
 	UpperRp              = MetaGroup + "upper-rp"
 	CrqPointer           = MetaGroup + "crq-pointer"
 	DisplayName          = MetaGroup + "display-name"
+	Description          = MetaGroup + "description"
 	OpenShiftDisplayName = "openshift.io/display-name"
 )
 

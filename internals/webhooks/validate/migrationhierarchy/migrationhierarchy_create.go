@@ -32,11 +32,19 @@ func (a *MigrationHierarchyAnnotator) handleCreate(mhObject *utils.ObjectContext
 		return admission.Errored(http.StatusBadRequest, err)
 	}
 
+	if response := a.validateCurrentNSAndToNSEqual(currentNSName, toNSName); !response.Allowed {
+		return response
+	}
+
 	if response := utils.ValidateNamespaceExist(currentNS); !response.Allowed {
 		return response
 	}
 
 	if response := utils.ValidateNamespaceExist(toNS); !response.Allowed {
+		return response
+	}
+
+	if response := utils.ValidateToNamespaceName(currentNS, toNSName); !response.Allowed {
 		return response
 	}
 
@@ -56,7 +64,7 @@ func (a *MigrationHierarchyAnnotator) handleCreate(mhObject *utils.ObjectContext
 		return response
 	}
 
-	isCurrentNSResoucePool, err := utils.IsNamespaceResourcePool(currentNS)
+	isCurrentNSResourcePool, err := utils.IsNamespaceResourcePool(currentNS)
 	if err != nil {
 		return admission.Errored(http.StatusBadRequest, err)
 	}
@@ -66,11 +74,22 @@ func (a *MigrationHierarchyAnnotator) handleCreate(mhObject *utils.ObjectContext
 		return admission.Errored(http.StatusBadRequest, err)
 	}
 
-	if response := a.validateSNSToRPMigration(isCurrentNSResoucePool, isToNSResourcePool); !response.Allowed {
+	if response := a.validateSNSToRPMigration(isCurrentNSResourcePool, isToNSResourcePool); !response.Allowed {
 		return response
 	}
 
-	if !isCurrentNSResoucePool == !isToNSResourcePool {
+	if isCurrentNSResourcePool {
+		isNSUpperResourcePool, err := utils.IsNSUpperResourcePool(currentNS)
+		if err != nil {
+			return admission.Errored(http.StatusBadRequest, err)
+		}
+
+		if response := a.validateNonUpperRPToSNSMigration(isNSUpperResourcePool, isToNSResourcePool); !response.Allowed {
+			return response
+		}
+	}
+
+	if !isCurrentNSResourcePool && !isToNSResourcePool {
 		currentNSKey := a.NamespaceDB.GetKey(currentNSName)
 		toNSKey := a.NamespaceDB.GetKey(toNSName)
 
@@ -112,10 +131,16 @@ func (a *MigrationHierarchyAnnotator) handleCreate(mhObject *utils.ObjectContext
 		if response := a.validateMigrateRPRequest(currSNS, toSNS); !response.Allowed {
 			return response
 		}
-	} else {
-		if response := a.validateMigrateRPRequest(currSNS, toSNS); !response.Allowed {
-			return response
-		}
+	}
+
+	return admission.Allowed("")
+}
+
+// validateCurrentNSAndToNSEqual validates that a Subnamespace is not asked to be migrated to be under itself
+func (a *MigrationHierarchyAnnotator) validateCurrentNSAndToNSEqual(currentNSName, toNSName string) admission.Response {
+	if currentNSName == toNSName {
+		message := "it's forbidden to migrate a Subnamespace to be under itself"
+		return admission.Denied(message)
 	}
 
 	return admission.Allowed("")
@@ -125,6 +150,17 @@ func (a *MigrationHierarchyAnnotator) handleCreate(mhObject *utils.ObjectContext
 func (a *MigrationHierarchyAnnotator) validateSNSToRPMigration(isCurrentNSResourcePool, isToNSResourcePool bool) admission.Response {
 	if !isCurrentNSResourcePool && isToNSResourcePool {
 		message := "it's forbidden to migrate from a Subnamespace to a ResourcePool. You can convert the subnamespace to a ResourcePool and try again"
+		return admission.Denied(message)
+	}
+
+	return admission.Allowed("")
+}
+
+// validateNonUpperRPToSNSMigration validates that a non-upper ResourcePool is not asked to be migrated to be under a subnamespace
+func (a *MigrationHierarchyAnnotator) validateNonUpperRPToSNSMigration(isCurrentUpperResourcePool, isToNSResourcePool bool) admission.Response {
+	if !isCurrentUpperResourcePool && !isToNSResourcePool {
+
+		message := "it's forbidden to migrate a non-upper ResourcePool to be under a Subnamespace"
 		return admission.Denied(message)
 	}
 
@@ -170,36 +206,6 @@ func (a *MigrationHierarchyAnnotator) validateKeyCountInDB(ctx context.Context, 
 	return admission.Allowed("")
 }
 
-// validateMigrateSNSRequest validates that there are enough resources to complete a
-// migration in case the subnamespace is not a ResourcePool
-func (a *MigrationHierarchyAnnotator) validateMigrateSNSRequest(currSNS *utils.ObjectContext, toSNS *utils.ObjectContext) admission.Response {
-	quotaParent, err := utils.GetSNSQuota(toSNS)
-	if err != nil {
-		message := fmt.Sprintf("failed to get quota of subnamespace '%s': "+err.Error(), toSNS.GetName())
-		return admission.Denied(message)
-	}
-
-	quotaObjectRequest := utils.GetSnsQuotaSpec(currSNS.Object).Hard
-	childQuotaResources := utils.GetQuotaObjectsListResources(utils.GetSnsChildrenQuotaObjects(toSNS))
-
-	for resourceName := range quotaParent {
-		var (
-			children, _ = childQuotaResources[resourceName]
-			parent, _   = quotaParent[resourceName]
-			request, _  = quotaObjectRequest[resourceName]
-		)
-
-		parent.Sub(children)
-		parent.Sub(request)
-		if parent.Value() < 0 {
-			message := fmt.Sprintf("it's forbidden to migrate because there are not enough resources of type '%s' "+
-				"in the requested new parent '%s'", resourceName.String(), toSNS.GetName())
-			return admission.Denied(message)
-		}
-	}
-	return admission.Allowed("")
-}
-
 // validateMigrateRPRequest validates that there are enough resources to complete a
 // migration in case the subnamespace is a ResourcePool
 func (a *MigrationHierarchyAnnotator) validateMigrateRPRequest(currSNS *utils.ObjectContext, toSNS *utils.ObjectContext) admission.Response {
@@ -231,7 +237,7 @@ func (a *MigrationHierarchyAnnotator) validateMigrateRPRequest(currSNS *utils.Ob
 		parent.Sub(request)
 		if parent.Value() < 0 {
 			message := fmt.Sprintf("it's forbidden to migrate because there are not enough free resources of type '%s' "+
-				"in the ResourcePool the requeested new parent '%s' is a part of", resourceName.String(), toSNS.GetName())
+				"in the ResourcePool the requested new parent '%s' is a part of", resourceName.String(), toSNS.GetName())
 			return admission.Denied(message)
 		}
 	}

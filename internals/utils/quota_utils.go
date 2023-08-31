@@ -5,6 +5,7 @@ import (
 	quotav1 "github.com/openshift/api/quota/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"reflect"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -325,4 +326,22 @@ func isCRQ(obj client.Object) bool {
 		return true
 	}
 	return false
+}
+
+// ComposeUpdateQuota returns an UpdateQuota object based on the given parameters
+func ComposeUpdateQuota(upqName, sourceNS, destNS, description string, resources corev1.ResourceQuotaSpec) *danav1.Updatequota {
+	return &danav1.Updatequota{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      upqName,
+			Namespace: sourceNS,
+			Annotations: map[string]string{
+				danav1.Description: description,
+			},
+		},
+		Spec: danav1.UpdatequotaSpec{
+			ResourceQuotaSpec: resources,
+			DestNamespace:     destNS,
+			SourceNamespace:   sourceNS,
+		},
+	}
 }
