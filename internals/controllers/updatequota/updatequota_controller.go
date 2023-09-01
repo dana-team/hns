@@ -97,7 +97,7 @@ func (r *UpdateQuotaReconciler) reconcile(upqObject *utils.ObjectContext) error 
 	if isNSAncestor(sourceNSName, ancestorNSName) {
 		er := moveResourcesDown(ancestorNSName, destNS, upqObject)
 		if er != nil {
-			err := updateUPQErrorStatus(upqObject, er)
+			err := updateUPQStatus(upqObject, danav1.Error, er.Error())
 			if err != nil {
 				return fmt.Errorf("failed updating the status of object '%s': "+err.Error(), upqObject.GetName())
 			}
@@ -106,7 +106,7 @@ func (r *UpdateQuotaReconciler) reconcile(upqObject *utils.ObjectContext) error 
 	} else if isNSAncestor(destNSName, ancestorNSName) {
 		er := moveResourcesUp(ancestorNSName, sourceNS, upqObject)
 		if er != nil {
-			err := updateUPQErrorStatus(upqObject, er)
+			err := updateUPQStatus(upqObject, danav1.Error, er.Error())
 			if err != nil {
 				return fmt.Errorf("failed updating the status of object '%s': "+err.Error(), upqObject.GetName())
 			}
@@ -114,7 +114,7 @@ func (r *UpdateQuotaReconciler) reconcile(upqObject *utils.ObjectContext) error 
 		}
 	} else {
 		if er := moveBetweenBranches(ancestorNSName, upqObject, sourceNS, destNS); err != nil {
-			err := updateUPQErrorStatus(upqObject, er)
+			err := updateUPQStatus(upqObject, danav1.Error, er.Error())
 			if err != nil {
 				return fmt.Errorf("failed updating the status of object '%s': "+err.Error(), upqObject.GetName())
 			}
@@ -122,7 +122,7 @@ func (r *UpdateQuotaReconciler) reconcile(upqObject *utils.ObjectContext) error 
 		}
 	}
 
-	err = r.updateUPQSuccessStatus(upqObject)
+	err = updateUPQStatus(upqObject, danav1.Complete, "")
 	if err != nil {
 		return fmt.Errorf("failed updating the status of object '%s': "+err.Error(), upqObject.GetName())
 	}
@@ -141,7 +141,7 @@ func isNSAncestor(namespace, ancestor string) bool {
 func moveBetweenBranches(ancestorNSName string, upqObject, sourceNS, destNS *utils.ObjectContext) error {
 	er := moveResourcesUp(ancestorNSName, sourceNS, upqObject)
 	if er != nil {
-		err := updateUPQErrorStatus(upqObject, er)
+		err := updateUPQStatus(upqObject, danav1.Error, er.Error())
 		if err != nil {
 			return fmt.Errorf("failed updating the status of object '%s': "+err.Error(), upqObject.GetName())
 		}
@@ -150,7 +150,7 @@ func moveBetweenBranches(ancestorNSName string, upqObject, sourceNS, destNS *uti
 
 	er = moveResourcesDown(ancestorNSName, destNS, upqObject)
 	if er != nil {
-		err := updateUPQErrorStatus(upqObject, er)
+		err := updateUPQStatus(upqObject, danav1.Error, er.Error())
 		if err != nil {
 			return fmt.Errorf("failed updating the status of object '%s': "+err.Error(), upqObject.GetName())
 		}
@@ -158,28 +158,6 @@ func moveBetweenBranches(ancestorNSName string, upqObject, sourceNS, destNS *uti
 	}
 
 	return nil
-}
-
-// updateUPQErrorStatus updates the status of the UPQ object in case of an error
-func updateUPQErrorStatus(upqObject *utils.ObjectContext, er error) error {
-	err := upqObject.UpdateObject(func(object client.Object, l logr.Logger) (client.Object, logr.Logger) {
-		object.(*danav1.Updatequota).Status.Phase = danav1.Error
-		object.(*danav1.Updatequota).Status.Reason = er.Error()
-		return object, l
-	})
-
-	return err
-}
-
-// updateUPQSuccessStatus updates the status of the UPQ object in case of a success
-func (r *UpdateQuotaReconciler) updateUPQSuccessStatus(upqObject *utils.ObjectContext) error {
-	err := upqObject.UpdateObject(func(object client.Object, l logr.Logger) (client.Object, logr.Logger) {
-		object.(*danav1.Updatequota).Status.Phase = danav1.Complete
-		object.(*danav1.Updatequota).Status.Reason = ""
-		return object, l
-	})
-
-	return err
 }
 
 // moveResourcesDown moves the ResourceQuota specified in the `upqObject` to all subnamespaces
@@ -361,4 +339,15 @@ func ensureSnsEqualQuota(sns *utils.ObjectContext) error {
 		retries++
 	}
 	return nil
+}
+
+// updateUPQStatus updates the status of the UPQ object
+func updateUPQStatus(upqObject *utils.ObjectContext, phase danav1.Phase, reason string) error {
+	err := upqObject.UpdateObject(func(object client.Object, l logr.Logger) (client.Object, logr.Logger) {
+		object.(*danav1.Updatequota).Status.Phase = phase
+		object.(*danav1.Updatequota).Status.Reason = reason
+		return object, l
+	})
+
+	return err
 }

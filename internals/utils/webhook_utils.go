@@ -24,6 +24,19 @@ func ValidateNamespaceExist(ns *ObjectContext) admission.Response {
 	return admission.Allowed("")
 }
 
+// ValidateToNamespaceName validates that a namespace is not trying to be migrated
+// to be under the same namespace it's already in
+func ValidateToNamespaceName(ns *ObjectContext, toNSName string) admission.Response {
+	currentParent := GetNamespaceParent(ns.Object)
+
+	if toNSName == currentParent {
+		message := fmt.Sprintf("'%s' is already under '%s'", ns.Object.GetName(), toNSName)
+		return admission.Denied(message)
+	}
+
+	return admission.Allowed("")
+}
+
 // ValidateSecondaryRoot denies if trying to perform UpdateQuota involving namesapces from different secondary root namespaces
 // a secondary root is the first subnamespace after the root namespace in the hierarchy of a subnamespace
 func ValidateSecondaryRoot(ctx context.Context, c client.Client, aNSArray, bNSArray []string) admission.Response {
@@ -105,7 +118,7 @@ func PermissionsExist(ctx context.Context, reqUser, namespace string) bool {
 	}
 
 	// create a new Kubernetes client using the configuration
-	clientset, err := kubernetes.NewForConfig(config)
+	clientSet, err := kubernetes.NewForConfig(config)
 	if err != nil {
 		panic(err.Error())
 	}
@@ -124,7 +137,7 @@ func PermissionsExist(ctx context.Context, reqUser, namespace string) bool {
 	}
 
 	// check the permissions for the user
-	resp, err := clientset.AuthorizationV1().SelfSubjectAccessReviews().Create(ctx, &selfCheck, metav1.CreateOptions{})
+	resp, err := clientSet.AuthorizationV1().SelfSubjectAccessReviews().Create(ctx, &selfCheck, metav1.CreateOptions{})
 	if err != nil {
 		panic(err.Error())
 	}

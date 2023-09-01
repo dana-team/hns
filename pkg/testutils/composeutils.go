@@ -26,14 +26,6 @@ func GenerateE2EName(nm, testPrefix, randPrefix string) string {
 	return snsName
 }
 
-// GenerateE2EUserName generates a name for a namespace and subnamespace
-func GenerateE2EUserName(nm string) string {
-	prefix := namspacePrefix + "-" + RandStr() + "-user-"
-	snsName := prefix + nm
-
-	return snsName
-}
-
 // RandStr generates a random string
 func RandStr() string {
 	rand.Seed(time.Now().UnixNano())
@@ -46,6 +38,14 @@ func RandStr() string {
 		b[i] = charset[rand.Intn(len(charset))]
 	}
 	return string(b)
+}
+
+// GenerateE2EUserName generates a name for a namespace and subnamespace
+func GenerateE2EUserName(nm string) string {
+	prefix := namspacePrefix + "-" + RandStr() + "-user-"
+	snsName := prefix + nm
+
+	return snsName
 }
 
 // GrantTestingUserAdmin gives admin rolebinding to a user on a namespace
