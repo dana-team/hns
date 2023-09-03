@@ -118,12 +118,14 @@ func (r *MigrationHierarchyReconciler) updateCRQSelector(childNS, parentNS *util
 		return err
 	}
 
+	// make changes to a copy of the CRQ
+	crqCopy := crq.DeepCopy()
 	crqAnnotation := make(map[string]string)
 	childNamespaceDepth := strconv.Itoa(utils.GetNamespaceDepth(parentNS.Object) + 1)
 
 	crqAnnotation[danav1.CrqSelector+"-"+childNamespaceDepth] = nsName
-	crq.Spec.Selector.AnnotationSelector = crqAnnotation
-	err := r.Client.Update(ctx, &crq)
+	crqCopy.Spec.Selector.AnnotationSelector = crqAnnotation
+	err := r.Client.Update(ctx, crqCopy)
 
 	return err
 }
