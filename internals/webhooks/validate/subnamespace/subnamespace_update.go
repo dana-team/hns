@@ -149,8 +149,7 @@ func (a *SubnamespaceAnnotator) validateUpdateSnsRequest(snsObject, snsOldObject
 	logger := log.FromContext(snsObject.Ctx)
 	snsName := snsObject.Object.GetName()
 	snsParentName := snsObject.Object.GetNamespace()
-
-	snsQuotaObject, err := utils.GetSNSQuotaObject(snsObject)
+	snsQuotaObject, err := utils.GetSNSQuotaObjectFromAnnotation(snsObject)
 	if err != nil {
 		logger.Error(err, "unable to get sns quota object")
 		return admission.Denied(err.Error())

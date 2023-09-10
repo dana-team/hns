@@ -44,7 +44,6 @@ var _ = Describe("Subnamespaces", func() {
 
 		// delete subnamespace
 		MustRun("kubectl delete subnamespace", nsC, "-n", nsB)
-		MustNotRun("kubectl get ns", nsC)
 	})
 
 	It("should create a subnamespace and namespace with the needed labels and annotations", func() {
@@ -178,14 +177,16 @@ var _ = Describe("Subnamespaces", func() {
 		ShouldNotCreateSubnamespace(nsD, nsB, false, storage, "25Gi", cpu, "25", memory, "25Gi", pods, "25", gpu, "25")
 	})
 
-	It("should fail to delete a subnamespace which is not a leaf", func() {
+	It("should fail to delete a namespace which is not a leaf", func() {
 		nsA := GenerateE2EName("a", testPrefix, randPrefix)
 		nsB := GenerateE2EName("b", testPrefix, randPrefix)
 
 		CreateSubnamespace(nsA, nsRoot, randPrefix, false, storage, "50Gi", cpu, "50", memory, "50Gi", pods, "50", gpu, "50")
 		CreateSubnamespace(nsB, nsA, randPrefix, false, storage, "25Gi", cpu, "25", memory, "25Gi", pods, "25", gpu, "25")
 
-		MustNotRun("kubectl delete subnamespace -n", nsRoot, nsA)
+		FieldShouldContain("namespace", "", nsB, ".metadata.labels", danav1.Parent+":"+nsA)
+
+		MustNotRun("kubectl delete namespace", nsA)
 	})
 
 	It("should fail to create a subnamespace which requests more resources than its parent to allocate", func() {
@@ -202,6 +203,9 @@ var _ = Describe("Subnamespaces", func() {
 
 		CreateSubnamespace(nsD, nsC, randPrefix, false, storage, "10Gi", cpu, "10", memory, "10Gi", pods, "10", gpu, "10")
 		CreateSubnamespace(nsE, nsC, randPrefix, false, storage, "10Gi", cpu, "10", memory, "10Gi", pods, "10", gpu, "10")
+
+		FieldShouldContain("namespace", "", nsE, ".metadata.labels", danav1.Parent+":"+nsC)
+
 		ShouldNotCreateSubnamespace(nsF, nsC, false, storage, "11Gi", cpu, "11", memory, "11Gi", pods, "11", gpu, "11")
 	})
 

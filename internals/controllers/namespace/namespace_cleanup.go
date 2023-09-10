@@ -81,7 +81,7 @@ func deleteNamespaceQuotaObject(ns *utils.ObjectContext) error {
 		return err
 	}
 
-	quotaObject, err := utils.GetNSQuotaObject(sns)
+	quotaObject, err := utils.GetSNSQuotaObjectFromAnnotation(sns)
 	if err != nil {
 		return err
 	}
