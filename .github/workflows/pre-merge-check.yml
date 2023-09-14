@@ -3,7 +3,7 @@ name: Pre Merge E2E test
 on:
   pull_request:
     branches:
-      - main
+      - ci
     types: [opened, reopened, synchronize]
 
   e2e-tests:
@@ -11,7 +11,9 @@ on:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
-      IMAGE_REGISTRY: danateam
+      REGISTRY: ghcr.io
+      REPOSITORY_NAME: ${{ github.repository }}
+      DANA_ORG: dana-team
     steps:
       - name: auth
         uses: mobiledevops/secret-to-file-action@v1
@@ -27,9 +29,13 @@ on:
           go-version-file: go.mod
       - name: Go Vet
         run: go vet ./...
-      - name: Build container-app image
-        run: make docker-build docker-push IMG=${IMAGE_REGISTRY}/hns:test-${GITHUB_REF##*/}
-      - name: Deploy to cluster
-        run: make install deploy IMG=${IMAGE_REGISTRY}/hns:test-${GITHUB_REF##*/}
+      - name: Log in to the Container registry
+        uses: docker/login-action@65b78e6e13532edd9afa3aa52ac7964289d1a9c1
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build and push docker image
+        run: make docker-build docker-push IMG=${{ env.REGISTRY }}/dana-team/${{ env.REPOSITORY_NAME }}:${GITHUB_REF##*/}
       - name: test
         run: make test
