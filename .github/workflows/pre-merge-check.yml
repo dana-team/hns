@@ -1,17 +1,35 @@
-name: Pre Merge Check
+name: Pre Merge E2E test
 
 on:
   pull_request:
+    branches:
+      - main
     types: [opened, reopened, synchronize]
 
-jobs:
-  go-vet:
+  e2e-tests:
+    name: E2e-tests
     runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      IMAGE_REGISTRY: danateam
     steps:
-    - uses: actions/checkout@v3
-    - name: Setup Go
-      uses: actions/setup-go@v4
-      with:
-        go-version: 'stable'
-    - name: Go Vet
-      run: go vet ./...
+      - name: auth
+        uses: mobiledevops/secret-to-file-action@v1
+        with:
+          base64-encoded-secret: ${{ secrets.HNS_CI_CLUSTER }}
+          filename: "config"
+          working-directory: "~/.kube"
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Setup Go
+        uses: actions/setup-go@v4
+        with:
+          go-version-file: go.mod
+      - name: Go Vet
+        run: go vet ./...
+      - name: Build container-app image
+        run: make docker-build docker-push IMG=${IMAGE_REGISTRY}/hns:test-${GITHUB_REF##*/}
+      - name: Deploy to cluster
+        run: make install deploy IMG=${IMAGE_REGISTRY}/hns:test-${GITHUB_REF##*/}
+      - name: test
+        run: make test
