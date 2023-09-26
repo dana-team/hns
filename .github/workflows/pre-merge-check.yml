@@ -15,14 +15,10 @@ jobs:
       REPOSITORY_NAME: ${{ github.repository }}
       DANA_ORG: dana-team
     steps:
-      - name: auth
-        uses: mobiledevops/secret-to-file-action@v1
+      - name: Set up Kubernetes CLI
+        uses: azure/setup-kubectl@v1
         with:
-          base64-encoded-secret: ${{ secrets.HNS_CI_CLUSTER }}
-          filename: "config"
-          working-directory: "~/.kube"
-      - name: setKubeConfig
-        run: echo "KUBECONFIG=~/.kube/config" >> $GITHUB_ENV
+          kubeconfig: ${{ secrets.HNS_CI_CLUSTER }}
       - name: Checkout
         uses: actions/checkout@v3
       - name: Setup Go
