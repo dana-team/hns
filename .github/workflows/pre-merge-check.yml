@@ -21,6 +21,8 @@ jobs:
           base64-encoded-secret: ${{ secrets.HNS_CI_CLUSTER }}
           filename: "config"
           working-directory: "~/.kube"
+      - name: setKubeConfig
+        run: echo "KUBECONFIG=~/.kube/config" >> $GITHUB_ENV
       - name: Checkout
         uses: actions/checkout@v3
       - name: Setup Go
