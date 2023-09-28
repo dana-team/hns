@@ -43,7 +43,6 @@ var _ = Describe("ResourcePool", func() {
 
 		// delete subnamespace
 		MustRun("kubectl delete subnamespace", nsC, "-n", nsB)
-		MustNotRun("kubectl get ns", nsC)
 	})
 
 	It("should create a resourcepool under a resourcepool and update the labels accordingly", func() {

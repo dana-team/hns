@@ -7,7 +7,6 @@ import (
 	controllers "github.com/dana-team/hns/internals/controllers/subnamespace/defaults"
 	"github.com/dana-team/hns/internals/utils"
 	"github.com/go-logr/logr"
-	quotav1 "github.com/openshift/api/quota/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -67,10 +66,21 @@ func (r *SubnamespaceReconciler) sync(snsParentNS, snsObject *utils.ObjectContex
 	// if the subnamespace is a regular SNS (i.e. not a ResourcePool) OR it's an upper-rp, then create a corresponding
 	// quota object for the subnamespace. The quota object can be either a ResourceQuota or a ClusterResourceQuota
 	if !isSNSResourcePool || isSNSUpperResourcePool {
-		if rqFlag {
-			err := deleteLegacyCRQ(snsObject)
-			if err != nil {
-				return ctrl.Result{}, fmt.Errorf("failed to delete legacy quota object for subnamespace '%s': "+err.Error(), snsName)
+		exists, quotaObject, err := utils.DoesSNSCRQExists(snsObject)
+		if err != nil {
+			return ctrl.Result{}, fmt.Errorf("failed to get quota object")
+		} else if exists && rqFlag {
+			if err := quotaObject.EnsureDeleteObject(); err != nil {
+				return ctrl.Result{}, fmt.Errorf("failed to get quota object")
+			}
+		}
+
+		exists, quotaObject, err = utils.DoesSNSRQExists(snsObject)
+		if err != nil {
+			return ctrl.Result{}, fmt.Errorf("failed to get quota object")
+		} else if exists && !rqFlag {
+			if err := quotaObject.EnsureDeleteObject(); err != nil {
+				return ctrl.Result{}, fmt.Errorf("failed to get quota object")
 			}
 		}
 
@@ -203,22 +213,6 @@ func getFreeToAllocateSNSResources(snsObject *utils.ObjectContext, allocated cor
 	return freeToAllocate
 }
 
-// deleteLegacyCRQ deletes a pre-exising CRQ in cases where they should only be a RQ.
-// This is needed because historically we used to only have CRQs and didn't introduce RQs until later
-func deleteLegacyCRQ(snsObject *utils.ObjectContext) error {
-	if utils.DoesSNSCrqExists(snsObject) {
-		crqName := snsObject.Object.GetName()
-		crqObj, err := utils.NewObjectContext(snsObject.Ctx, snsObject.Client, types.NamespacedName{Name: crqName}, &quotav1.ClusterResourceQuota{})
-		if err != nil {
-			return err
-		}
-		if err := crqObj.EnsureDeleteObject(); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
 // syncSNSAnnotations syncs subnamespace annotations
 func syncSNSAnnotations(snsObject, snsParentNS, parentSNS *utils.ObjectContext, isRq bool) error {
 	annotations := snsObject.Object.GetAnnotations()
@@ -302,6 +296,10 @@ func syncQuotaObject(snsObject *utils.ObjectContext, isRq bool) (ctrl.Result, er
 	if exists, quotaObject, err := utils.DoesSNSQuotaObjectExist(snsObject); err != nil {
 		return ctrl.Result{}, err
 	} else if exists {
+		if err := createDefaultSNSResourceQuota(snsObject); err != nil {
+			return ctrl.Result{}, err
+		}
+
 		resources := utils.GetSnsQuotaSpec(snsObject.Object).Hard
 		return ctrl.Result{}, updateQuotaObjectHard(quotaObject, resources, isRq)
 	}
