@@ -3,7 +3,7 @@ name: Pre Merge E2E test
 on:
   pull_request:
     branches:
-      - main
+      - ci
     types: [opened, reopened, synchronize]
 jobs:
   e2e-tests:
