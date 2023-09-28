@@ -6,7 +6,7 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 )
 
-var _ = PDescribe("MigrationHierarchy", func() {
+var _ = Describe("MigrationHierarchy", func() {
 	testPrefix := "mh-test"
 	var randPrefix string
 	var nsRoot string
