@@ -83,17 +83,16 @@ func (a *UpdateQuotaAnnotator) validateNSQuotaObject(ns *utils.ObjectContext) ad
 // validateNonRootNSQuotaObject validates that a quota object exists for a
 // namespace that is a root namespace
 func (a *UpdateQuotaAnnotator) validateRootNSQuotaObject(ns *utils.ObjectContext) admission.Response {
-	sns := ns
 	logger := ns.Log
 
-	quotaObject, err := utils.GetRootNSQuotaObject(sns)
+	quotaObject, err := utils.GetRootNSQuotaObject(ns)
 	if err != nil {
-		logger.Error(err, "failed to get object", "quotaObject", sns.GetName())
+		logger.Error(err, "failed to get object", "quotaObject", ns.GetName())
 		return admission.Errored(http.StatusInternalServerError, err)
 	}
 
 	if !(quotaObject.IsPresent()) {
-		message := fmt.Sprintf("quota object '%s' does not exist", sns.GetName())
+		message := fmt.Sprintf("quota object '%s' does not exist", ns.GetName())
 		return admission.Denied(message)
 	}
 

@@ -210,7 +210,7 @@ func AddNS(ctx context.Context, nDB *NamespaceDB, client client.Client, sns *dan
 	logger := log.FromContext(ctx)
 	keyNS := nDB.GetKey(sns.Namespace)
 
-	if keyNS != "" {
+	if !isKeyEmpty(keyNS) {
 		if err := nDB.addNSToKey(keyNS, sns.Name); err != nil {
 			return fmt.Errorf("failed to add namespace '%s' to key '%s': "+err.Error(), sns.Name, keyNS)
 		}
@@ -241,14 +241,6 @@ func MigrateNSHierarchy(ctx context.Context, ndb *NamespaceDB, client client.Cli
 	oldKeyNS := ndb.GetKey(snsName)
 	newKeyNS := ndb.GetKey(destNSName)
 
-	if oldKeyNS == "" {
-		return fmt.Errorf("failed to find key '%s' in DB for namespace '%s'", oldKeyNS, snsName)
-	}
-
-	if newKeyNS == "" {
-		return fmt.Errorf("failed to find key '%s' in DB for namespace '%s'", newKeyNS, destNSName)
-	}
-
 	ns, err := utils.NewObjectContext(ctx, client, types.NamespacedName{Name: snsName}, &corev1.Namespace{})
 	if err != nil {
 		return err
@@ -260,12 +252,16 @@ func MigrateNSHierarchy(ctx context.Context, ndb *NamespaceDB, client client.Cli
 	for _, child := range childrenList {
 		childName := child.GetName()
 
-		if err := ndb.RemoveNS(childName, oldKeyNS); err != nil {
-			return fmt.Errorf("removing namespace '%s' from key '%s' failed: "+err.Error(), childName, oldKeyNS)
+		if !isKeyEmpty(oldKeyNS) && oldKeyNS != snsName {
+			if err := ndb.RemoveNS(childName, oldKeyNS); err != nil {
+				return fmt.Errorf("removing namespace '%s' from key '%s' failed: "+err.Error(), childName, oldKeyNS)
+			}
 		}
 
-		if err := ndb.addNSToKey(newKeyNS, childName); err != nil {
-			return fmt.Errorf("adding namespace '%s' to key '%s' failed: "+err.Error(), childName, newKeyNS)
+		if !isKeyEmpty(newKeyNS) {
+			if err := ndb.addNSToKey(newKeyNS, childName); err != nil {
+				return fmt.Errorf("adding namespace '%s' to key '%s' failed: "+err.Error(), childName, newKeyNS)
+			}
 		}
 	}
 	return nil
@@ -283,11 +279,10 @@ func (ndb *NamespaceDB) RemoveNS(nsname string, key string) error {
 	for i, namespace := range ndb.crqForest[key] {
 		if namespace == nsname {
 			ndb.crqForest[key] = append(ndb.crqForest[key][:i], ndb.crqForest[key][i+1:]...)
-			return nil
 		}
 	}
 
-	return fmt.Errorf("namespace '%s' not found in key '%s'", nsname, key)
+	return nil
 }
 
 // GetKey retrieves the key that the provided namespace belongs to
@@ -329,4 +324,9 @@ func (ndb *NamespaceDB) GetKeyCount(key string) int {
 	}
 
 	return 0
+}
+
+// isKeyEmpty returns true if the key is empty
+func isKeyEmpty(key string) bool {
+	return key == ""
 }
