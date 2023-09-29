@@ -1,4 +1,4 @@
-name: Pre Merge E2E test
+name: Pre Merge
 
 on:
   pull_request:
@@ -7,28 +7,27 @@ on:
     types: [opened, reopened, synchronize]
 jobs:
   e2e-tests:
-    name: E2e-tests
+    name: e2e-tests
     runs-on: ubuntu-latest
-    timeout-minutes: 30
     env:
       REGISTRY: ghcr.io
       REPOSITORY_NAME: ${{ github.repository }}
       DANA_ORG: dana-team
     steps:
-      - name: Kubernetes Set Context
+      - name: Set Kubernetes context
         uses: Azure/k8s-set-context@v3.0
         with:
           method: kubeconfig
           kubeconfig: ${{ secrets.HNS_CI_CLUSTER }}
       - name: Checkout
         uses: actions/checkout@v3
-      - name: Setup Go
+      - name: Setup go
         uses: actions/setup-go@v4
         with:
           go-version-file: go.mod
-      - name: Go Vet
+      - name: Run go vet
         run: go vet ./...
-      - name: Log in to the Container registry
+      - name: Log into ghcr.io
         uses: docker/login-action@65b78e6e13532edd9afa3aa52ac7964289d1a9c1
         with:
           registry: ${{ env.REGISTRY }}
@@ -38,7 +37,7 @@ jobs:
         run: echo "IMAGE_TAG=`echo ${GITHUB_SHA} | cut -c1-8`" >> $GITHUB_ENV
       - name: Build and push docker image
         run: make docker-build docker-push IMG=${{ env.REGISTRY }}/dana-team/${{ env.REPOSITORY_NAME }}:${IMAGE_TAG}
-      - name: Deploy hns
+      - name: Deploy HNS
         run: make install deploy IMG=${{ env.REGISTRY }}/dana-team/${{ env.REPOSITORY_NAME }}:${IMAGE_TAG}
-      - name: test
+      - name: Run e2e tests
         run: make test-e2e
