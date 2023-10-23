@@ -54,7 +54,7 @@ var _ = Describe("MigrationHierarchy", func() {
 		LabelTestingMigrationHierarchies(mhName, randPrefix)
 	})
 
-	It("should not migrate subnamespace that doesn't have a CRQ and their direct parent doesn't have a CRQ,", func() {
+	It("should migrate subnamespace that doesn't have a CRQ and their direct parent doesn't have a CRQ,", func() {
 		nsA := GenerateE2EName("a", testPrefix, randPrefix)
 		nsB := GenerateE2EName("b", testPrefix, randPrefix)
 		nsC := GenerateE2EName("c", testPrefix, randPrefix)
@@ -66,11 +66,71 @@ var _ = Describe("MigrationHierarchy", func() {
 		CreateSubnamespace(nsC, nsA, randPrefix, false, storage, "25Gi", cpu, "25", memory, "25Gi", pods, "25", gpu, "25")
 		CreateSubnamespace(nsD, nsB, randPrefix, false, storage, "10Gi", cpu, "10", memory, "10Gi", pods, "10", gpu, "10")
 
-		// make sure the subnamespace was not migrated and the parent has not been updated
-		ShouldNotCreateMigrationHierarchy(nsD, nsC)
+		mhName := CreateMigrationHierarchy(nsD, nsC)
 
-		FieldShouldContain("subnamespace", nsB, nsD, ".metadata.namespace", nsB)
-		FieldShouldContain("namespace", "", nsD, ".metadata.labels", danav1.Parent+":"+nsB)
+		// verify phase is complete before labeling it
+		FieldShouldContain("migrationhierarchy", "", mhName, ".status.phase", "Complete")
+		FieldShouldContain("subnamespace", nsC, nsD, ".metadata.namespace", nsC)
+		FieldShouldContain("namespace", "", nsD, ".metadata.labels", danav1.Parent+":"+nsC)
+		LabelTestingMigrationHierarchies(mhName, randPrefix)
+	})
+
+	It("should migrate subnamespace that does have a CRQ under a subnamespace that doesn't have a CRQ", func() {
+		nsA := GenerateE2EName("a", testPrefix, randPrefix)
+		nsB := GenerateE2EName("b", testPrefix, randPrefix)
+		nsC := GenerateE2EName("c", testPrefix, randPrefix)
+		nsD := GenerateE2EName("d", testPrefix, randPrefix)
+		nsE := GenerateE2EName("e", testPrefix, randPrefix)
+		nsF := GenerateE2EName("f", testPrefix, randPrefix)
+
+		// create hierarchy
+		CreateSubnamespace(nsA, nsRoot, randPrefix, false, storage, "50Gi", cpu, "50", memory, "50Gi", pods, "50", gpu, "50")
+		CreateSubnamespace(nsB, nsA, randPrefix, false, storage, "25Gi", cpu, "25", memory, "25Gi", pods, "25", gpu, "25")
+		CreateSubnamespace(nsC, nsA, randPrefix, false, storage, "25Gi", cpu, "25", memory, "25Gi", pods, "25", gpu, "25")
+		CreateSubnamespace(nsD, nsB, randPrefix, false, storage, "10Gi", cpu, "10", memory, "10Gi", pods, "10", gpu, "10")
+		CreateSubnamespace(nsE, nsD, randPrefix, false, storage, "2Gi", cpu, "2", memory, "2Gi", pods, "2", gpu, "2")
+		CreateSubnamespace(nsF, nsE, randPrefix, false, storage, "1Gi", cpu, "1", memory, "1Gi", pods, "1", gpu, "1")
+
+		mhName := CreateMigrationHierarchy(nsD, nsA)
+
+		// verify phase is complete before labeling it
+		FieldShouldContain("migrationhierarchy", "", mhName, ".status.phase", "Complete")
+		FieldShouldContain("subnamespace", nsA, nsD, ".metadata.namespace", nsA)
+		FieldShouldContain("namespace", "", nsD, ".metadata.labels", danav1.Parent+":"+nsA)
+
+		FieldShouldContain("resourcequota", nsD, nsD, ".spec.hard.pods", "10")
+		RunShouldNotContain(nsD, propagationTime, "kubectl get clusterresourcequota")
+
+		LabelTestingMigrationHierarchies(mhName, randPrefix)
+	})
+
+	It("should migrate a subnamespace that does not have a CRQ under a subnamespace that does have a CRQ", func() {
+		nsA := GenerateE2EName("a", testPrefix, randPrefix)
+		nsB := GenerateE2EName("b", testPrefix, randPrefix)
+		nsC := GenerateE2EName("c", testPrefix, randPrefix)
+		nsD := GenerateE2EName("d", testPrefix, randPrefix)
+		nsE := GenerateE2EName("e", testPrefix, randPrefix)
+		nsF := GenerateE2EName("f", testPrefix, randPrefix)
+
+		// create hierarchy
+		CreateSubnamespace(nsB, nsRoot, randPrefix, false, storage, "25Gi", cpu, "25", memory, "25Gi", pods, "25", gpu, "25")
+		CreateSubnamespace(nsD, nsB, randPrefix, false, storage, "10Gi", cpu, "10", memory, "10Gi", pods, "10", gpu, "10")
+		CreateSubnamespace(nsE, nsD, randPrefix, false, storage, "2Gi", cpu, "2", memory, "2Gi", pods, "2", gpu, "2")
+		CreateSubnamespace(nsF, nsE, randPrefix, false, storage, "1Gi", cpu, "1", memory, "1Gi", pods, "1", gpu, "1")
+		CreateSubnamespace(nsA, nsRoot, randPrefix, false, storage, "50Gi", cpu, "50", memory, "50Gi", pods, "50", gpu, "50")
+		CreateSubnamespace(nsC, nsA, randPrefix, false, storage, "25Gi", cpu, "25", memory, "25Gi", pods, "25", gpu, "25")
+
+		mhName := CreateMigrationHierarchy(nsA, nsF)
+
+		// verify phase is complete before labeling it
+		FieldShouldContain("migrationhierarchy", "", mhName, ".status.phase", "Complete")
+		FieldShouldContain("subnamespace", nsF, nsA, ".metadata.namespace", nsF)
+		FieldShouldContain("namespace", "", nsA, ".metadata.labels", danav1.Parent+":"+nsF)
+
+		FieldShouldNotContain("resourcequota", nsA, nsA, ".spec.hard.pods", "50")
+		FieldShouldContain("clusterresourcequota", "", nsA, ".spec.quota.hard.pods", "50")
+
+		LabelTestingMigrationHierarchies(mhName, randPrefix)
 	})
 
 	It("should migrate subnamespace with children, including the children migration", func() {
@@ -348,5 +408,19 @@ var _ = Describe("MigrationHierarchy", func() {
 
 		// make sure the subnamespace was not migrated and the parent has not been updated
 		ShouldNotCreateMigrationHierarchy(nsB, nsB)
+	})
+
+	It("should not migrate a Subnamespace to be under its own descendant and create a loop", func() {
+		nsA := GenerateE2EName("a", testPrefix, randPrefix)
+		nsB := GenerateE2EName("b", testPrefix, randPrefix)
+		nsC := GenerateE2EName("c", testPrefix, randPrefix)
+
+		// create hierarchy
+		CreateSubnamespace(nsA, nsRoot, randPrefix, false, storage, "50Gi", cpu, "50", memory, "50Gi", pods, "50", gpu, "50")
+		CreateSubnamespace(nsB, nsA, randPrefix, false, storage, "25Gi", cpu, "25", memory, "25Gi", pods, "25", gpu, "25")
+		CreateSubnamespace(nsC, nsB, randPrefix, true, storage, "10Gi", cpu, "10", memory, "10Gi", pods, "10", gpu, "10")
+
+		// make sure the subnamespace was not migrated and the parent has not been updated
+		ShouldNotCreateMigrationHierarchy(nsA, nsC)
 	})
 })

@@ -116,7 +116,7 @@ func (r *ObjectContext) EnsureCreateObject() error {
 	return nil
 }
 
-// EnsureDeleteObject deletes the object if it exist
+// EnsureDeleteObject deletes the object if it exists
 func (r *ObjectContext) EnsureDeleteObject() error {
 	logger := r.Log.WithName("objectContext.EnsureDeleteObject")
 	if r.IsPresent() {

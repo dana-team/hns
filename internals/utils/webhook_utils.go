@@ -3,6 +3,7 @@ package utils
 import (
 	"context"
 	"fmt"
+	danav1 "github.com/dana-team/hns/api/v1"
 	authv1 "k8s.io/api/authorization/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -107,6 +108,10 @@ func ValidatePermissions(ctx context.Context, aNS []string, aNSName, bNSName, an
 // It impersonates the reqUser and uses SelfSubjectAccessReview API to check if the action is allowed or denied.
 // It returns a boolean value indicating whether the user has permission to create the pod or not
 func PermissionsExist(ctx context.Context, reqUser, namespace string) bool {
+	if reqUser == fmt.Sprintf("system:serviceaccount:%s:%s", danav1.SNSNamespace, danav1.SNSServiceAccount) {
+		return true
+	}
+
 	config, err := rest.InClusterConfig()
 	if err != nil {
 		panic(err.Error())

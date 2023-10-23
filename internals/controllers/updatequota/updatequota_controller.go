@@ -281,19 +281,19 @@ func addSnsQuota(sns *utils.ObjectContext, quotaSpec corev1.ResourceQuotaSpec) e
 	return nil
 }
 
-// addSnsQuota updates the resource quota for a subnamespace by subtracting the quota specified
+// subSnsQuota updates the resource quota for a subnamespace by subtracting the quota specified
 // in quotaSpec from the existing quota. It retrieves the existing quota from the subnamespace object and
 // loops through each resource, subtracting the requested quota if it is specified
 func subSnsQuota(sns *utils.ObjectContext, quotaSpec corev1.ResourceQuotaSpec) error {
 	err := sns.EnsureUpdateObject(func(object client.Object, l logr.Logger) (client.Object, logr.Logger, error) {
 		snsQuota := object.(*danav1.Subnamespace).Spec.ResourceQuotaSpec
-		for res := range snsQuota.Hard {
+		for resourceName := range snsQuota.Hard {
 			var (
-				vBefore, _  = snsQuota.Hard[res]
-				vRequest, _ = quotaSpec.Hard[res]
+				before, _  = snsQuota.Hard[resourceName]
+				request, _ = quotaSpec.Hard[resourceName]
 			)
-			vBefore.Set(vBefore.Value() - vRequest.Value())
-			object.(*danav1.Subnamespace).Spec.ResourceQuotaSpec.Hard[res] = vBefore
+			before.Set(before.Value() - request.Value())
+			object.(*danav1.Subnamespace).Spec.ResourceQuotaSpec.Hard[resourceName] = before
 		}
 		return object, l, nil
 	}, false)

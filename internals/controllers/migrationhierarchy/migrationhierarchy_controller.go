@@ -108,8 +108,22 @@ func (r *MigrationHierarchyReconciler) reconcile(mhObject *utils.ObjectContext) 
 
 	if phase == danav1.None {
 		if sourceQuotaObjExists {
-			if err := createMigrationUPQ(mhObject, sourceResources, rootNSName, toNamespace); err != nil {
-				return ctrl.Result{}, fmt.Errorf("failed create updateQuota for migration '%s': "+err.Error(), mhObject.GetName())
+			// temporarily increase the quota of the root namespace to make
+			// sure the migrationUPQ doesn't result in an error due to insufficent resources
+			if er := increaseRootResources(mhObject, rootNSName, sourceResources); err != nil {
+				err := r.updateMHStatus(mhObject, danav1.Error, er.Error())
+				if err != nil {
+					return ctrl.Result{}, fmt.Errorf("failed updating the status of object '%s': "+err.Error(), mhObject.GetName())
+				}
+				return ctrl.Result{}, fmt.Errorf("failed increasing root resources for migration '%s': "+er.Error(), mhObject.GetName())
+			}
+
+			if er := createMigrationUPQ(mhObject, sourceResources, rootNSName, toNamespace); err != nil {
+				err := r.updateMHStatus(mhObject, danav1.Error, er.Error())
+				if err != nil {
+					return ctrl.Result{}, fmt.Errorf("failed updating the status of object '%s': "+err.Error(), mhObject.GetName())
+				}
+				return ctrl.Result{}, fmt.Errorf("failed create updateQuota for migration '%s': "+er.Error(), mhObject.GetName())
 			}
 		}
 
@@ -194,6 +208,10 @@ func (r *MigrationHierarchyReconciler) reconcile(mhObject *utils.ObjectContext) 
 	if sourceQuotaObjExists {
 		if err := createMigrationUPQ(mhObject, sourceResources, sourceSNSParentName, rootNSName); err != nil {
 			return ctrl.Result{}, fmt.Errorf("failed to create updateQuota for migration '%s': "+err.Error(), mhObject.GetName())
+		}
+		// decrease the quota of the root namespace which was temporarily added
+		if err := decreaseRootResources(mhObject, rootNSName, sourceResources); err != nil {
+			return ctrl.Result{}, fmt.Errorf("failed decreasing root resources for migration")
 		}
 	}
 

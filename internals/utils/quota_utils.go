@@ -2,6 +2,7 @@ package utils
 
 import (
 	danav1 "github.com/dana-team/hns/api/v1"
+	defaults "github.com/dana-team/hns/internals/controllers/subnamespace/defaults"
 	quotav1 "github.com/openshift/api/quota/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -62,37 +63,52 @@ func GetSNSQuotaObject(sns *ObjectContext) (*ObjectContext, error) {
 	}
 
 	if rqFlag {
-		quotaObject, err := NewObjectContext(sns.Ctx, sns.Client, client.ObjectKey{Namespace: sns.Object.GetName(), Name: sns.Object.GetName()}, &corev1.ResourceQuota{})
-		if err != nil {
-			return quotaObject, err
-		}
-		return quotaObject, nil
-	} else {
-		quotaObject, err := NewObjectContext(sns.Ctx, sns.Client, client.ObjectKey{Namespace: "", Name: sns.Object.GetName()}, &quotav1.ClusterResourceQuota{})
-		if err != nil {
-			return quotaObject, err
-		}
-		return quotaObject, nil
+		return GetResourceQuota(sns)
 	}
+
+	return GetClusterResourceQuota(sns)
+}
+
+// GetSNSQuotaObjectFromAnnotation returns the quota object of a subnamesapce using annotations
+func GetSNSQuotaObjectFromAnnotation(sns *ObjectContext) (*ObjectContext, error) {
+	rqFlag := sns.Object.GetAnnotations()[danav1.IsRq]
+
+	if rqFlag == danav1.True {
+		return GetResourceQuota(sns)
+	}
+
+	return GetClusterResourceQuota(sns)
+}
+
+// GetResourceQuota returns a ResourceQuota
+func GetResourceQuota(sns *ObjectContext) (*ObjectContext, error) {
+	quotaObject, err := NewObjectContext(sns.Ctx, sns.Client, client.ObjectKey{Namespace: sns.Object.GetName(), Name: sns.Object.GetName()}, &corev1.ResourceQuota{})
+	if err != nil {
+		return quotaObject, err
+	}
+
+	return quotaObject, nil
+}
+
+// GetClusterResourceQuota returns a ClusterResourceQuota
+func GetClusterResourceQuota(sns *ObjectContext) (*ObjectContext, error) {
+	quotaObject, err := NewObjectContext(sns.Ctx, sns.Client, client.ObjectKey{Namespace: "", Name: sns.Object.GetName()}, &quotav1.ClusterResourceQuota{})
+	if err != nil {
+		return quotaObject, err
+	}
+
+	return quotaObject, nil
 }
 
 // GetNSQuotaObject returns the quota object of a namespace
 func GetNSQuotaObject(ns *ObjectContext) (*ObjectContext, error) {
-	rqFlag := ns.Object.GetAnnotations()[danav1.IsRq]
-
-	if rqFlag == danav1.True {
-		quotaObj, err := NewObjectContext(ns.Ctx, ns.Client, client.ObjectKey{Namespace: ns.Object.GetName(), Name: ns.Object.GetName()}, &corev1.ResourceQuota{})
-		if err != nil {
-			return quotaObj, err
-		}
-		return quotaObj, nil
-	} else {
-		quotaObj, err := NewObjectContext(ns.Ctx, ns.Client, client.ObjectKey{Namespace: "", Name: ns.Object.GetName()}, &quotav1.ClusterResourceQuota{})
-		if err != nil {
-			return quotaObj, err
-		}
-		return quotaObj, nil
+	sns, err := GetSNSFromNamespace(ns)
+	if err != nil {
+		return nil, err
 	}
+
+	return GetSNSQuotaObject(sns)
+
 }
 
 // GetSNSParentQuotaObject returns the quota object of a subnamespace. The quota object can be either a
@@ -152,12 +168,27 @@ func GetSnsSiblingQuotaObjects(sns *ObjectContext) []*ObjectContext {
 }
 
 // GetRootNSQuotaObject returns the quota object of a root namespace
-func GetRootNSQuotaObject(sns *ObjectContext) (*ObjectContext, error) {
-	quotaObj, err := NewObjectContext(sns.Ctx, sns.Client, client.ObjectKey{Namespace: sns.Object.GetName(), Name: sns.Object.GetName()}, &corev1.ResourceQuota{})
+func GetRootNSQuotaObject(ns *ObjectContext) (*ObjectContext, error) {
+	quotaObj, err := NewObjectContext(ns.Ctx, ns.Client, client.ObjectKey{Namespace: ns.Object.GetName(), Name: ns.Object.GetName()}, &corev1.ResourceQuota{})
 	if err != nil {
 		return quotaObj, err
 	}
 	return quotaObj, nil
+}
+
+// GetRootNSQuotaObjectFromName returns the quota object of a root namespace
+func GetRootNSQuotaObjectFromName(obj *ObjectContext, rootNSName string) (*ObjectContext, error) {
+	rootNS, err := NewObjectContext(obj.Ctx, obj.Client, client.ObjectKey{Name: rootNSName}, &corev1.Namespace{})
+	if err != nil {
+		return nil, err
+	}
+
+	rootNSQuotaObj, err := GetRootNSQuotaObject(rootNS)
+	if err != nil {
+		return nil, err
+	}
+
+	return rootNSQuotaObj, nil
 }
 
 // IsQuotaObjectZeroed returns whether a quota object is zeroed
@@ -167,6 +198,19 @@ func IsQuotaObjectZeroed(QuotaObject client.Object) bool {
 			return false
 		}
 	}
+	return true
+}
+
+// IsQuotaObjectDefault returns whether a quota object is default
+func IsQuotaObjectDefault(QuotaObject client.Object) bool {
+	quotaSpec := GetQuotaObjectSpec(QuotaObject)
+
+	for resourceName, quantity := range quotaSpec.Hard {
+		if defaultQuantity, exists := defaults.DefaultQuotaHard[resourceName]; !exists || quantity.Cmp(defaultQuantity) != 0 {
+			return false
+		}
+	}
+
 	return true
 }
 
@@ -185,19 +229,35 @@ func DoesSNSQuotaObjectExist(sns *ObjectContext) (bool, *ObjectContext, error) {
 	return false, nil, nil
 }
 
-// DoesSNSCrqExists returns true if a ClusterResourceQuota exists
-func DoesSNSCrqExists(sns *ObjectContext) bool {
-	snsCrq, err := NewObjectContext(sns.Ctx, sns.Client, types.NamespacedName{Name: sns.Object.GetName()}, &quotav1.ClusterResourceQuota{})
+// DoesSNSCRQExists returns true if a ClusterResourceQuota exists
+func DoesSNSCRQExists(sns *ObjectContext) (bool, *ObjectContext, error) {
+	snsCrq, err := GetClusterResourceQuota(sns)
 	if err != nil {
-		return false
+		return false, nil, err
 	}
 
 	if snsCrq.IsPresent() {
-		if !IsQuotaObjectZeroed(snsCrq.Object) {
-			return true
+		if !IsQuotaObjectZeroed(snsCrq.Object) && !IsQuotaObjectDefault(snsCrq.Object) {
+			return true, snsCrq, nil
 		}
 	}
-	return false
+
+	return false, nil, nil
+}
+
+// DoesSNSRQExists returns true if a ResourceQuota exists
+func DoesSNSRQExists(sns *ObjectContext) (bool, *ObjectContext, error) {
+	snsRQ, err := NewObjectContext(sns.Ctx, sns.Client, types.NamespacedName{Name: sns.Object.GetName(), Namespace: sns.Object.GetName()}, &corev1.ResourceQuota{})
+	if err != nil {
+		return false, nil, err
+	}
+
+	if snsRQ.IsPresent() {
+		if !IsQuotaObjectZeroed(snsRQ.Object) && !IsQuotaObjectDefault(snsRQ.Object) {
+			return true, snsRQ, nil
+		}
+	}
+	return false, nil, nil
 }
 
 // GetQuotaObjectSpec returns the quota of a quota object
