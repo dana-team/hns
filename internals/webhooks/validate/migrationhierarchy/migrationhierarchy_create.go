@@ -56,6 +56,10 @@ func (a *MigrationHierarchyAnnotator) handleCreate(mhObject *utils.ObjectContext
 		return admission.Errored(http.StatusBadRequest, err)
 	}
 
+	if response := a.validateMigrationLoop(toNSSliced, currentNSName); !response.Allowed {
+		return response
+	}
+
 	if response := utils.ValidateSecondaryRoot(ctx, a.Client, currentNSSliced, toNSSliced); !response.Allowed {
 		return response
 	}
@@ -93,26 +97,12 @@ func (a *MigrationHierarchyAnnotator) handleCreate(mhObject *utils.ObjectContext
 		currentNSKey := a.NamespaceDB.GetKey(currentNSName)
 		toNSKey := a.NamespaceDB.GetKey(toNSName)
 
-		// validate that if the subnamespace is not a resourcepool, then it is only allowed to migrate subnamespaces that
-		// either have a CRQ or their direct parent have a CRQ
-		if response := a.validateKeyExists(currentNSName, currentNSKey); !response.Allowed {
-			return response
-		}
-
-		if response := a.validateKeyExists(toNSName, toNSKey); !response.Allowed {
-			return response
-		}
-
-		// validate that the subnamespace that should be migrated is not the key itself in the DB since that would
-		// mean that its parent does not have a CRQ
-		if response := a.validateKeyHierarchy(currentNSName, currentNSKey); !response.Allowed {
-			return response
-		}
-
-		// validate that the new requested parent doesn't already have too many subnamespaces in its branch
-		// the maximum number a subnamespace can have in its branch is called by the danav1.MaxSNS env var
-		if response := a.validateKeyCountInDB(ctx, toNSKey, currentNSName); !response.Allowed {
-			return response
+		if currentNSKey != "" && toNSKey != "" {
+			// validate that the new requested parent doesn't already have too many subnamespaces in its branch
+			// the maximum number a subnamespace can have in its branch is called by the danav1.MaxSNS env var
+			if response := a.validateKeyCountInDB(ctx, toNSKey, currentNSName); !response.Allowed {
+				return response
+			}
 		}
 	}
 
@@ -146,6 +136,17 @@ func (a *MigrationHierarchyAnnotator) validateCurrentNSAndToNSEqual(currentNSNam
 	return admission.Allowed("")
 }
 
+// validateMigrationLoop validates that a Subnamespace is not asked to be migrated to be under its own
+// descendant since that can create a loop
+func (a *MigrationHierarchyAnnotator) validateMigrationLoop(toNSSliced []string, currentNSName string) admission.Response {
+	if utils.ContainsString(toNSSliced, currentNSName) {
+		message := "it's forbidden to migrate a Subnamespace to be under its own descendant since it would create a loop"
+		return admission.Denied(message)
+	}
+
+	return admission.Allowed("")
+}
+
 // validateSNSToRPMigration validates that a Subnamespace is not asked to be migrated to be under a ResourcePool
 func (a *MigrationHierarchyAnnotator) validateSNSToRPMigration(isCurrentNSResourcePool, isToNSResourcePool bool) admission.Response {
 	if !isCurrentNSResourcePool && isToNSResourcePool {
@@ -161,26 +162,6 @@ func (a *MigrationHierarchyAnnotator) validateNonUpperRPToSNSMigration(isCurrent
 	if !isCurrentUpperResourcePool && !isToNSResourcePool {
 
 		message := "it's forbidden to migrate a non-upper ResourcePool to be under a Subnamespace"
-		return admission.Denied(message)
-	}
-
-	return admission.Allowed("")
-}
-
-// validateKeyExists validates that a namespace has a key in the namespaceDB
-func (a *MigrationHierarchyAnnotator) validateKeyExists(namespace, key string) admission.Response {
-	if key == "" {
-		message := fmt.Sprintf("it's forbidden to migrate from or to this level of the hierarchy. The issue is with '%s'", namespace)
-		return admission.Denied(message)
-	}
-
-	return admission.Allowed("")
-}
-
-// validateKeyHierarchy validates that if a namespace is the key itself in the namespaceDB
-func (a *MigrationHierarchyAnnotator) validateKeyHierarchy(namespace, key string) admission.Response {
-	if namespace == key {
-		message := "it's forbidden to migrate from or to this level of the hierarchy"
 		return admission.Denied(message)
 	}
 

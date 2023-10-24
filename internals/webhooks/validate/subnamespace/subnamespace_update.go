@@ -133,7 +133,7 @@ func (a *SubnamespaceAnnotator) validateEnoughResourcesForChildren(snsObject *ut
 			var vChildren, _ = childrenQuotaResources[resourceName]
 			vMy.Sub(vChildren)
 			if vMy.Value() < 0 {
-				message := fmt.Sprintf("it's forbidden to update '%s' to have resource of type '%s' that are"+
+				message := fmt.Sprintf("it's forbidden to update '%s' to have resource of type '%s' that are "+
 					"fewer than the resources of type '%s' that are already allocated to the subnamespace children",
 					snsName, resourceName.String(), resourceName.String())
 				return admission.Denied(message)
@@ -149,8 +149,7 @@ func (a *SubnamespaceAnnotator) validateUpdateSnsRequest(snsObject, snsOldObject
 	logger := log.FromContext(snsObject.Ctx)
 	snsName := snsObject.Object.GetName()
 	snsParentName := snsObject.Object.GetNamespace()
-
-	snsQuotaObject, err := utils.GetSNSQuotaObject(snsObject)
+	snsQuotaObject, err := utils.GetSNSQuotaObjectFromAnnotation(snsObject)
 	if err != nil {
 		logger.Error(err, "unable to get sns quota object")
 		return admission.Denied(err.Error())
