@@ -205,8 +205,8 @@ func IsQuotaObjectZeroed(QuotaObject client.Object) bool {
 func IsQuotaObjectDefault(QuotaObject client.Object) bool {
 	quotaSpec := GetQuotaObjectSpec(QuotaObject)
 
-	for resourceName, quantity := range quotaSpec.Hard {
-		if defaultQuantity, exists := defaults.DefaultQuotaHard[resourceName]; !exists || quantity.Cmp(defaultQuantity) != 0 {
+	for resourceName := range quotaSpec.Hard {
+		if _, exists := defaults.DefaultQuotaHard[resourceName]; !exists {
 			return false
 		}
 	}
