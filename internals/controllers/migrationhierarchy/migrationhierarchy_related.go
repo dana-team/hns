@@ -8,6 +8,7 @@ import (
 	"github.com/go-logr/logr"
 	quotav1 "github.com/openshift/api/quota/v1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/util/retry"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -122,6 +123,9 @@ func (r *MigrationHierarchyReconciler) updateCRQSelector(childNS, parentNS *util
 	// use retry on conflict to update the CRQ
 	err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
 		if err := r.Client.Get(ctx, types.NamespacedName{Name: childNS.GetName()}, &crq); err != nil {
+			if errors.IsNotFound(err) {
+				return nil
+			}
 			return err
 		}
 
