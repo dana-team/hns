@@ -206,7 +206,7 @@ func createDefaultSNSLimitRange(snsObject *utils.ObjectContext) error {
 }
 
 // ComposeLimitRange returns a LimitRange object based on the given parameters
-func ComposeLimitRange(name string, namespace string, limits corev1.LimitRangeItem) *corev1.LimitRange {
+func ComposeLimitRange(name string, namespace string, limits []corev1.LimitRangeItem) *corev1.LimitRange {
 	return &corev1.LimitRange{
 		TypeMeta: metav1.TypeMeta{
 			Kind: "LimitRange",
@@ -216,9 +216,7 @@ func ComposeLimitRange(name string, namespace string, limits corev1.LimitRangeIt
 			Namespace: namespace,
 		},
 		Spec: corev1.LimitRangeSpec{
-			Limits: []corev1.LimitRangeItem{
-				limits,
-			},
+			Limits: limits,
 		},
 	}
 }
