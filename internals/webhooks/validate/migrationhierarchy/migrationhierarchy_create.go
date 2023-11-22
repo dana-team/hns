@@ -68,10 +68,6 @@ func (a *MigrationHierarchyAnnotator) handleCreate(mhObject *utils.ObjectContext
 		}
 	}
 
-	if response := utils.ValidateSecondaryRoot(ctx, a.Client, currentNSSliced, toNSSliced); !response.Allowed {
-		return response
-	}
-
 	if response := utils.ValidatePermissions(ctx, currentNSSliced, currentNSName, toNSName, ancestorNSName, reqUser, false); !response.Allowed {
 		return response
 	}
