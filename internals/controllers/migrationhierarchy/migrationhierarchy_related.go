@@ -8,7 +8,6 @@ import (
 	"github.com/go-logr/logr"
 	quotav1 "github.com/openshift/api/quota/v1"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/util/retry"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -116,29 +115,22 @@ func (r *MigrationHierarchyReconciler) updateCRQSelector(childNS, parentNS *util
 	ctx := childNS.Ctx
 
 	crq := quotav1.ClusterResourceQuota{}
-	if err := r.Client.Get(ctx, types.NamespacedName{Name: childNS.GetName()}, &crq); err != nil {
-		if errors.IsNotFound(err) {
-			return nil
-		}
-		return err
-	}
-
 	crqAnnotation := make(map[string]string)
 	childNamespaceDepth := strconv.Itoa(utils.GetNamespaceDepth(parentNS.Object) + 1)
-
 	crqAnnotation[danav1.CrqSelector+"-"+childNamespaceDepth] = nsName
-	crq.Spec.Selector.AnnotationSelector = crqAnnotation
 
-	// Use retry on conflict to update the CRQ
+	// use retry on conflict to update the CRQ
 	err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
-		updateErr := r.Client.Update(ctx, &crq)
-		if errors.IsConflict(updateErr) {
-			// Conflict occurred, let's re-fetch the latest version of CRQ and retry the update
-			if getErr := r.Client.Get(ctx, types.NamespacedName{Name: childNS.GetName()}, &crq); getErr != nil {
-				return getErr
-			}
+		if err := r.Client.Get(ctx, types.NamespacedName{Name: childNS.GetName()}, &crq); err != nil {
+			return err
 		}
-		return updateErr
+
+		crq.Spec.Selector.AnnotationSelector = crqAnnotation
+		if err := r.Client.Update(ctx, &crq); err != nil {
+			return err
+		}
+
+		return nil
 	})
 
 	return err
