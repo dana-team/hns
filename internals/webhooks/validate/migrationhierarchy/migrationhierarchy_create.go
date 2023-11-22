@@ -50,7 +50,7 @@ func (a *MigrationHierarchyAnnotator) handleCreate(mhObject *utils.ObjectContext
 
 	currentNSSliced := utils.GetNSDisplayNameSlice(currentNS)
 	toNSSliced := utils.GetNSDisplayNameSlice(toNS)
-	ancestorNSName, _, err := utils.GetAncestor(currentNSSliced, toNSSliced)
+	ancestorNSName, isAncestorRoot, err := utils.GetAncestor(currentNSSliced, toNSSliced)
 	if err != nil {
 		logger.Error(err, "failed to get ancestor", "source namespace", currentNSSliced, "destination namespace", toNSSliced)
 		return admission.Errored(http.StatusBadRequest, err)
@@ -58,6 +58,14 @@ func (a *MigrationHierarchyAnnotator) handleCreate(mhObject *utils.ObjectContext
 
 	if response := a.validateMigrationLoop(toNSSliced, currentNSName); !response.Allowed {
 		return response
+	}
+
+	// validate the source and destination namespaces are under the same secondary root only
+	// if you are not trying to migrate to or from the root namespace of the cluster
+	if (isAncestorRoot) && (!utils.IsRootNamespace(currentNS.Object) && !utils.IsRootNamespace(toNS.Object)) {
+		if response := utils.ValidateSecondaryRoot(ctx, a.Client, currentNSSliced, toNSSliced); !response.Allowed {
+			return response
+		}
 	}
 
 	if response := utils.ValidateSecondaryRoot(ctx, a.Client, currentNSSliced, toNSSliced); !response.Allowed {
