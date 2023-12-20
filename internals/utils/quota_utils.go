@@ -18,43 +18,6 @@ func GetSnsQuotaSpec(sns client.Object) corev1.ResourceQuotaSpec {
 	return sns.(*danav1.Subnamespace).Spec.ResourceQuotaSpec
 }
 
-// GetSNSQuotaUsed returns the used value of the subnamespace quota object
-func GetSNSQuotaUsed(sns *ObjectContext) (corev1.ResourceList, error) {
-	quotaObject, err := GetSNSQuotaObject(sns)
-	if err != nil {
-		return corev1.ResourceList{}, err
-	}
-
-	if isRQ(quotaObject.Object) {
-		return quotaObject.Object.(*corev1.ResourceQuota).Status.Used, nil
-	}
-
-	if isCRQ(quotaObject.Object) {
-		return quotaObject.Object.(*quotav1.ClusterResourceQuota).Status.Total.Used, nil
-	}
-
-	return corev1.ResourceList{}, nil
-
-}
-
-// GetSNSQuota returns the ResourceList of the quota object of a subnamespace
-func GetSNSQuota(sns *ObjectContext) (corev1.ResourceList, error) {
-	quotaObject, err := GetSNSQuotaObject(sns)
-	if err != nil {
-		return corev1.ResourceList{}, err
-	}
-
-	if isRQ(quotaObject.Object) {
-		return quotaObject.Object.(*corev1.ResourceQuota).Spec.Hard, nil
-	}
-
-	if isCRQ(quotaObject.Object) {
-		return quotaObject.Object.(*quotav1.ClusterResourceQuota).Spec.Quota.Hard, nil
-	}
-
-	return corev1.ResourceList{}, nil
-}
-
 // GetSNSQuotaObject returns the quota object of a subnamesapce
 func GetSNSQuotaObject(sns *ObjectContext) (*ObjectContext, error) {
 	rqFlag, err := IsRq(sns, danav1.SelfOffset)
@@ -92,7 +55,7 @@ func GetResourceQuota(sns *ObjectContext) (*ObjectContext, error) {
 
 // GetClusterResourceQuota returns a ClusterResourceQuota
 func GetClusterResourceQuota(sns *ObjectContext) (*ObjectContext, error) {
-	quotaObject, err := NewObjectContext(sns.Ctx, sns.Client, client.ObjectKey{Namespace: "", Name: sns.Object.GetName()}, &quotav1.ClusterResourceQuota{})
+	quotaObject, err := NewObjectContext(sns.Ctx, sns.Client, client.ObjectKey{Name: sns.Object.GetName()}, &quotav1.ClusterResourceQuota{})
 	if err != nil {
 		return quotaObject, err
 	}
@@ -126,7 +89,7 @@ func GetSNSParentQuotaObject(sns *ObjectContext) (*ObjectContext, error) {
 		}
 		return quotaObj, nil
 	} else {
-		quotaObj, err := NewObjectContext(sns.Ctx, sns.Client, client.ObjectKey{Namespace: "", Name: sns.Object.GetNamespace()}, &quotav1.ClusterResourceQuota{})
+		quotaObj, err := NewObjectContext(sns.Ctx, sns.Client, client.ObjectKey{Name: sns.Object.GetNamespace()}, &quotav1.ClusterResourceQuota{})
 		if err != nil {
 			return quotaObj, err
 		}
@@ -363,7 +326,7 @@ func addQuantityToResourceList(resourceList corev1.ResourceList, resourceName co
 // or an upper-rp, it returns its name.  If it doesn't, it returns the upper resourcepool's name
 func GetCrqPointer(subns client.Object) string {
 	if subns.GetAnnotations()[danav1.IsRq] == danav1.True {
-		return "none"
+		return subns.GetName()
 	}
 	if subns.GetLabels()[danav1.ResourcePool] == "false" ||
 		subns.GetAnnotations()[danav1.IsUpperRp] == danav1.True {
