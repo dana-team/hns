@@ -31,6 +31,7 @@ import (
 	"os"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
+	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 	// +kubebuilder:scaffold:imports
 )
 
@@ -67,15 +68,16 @@ func main() {
 	ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts)))
 
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
-		Scheme:             scheme,
-		LeaderElection:     enableLeaderElection,
-		LeaderElectionID:   "c1382367.dana.io",
-		MetricsBindAddress: metricsAddr,
-		Port:               9443,
+		Scheme:                 scheme,
+		LeaderElection:         enableLeaderElection,
+		LeaderElectionID:       "c1382367.dana.io",
+		Metrics:                metricsserver.Options{BindAddress: metricsAddr},
+		HealthProbeBindAddress: probeAddr,
 
-		// uncomment here when debugging webhooks locally
-		//CertDir: "k8s-webhook-server/serving-certs/",
+		// uncomment to debug locally
+		//WebhookServer:          webhook.NewServer(webhook.Options{CertDir: "k8s-webhook-server/serving-certs/"}),
 	})
+
 	if err != nil {
 		setupLog.Error(err, "unable to start manager")
 		os.Exit(1)

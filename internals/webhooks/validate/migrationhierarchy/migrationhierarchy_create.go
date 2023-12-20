@@ -19,14 +19,14 @@ func (a *MigrationHierarchyAnnotator) handleCreate(mhObject *utils.ObjectContext
 	logger := log.FromContext(ctx)
 
 	currentNSName := mhObject.Object.(*danav1.MigrationHierarchy).Spec.CurrentNamespace
-	currentNS, err := utils.NewObjectContext(ctx, a.Client, client.ObjectKey{Namespace: "", Name: currentNSName}, &corev1.Namespace{})
+	currentNS, err := utils.NewObjectContext(ctx, a.Client, client.ObjectKey{Name: currentNSName}, &corev1.Namespace{})
 	if err != nil {
 		logger.Error(err, "failed to create object", "currentNS", currentNSName)
 		return admission.Errored(http.StatusBadRequest, err)
 	}
 
 	toNSName := mhObject.Object.(*danav1.MigrationHierarchy).Spec.ToNamespace
-	toNS, err := utils.NewObjectContext(ctx, a.Client, client.ObjectKey{Namespace: "", Name: toNSName}, &corev1.Namespace{})
+	toNS, err := utils.NewObjectContext(ctx, a.Client, client.ObjectKey{Name: toNSName}, &corev1.Namespace{})
 	if err != nil {
 		logger.Error(err, "failed to create object", "toNS", toNSName)
 		return admission.Errored(http.StatusBadRequest, err)
@@ -110,23 +110,6 @@ func (a *MigrationHierarchyAnnotator) handleCreate(mhObject *utils.ObjectContext
 		}
 	}
 
-	currSNS, err := utils.GetSNSFromNamespace(currentNS)
-	if err != nil {
-		logger.Error(err, "failed to get subnamespace object", "subnamespace", currentNS.GetName())
-		return admission.Errored(http.StatusBadRequest, err)
-	}
-	toSNS, err := utils.GetSNSFromNamespace(toNS)
-	if err != nil {
-		logger.Error(err, "failed to get subnamespace object", "subnamespace", toNS.GetName())
-		return admission.Errored(http.StatusBadRequest, err)
-	}
-
-	if isToNSResourcePool {
-		if response := a.validateMigrateRPRequest(currSNS, toSNS); !response.Allowed {
-			return response
-		}
-	}
-
 	return admission.Allowed("")
 }
 
@@ -188,44 +171,6 @@ func (a *MigrationHierarchyAnnotator) validateKeyCountInDB(ctx context.Context, 
 		return admission.Denied(message)
 	}
 
-	return admission.Allowed("")
-}
-
-// validateMigrateRPRequest validates that there are enough resources to complete a
-// migration in case the subnamespace is a ResourcePool
-func (a *MigrationHierarchyAnnotator) validateMigrateRPRequest(currSNS *utils.ObjectContext, toSNS *utils.ObjectContext) admission.Response {
-	quotaNewParent, err := utils.GetSNSQuota(toSNS)
-	if err != nil {
-		message := fmt.Sprintf("failed to get quota of subnamespace '%s': "+err.Error(), toSNS.GetName())
-		return admission.Denied(message)
-	}
-
-	snsRequest, err := utils.GetSNSQuotaUsed(currSNS)
-	if err != nil {
-		message := fmt.Sprintf("failed to get used quota of subnamespace '%s': "+err.Error(), currSNS.GetName())
-		return admission.Denied(message)
-	}
-	usedNewParentResources, err := utils.GetSNSQuotaUsed(toSNS)
-	if err != nil {
-		message := fmt.Sprintf("failed to get used quota of subnamespace '%s': "+err.Error(), toSNS.GetName())
-		return admission.Denied(message)
-	}
-
-	for resourceName := range quotaNewParent {
-		var (
-			used, _    = usedNewParentResources[resourceName]
-			parent, _  = quotaNewParent[resourceName]
-			request, _ = snsRequest[resourceName]
-		)
-
-		parent.Sub(used)
-		parent.Sub(request)
-		if parent.Value() < 0 {
-			message := fmt.Sprintf("it's forbidden to migrate because there are not enough free resources of type '%s' "+
-				"in the ResourcePool the requested new parent '%s' is a part of", resourceName.String(), toSNS.GetName())
-			return admission.Denied(message)
-		}
-	}
 	return admission.Allowed("")
 }
 
