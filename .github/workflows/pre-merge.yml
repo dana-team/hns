@@ -1,0 +1,43 @@
+name: Pre Merge
+
+on:
+  pull_request:
+    branches:
+      - main
+    types: [opened, reopened, synchronize]
+jobs:
+  e2e-tests:
+    name: e2e-tests
+    runs-on: ubuntu-latest
+    env:
+      REGISTRY: ghcr.io
+      REPOSITORY_NAME: ${{ github.repository }}
+    steps:
+      - name: Set Kubernetes context
+        uses: Azure/k8s-set-context@v3.0
+        with:
+          method: kubeconfig
+          kubeconfig: ${{ secrets.HNS_CI_CLUSTER }}
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Setup go
+        uses: actions/setup-go@v4
+        with:
+          go-version-file: go.mod
+          go-version: '1.20'
+      - name: Run go vet
+        run: go vet ./...
+      - name: Log into ghcr.io
+        uses: docker/login-action@65b78e6e13532edd9afa3aa52ac7964289d1a9c1
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Add IMAGE_TAG env property with commit short sha
+        run: echo "IMAGE_TAG=`echo ${GITHUB_SHA} | cut -c1-8`" >> $GITHUB_ENV
+      - name: Build and push docker image
+        run: make docker-build docker-push IMG=${{ env.REGISTRY }}/${{ env.REPOSITORY_NAME }}:${IMAGE_TAG}
+      - name: Deploy HNS
+        run: make install deploy IMG=${{ env.REGISTRY }}/${{ env.REPOSITORY_NAME }}:${IMAGE_TAG}
+      - name: Run e2e tests
+        run: make test-e2e
