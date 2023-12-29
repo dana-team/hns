@@ -80,9 +80,25 @@ func ValidateSecondaryRoot(ctx context.Context, c client.Client, aNSArray, bNSAr
 // permissions on the namespace from which resources are moved and both namespaces are in the same branch
 // (only checked when the branch flag is true)
 func ValidatePermissions(ctx context.Context, aNS []string, aNSName, bNSName, ancestorNSName, reqUser string, branch bool) admission.Response {
-	hasSourcePermissions := PermissionsExist(ctx, reqUser, aNSName)
-	hasDestPermissions := PermissionsExist(ctx, reqUser, bNSName)
-	hasAncestorPermissions := PermissionsExist(ctx, reqUser, ancestorNSName)
+	logger := log.FromContext(ctx)
+
+	hasSourcePermissions, err := PermissionsExist(ctx, reqUser, aNSName)
+	if err != nil {
+		logger.Error(err, "failed to verify source permissions")
+		return admission.Errored(http.StatusBadRequest, err)
+	}
+
+	hasDestPermissions, err := PermissionsExist(ctx, reqUser, bNSName)
+	if err != nil {
+		logger.Error(err, "failed to verify destination permissions")
+		return admission.Errored(http.StatusBadRequest, err)
+	}
+
+	hasAncestorPermissions, err := PermissionsExist(ctx, reqUser, ancestorNSName)
+	if err != nil {
+		logger.Error(err, "failed to verify ancestor permissions")
+		return admission.Errored(http.StatusBadRequest, err)
+	}
 
 	inBranch := ContainsString(aNS, bNSName)
 
@@ -107,25 +123,20 @@ func ValidatePermissions(ctx context.Context, aNS []string, aNSName, bNSName, an
 // PermissionsExist checks if a user has permission to create a pod in a given namespace.
 // It impersonates the reqUser and uses SelfSubjectAccessReview API to check if the action is allowed or denied.
 // It returns a boolean value indicating whether the user has permission to create the pod or not
-func PermissionsExist(ctx context.Context, reqUser, namespace string) bool {
+func PermissionsExist(ctx context.Context, reqUser, namespace string) (bool, error) {
 	if reqUser == fmt.Sprintf("system:serviceaccount:%s:%s", danav1.SNSNamespace, danav1.SNSServiceAccount) {
-		return true
+		return true, nil
 	}
 
 	config, err := rest.InClusterConfig()
 	if err != nil {
-		panic(err.Error())
-	}
-
-	// set the user to impersonate in the configuration
-	config.Impersonate = rest.ImpersonationConfig{
-		UserName: reqUser,
+		return false, fmt.Errorf("unable to get in cluster config: %v", err.Error())
 	}
 
 	// create a new Kubernetes client using the configuration
 	clientSet, err := kubernetes.NewForConfig(config)
 	if err != nil {
-		panic(err.Error())
+		return false, fmt.Errorf("unable to create clientSet: %v", err.Error())
 	}
 
 	// create a new SelfSubjectAccessReview API object for checking permissions
@@ -135,24 +146,23 @@ func PermissionsExist(ctx context.Context, reqUser, namespace string) bool {
 		Resource:  "pods",
 	}
 
-	selfCheck := authv1.SelfSubjectAccessReview{
-		Spec: authv1.SelfSubjectAccessReviewSpec{
+	check := authv1.SubjectAccessReview{
+		Spec: authv1.SubjectAccessReviewSpec{
 			ResourceAttributes: &action,
+			User:               reqUser,
 		},
 	}
 
 	// check the permissions for the user
-	resp, err := clientSet.AuthorizationV1().SelfSubjectAccessReviews().Create(ctx, &selfCheck, metav1.CreateOptions{})
+	resp, err := clientSet.AuthorizationV1().SubjectAccessReviews().Create(ctx, &check, metav1.CreateOptions{})
 	if err != nil {
 		panic(err.Error())
 	}
 
 	// check the response status to determine whether the user has permission to create the pod or not
-	if resp.Status.Denied {
-		return false
-	}
 	if resp.Status.Allowed {
-		return true
+		return true, nil
 	}
-	return false
+
+	return false, nil
 }
