@@ -82,7 +82,7 @@ func createMigrationUPQ(mhObject *utils.ObjectContext, sourceResources corev1.Re
 	mhName := mhObject.Object.GetName()
 
 	if err := createUpdateQuota(mhObject, mhName, sourceNS, destNS, sourceResources); err != nil {
-		return fmt.Errorf("failed to create updateQuota for migration '%s'", mhObject.GetName())
+		return fmt.Errorf("failed to create updateQuota for migration %q", mhObject.GetName())
 	}
 
 	return nil
@@ -93,11 +93,11 @@ func createMigrationUPQ(mhObject *utils.ObjectContext, sourceResources corev1.Re
 func monitorMigrationUPQ(mhObject *utils.ObjectContext, ns string) (ctrl.Result, error) {
 	upqPhase, err := getUpdateQuotaStatus(mhObject, ns)
 	if err != nil {
-		return ctrl.Result{}, fmt.Errorf("failed getting updateQuota object status '%s': "+err.Error(), mhObject.GetName())
+		return ctrl.Result{}, fmt.Errorf("failed getting updateQuota object status %q: "+err.Error(), mhObject.GetName())
 	}
 
 	if upqPhase == danav1.Error {
-		return ctrl.Result{}, fmt.Errorf("failed to do updateQuota for migration '%s', phase Error", mhObject.GetName())
+		return ctrl.Result{}, fmt.Errorf("failed to do updateQuota for migration %q, phase Error", mhObject.GetName())
 	}
 
 	if upqPhase != danav1.Complete {
@@ -126,7 +126,7 @@ func getUpdateQuotaStatus(mhObject *utils.ObjectContext, upqNamespace string) (d
 	upqObj, err := utils.NewObjectContext(mhObject.Ctx, mhObject.Client, client.ObjectKey{Name: upqName, Namespace: upqNamespace}, &danav1.Updatequota{})
 
 	if err != nil {
-		return "", fmt.Errorf("failed getting updatequota object '%s': "+err.Error(), upqName)
+		return "", fmt.Errorf("failed getting updatequota object %q: "+err.Error(), upqName)
 	}
 
 	return upqObj.Object.(*danav1.Updatequota).Status.Phase, nil

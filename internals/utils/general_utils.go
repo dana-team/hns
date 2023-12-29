@@ -19,7 +19,7 @@ func IndexOf(element string, a []string) (int, error) {
 		}
 	}
 
-	return -1, fmt.Errorf("failed to find element '%s' in slice", element)
+	return -1, fmt.Errorf("failed to find element %q in slice", element)
 }
 
 // ContainsString checks if a string is present in a slice of strings

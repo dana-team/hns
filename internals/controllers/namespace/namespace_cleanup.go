@@ -23,12 +23,12 @@ func (r *NamespaceReconciler) cleanUp(ctx context.Context, nsObject *utils.Objec
 	nsName := nsObject.Object.GetName()
 
 	if err := r.deleteNamespaceFromNamespaceDB(nsName); err != nil {
-		return fmt.Errorf("failed to delete namespace '%s' from namespaceDB: "+err.Error(), nsName)
+		return fmt.Errorf("failed to delete namespace %q from namespaceDB: "+err.Error(), nsName)
 	}
 	logger.Info("successfully deleted namespace from namespaceDB", "namespace", nsName)
 
 	if err := deleteNamespaceQuotaObject(nsObject); err != nil {
-		return fmt.Errorf("failed to delete quota object of namespace '%s': "+err.Error(), nsName)
+		return fmt.Errorf("failed to delete quota object of namespace %q: "+err.Error(), nsName)
 	}
 	logger.Info("successfully deleted quota object of namespace", "namespace", nsName)
 

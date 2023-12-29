@@ -59,7 +59,7 @@ func (r *MigrationHierarchyReconciler) Reconcile(ctx context.Context, req ctrl.R
 
 	mhObject, err := utils.NewObjectContext(ctx, r.Client, client.ObjectKey{Name: req.NamespacedName.Name}, &danav1.MigrationHierarchy{})
 	if err != nil {
-		return ctrl.Result{}, fmt.Errorf("failed to get object '%s': "+err.Error(), mhObject.Object.GetName())
+		return ctrl.Result{}, fmt.Errorf("failed to get object %q: "+err.Error(), mhObject.Object.GetName())
 	}
 
 	if !mhObject.IsPresent() {
@@ -89,9 +89,9 @@ func (r *MigrationHierarchyReconciler) reconcile(mhObject *utils.ObjectContext) 
 	if er != nil {
 		err := r.updateMHStatus(mhObject, danav1.Error, er.Error())
 		if err != nil {
-			return ctrl.Result{}, fmt.Errorf("failed updating the status of object '%s': "+err.Error(), mhObject.GetName())
+			return ctrl.Result{}, fmt.Errorf("failed updating the status of object %q: "+err.Error(), mhObject.GetName())
 		}
-		return ctrl.Result{}, fmt.Errorf("failed getting namespace object '%s': "+er.Error(), currentNamespace)
+		return ctrl.Result{}, fmt.Errorf("failed getting namespace object %q: "+er.Error(), currentNamespace)
 	}
 
 	sourceSNSParentName := utils.GetNamespaceParent(ns.Object)
@@ -99,18 +99,18 @@ func (r *MigrationHierarchyReconciler) reconcile(mhObject *utils.ObjectContext) 
 	if er != nil {
 		err := r.updateMHStatus(mhObject, danav1.Error, er.Error())
 		if err != nil {
-			return ctrl.Result{}, fmt.Errorf("failed updating the status of object '%s': "+err.Error(), mhObject.GetName())
+			return ctrl.Result{}, fmt.Errorf("failed updating the status of object %q: "+err.Error(), mhObject.GetName())
 		}
-		return ctrl.Result{}, fmt.Errorf("failed getting subnamespace object '%s': "+er.Error(), currentNamespace)
+		return ctrl.Result{}, fmt.Errorf("failed getting subnamespace object %q: "+er.Error(), currentNamespace)
 	}
 
 	sourceQuotaObj, err := utils.GetNSQuotaObject(ns)
 	if er != nil {
 		err := r.updateMHStatus(mhObject, danav1.Error, er.Error())
 		if err != nil {
-			return ctrl.Result{}, fmt.Errorf("failed updating the status of object '%s': "+err.Error(), mhObject.GetName())
+			return ctrl.Result{}, fmt.Errorf("failed updating the status of object %q: "+err.Error(), mhObject.GetName())
 		}
-		return ctrl.Result{}, fmt.Errorf("failed getting quota object '%s': "+er.Error(), currentNamespace)
+		return ctrl.Result{}, fmt.Errorf("failed getting quota object %q: "+er.Error(), currentNamespace)
 	}
 
 	sourceResources := utils.GetQuotaObjectSpec(sourceQuotaObj.Object)
@@ -123,9 +123,9 @@ func (r *MigrationHierarchyReconciler) reconcile(mhObject *utils.ObjectContext) 
 	if er != nil {
 		err := r.updateMHStatus(mhObject, danav1.Error, er.Error())
 		if err != nil {
-			return ctrl.Result{}, fmt.Errorf("failed updating the status of object '%s': "+err.Error(), mhObject.GetName())
+			return ctrl.Result{}, fmt.Errorf("failed updating the status of object %q: "+err.Error(), mhObject.GetName())
 		}
-		return ctrl.Result{}, fmt.Errorf("failed to get namespace '%s': "+er.Error(), toNamespace)
+		return ctrl.Result{}, fmt.Errorf("failed to get namespace %q: "+er.Error(), toNamespace)
 	}
 
 	toSNSParentName := utils.GetNamespaceParent(toNS.Object)
@@ -133,9 +133,9 @@ func (r *MigrationHierarchyReconciler) reconcile(mhObject *utils.ObjectContext) 
 	if er != nil {
 		err := r.updateMHStatus(mhObject, danav1.Error, er.Error())
 		if err != nil {
-			return ctrl.Result{}, fmt.Errorf("failed updating the status of object '%s': "+err.Error(), mhObject.GetName())
+			return ctrl.Result{}, fmt.Errorf("failed updating the status of object %q: "+err.Error(), mhObject.GetName())
 		}
-		return ctrl.Result{}, fmt.Errorf("failed getting subnamespace object '%s': "+er.Error(), toNamespace)
+		return ctrl.Result{}, fmt.Errorf("failed getting subnamespace object %q: "+er.Error(), toNamespace)
 	}
 
 	if phase == danav1.None {
@@ -145,25 +145,25 @@ func (r *MigrationHierarchyReconciler) reconcile(mhObject *utils.ObjectContext) 
 			if er := increaseRootResources(mhObject, rootNSName, sourceResources); err != nil {
 				err := r.updateMHStatus(mhObject, danav1.Error, er.Error())
 				if err != nil {
-					return ctrl.Result{}, fmt.Errorf("failed updating the status of object '%s': "+err.Error(), mhObject.GetName())
+					return ctrl.Result{}, fmt.Errorf("failed updating the status of object %q: "+err.Error(), mhObject.GetName())
 				}
-				return ctrl.Result{}, fmt.Errorf("failed increasing root resources for migration '%s': "+er.Error(), mhObject.GetName())
+				return ctrl.Result{}, fmt.Errorf("failed increasing root resources for migration %q: "+er.Error(), mhObject.GetName())
 			}
 
 			toSNSCRQPointer := toSNS.Object.(*danav1.Subnamespace).Annotations[danav1.CrqPointer]
 			if er := createMigrationUPQ(mhObject, sourceResources, rootNSName, toSNSCRQPointer); err != nil {
 				err := r.updateMHStatus(mhObject, danav1.Error, er.Error())
 				if err != nil {
-					return ctrl.Result{}, fmt.Errorf("failed updating the status of object '%s': "+err.Error(), mhObject.GetName())
+					return ctrl.Result{}, fmt.Errorf("failed updating the status of object %q: "+err.Error(), mhObject.GetName())
 				}
-				return ctrl.Result{}, fmt.Errorf("failed create updateQuota for migration '%s': "+er.Error(), mhObject.GetName())
+				return ctrl.Result{}, fmt.Errorf("failed create updateQuota for migration %q: "+er.Error(), mhObject.GetName())
 			}
 		}
 
 		// update the phase of the Migration Hierarchy to make sure that in case of an error or a requeue, the resources
 		// that have been added for the migration will not be added again
 		if err := r.updateMHStatus(mhObject, danav1.InProgress, ""); err != nil {
-			return ctrl.Result{}, fmt.Errorf("failed updating the status of object '%s': "+err.Error(), mhObject.GetName())
+			return ctrl.Result{}, fmt.Errorf("failed updating the status of object %q: "+err.Error(), mhObject.GetName())
 		}
 		logger.Info("successfully updated status of MigrationHierarchy object", "phase", danav1.InProgress)
 	}
@@ -174,7 +174,7 @@ func (r *MigrationHierarchyReconciler) reconcile(mhObject *utils.ObjectContext) 
 		if res, er := monitorMigrationUPQ(mhObject, rootNSName); er != nil {
 			err := r.updateMHStatus(mhObject, danav1.Error, er.Error())
 			if err != nil {
-				return ctrl.Result{}, fmt.Errorf("failed updating the status of object '%s': "+err.Error(), mhObject.GetName())
+				return ctrl.Result{}, fmt.Errorf("failed updating the status of object %q: "+err.Error(), mhObject.GetName())
 			}
 			return ctrl.Result{}, fmt.Errorf("failed to add migration resources: " + er.Error())
 		} else if !res.IsZero() {
@@ -188,9 +188,9 @@ func (r *MigrationHierarchyReconciler) reconcile(mhObject *utils.ObjectContext) 
 	if er != nil {
 		err := r.updateMHStatus(mhObject, danav1.Error, er.Error())
 		if err != nil {
-			return ctrl.Result{}, fmt.Errorf("failed updating the status of object '%s': "+err.Error(), mhObject.GetName())
+			return ctrl.Result{}, fmt.Errorf("failed updating the status of object %q: "+err.Error(), mhObject.GetName())
 		}
-		return ctrl.Result{}, fmt.Errorf("failed creating subnamespace '%s' under namespace '%s': "+er.Error(), currentNamespace, toNamespace)
+		return ctrl.Result{}, fmt.Errorf("failed creating subnamespace %q under namespace '%s': "+er.Error(), currentNamespace, toNamespace)
 	}
 
 	logger.Info("successfully created new subnamespace under new parent", "subnamespace", currentNamespace, "new parent", toNamespace)

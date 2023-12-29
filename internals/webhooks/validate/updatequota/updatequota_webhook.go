@@ -57,7 +57,7 @@ func (a *UpdateQuotaAnnotator) Handle(ctx context.Context, req admission.Request
 			return admission.Errored(http.StatusBadRequest, err)
 		}
 		if !reflect.ValueOf(oldUPQ.Status).IsZero() {
-			message := fmt.Sprintf("it is forbidden to update an object of type '%s'", oldUPQ.TypeMeta.Kind)
+			message := fmt.Sprintf("it is forbidden to update an object of type %q", oldUPQ.TypeMeta.Kind)
 			return admission.Denied(message)
 		}
 	}

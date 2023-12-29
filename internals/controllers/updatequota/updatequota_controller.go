@@ -50,7 +50,7 @@ func (r *UpdateQuotaReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 
 	upqObject, err := utils.NewObjectContext(ctx, r.Client, client.ObjectKey{Name: req.Name, Namespace: req.Namespace}, &danav1.Updatequota{})
 	if err != nil {
-		return ctrl.Result{}, fmt.Errorf("failed to get object '%s': "+err.Error(), upqObject.Object.GetName())
+		return ctrl.Result{}, fmt.Errorf("failed to get object %q: "+err.Error(), upqObject.Object.GetName())
 	}
 
 	if !upqObject.IsPresent() {
@@ -74,13 +74,13 @@ func (r *UpdateQuotaReconciler) reconcile(upqObject *utils.ObjectContext) error 
 	sourceNSName := upqObject.Object.(*danav1.Updatequota).Spec.SourceNamespace
 	sourceNS, err := utils.NewObjectContext(ctx, r.Client, client.ObjectKey{Name: sourceNSName}, &corev1.Namespace{})
 	if err != nil {
-		return fmt.Errorf("failed to get object '%s': "+err.Error(), sourceNSName)
+		return fmt.Errorf("failed to get object %q: "+err.Error(), sourceNSName)
 	}
 
 	destNSName := upqObject.Object.(*danav1.Updatequota).Spec.DestNamespace
 	destNS, err := utils.NewObjectContext(ctx, r.Client, client.ObjectKey{Name: destNSName}, &corev1.Namespace{})
 	if err != nil {
-		return fmt.Errorf("failed to get object '%s': "+err.Error(), destNSName)
+		return fmt.Errorf("failed to get object %q: "+err.Error(), destNSName)
 	}
 
 	// get the Ancestor namespace of the source and destination namespaces. The Ancestor namespace is the
@@ -91,7 +91,7 @@ func (r *UpdateQuotaReconciler) reconcile(upqObject *utils.ObjectContext) error 
 
 	ancestorNSName, _, err := utils.GetAncestor(sourceNSSliced, destNSSliced)
 	if err != nil {
-		return fmt.Errorf("failed to find ancestor namespace of '%s' and '%s': "+err.Error(), sourceNSSliced, destNSSliced)
+		return fmt.Errorf("failed to find ancestor namespace of %q and %q: "+err.Error(), sourceNSSliced, destNSSliced)
 	}
 
 	if isNSAncestor(sourceNSName, ancestorNSName) {
@@ -99,7 +99,7 @@ func (r *UpdateQuotaReconciler) reconcile(upqObject *utils.ObjectContext) error 
 		if er != nil {
 			err := updateUPQStatus(upqObject, danav1.Error, er.Error())
 			if err != nil {
-				return fmt.Errorf("failed updating the status of object '%s': "+err.Error(), upqObject.GetName())
+				return fmt.Errorf("failed updating the status of object %q: "+err.Error(), upqObject.GetName())
 			}
 			return fmt.Errorf("failed move resources down: " + er.Error())
 		}
@@ -108,7 +108,7 @@ func (r *UpdateQuotaReconciler) reconcile(upqObject *utils.ObjectContext) error 
 		if er != nil {
 			err := updateUPQStatus(upqObject, danav1.Error, er.Error())
 			if err != nil {
-				return fmt.Errorf("failed updating the status of object '%s': "+err.Error(), upqObject.GetName())
+				return fmt.Errorf("failed updating the status of object %q: "+err.Error(), upqObject.GetName())
 			}
 			return fmt.Errorf("failed move resources up: " + er.Error())
 		}
@@ -116,7 +116,7 @@ func (r *UpdateQuotaReconciler) reconcile(upqObject *utils.ObjectContext) error 
 		if er := moveBetweenBranches(ancestorNSName, upqObject, sourceNS, destNS); err != nil {
 			err := updateUPQStatus(upqObject, danav1.Error, er.Error())
 			if err != nil {
-				return fmt.Errorf("failed updating the status of object '%s': "+err.Error(), upqObject.GetName())
+				return fmt.Errorf("failed updating the status of object %q: "+err.Error(), upqObject.GetName())
 			}
 			return fmt.Errorf("failed to move resources between branches: " + er.Error())
 		}
@@ -124,7 +124,7 @@ func (r *UpdateQuotaReconciler) reconcile(upqObject *utils.ObjectContext) error 
 
 	err = updateUPQStatus(upqObject, danav1.Complete, "")
 	if err != nil {
-		return fmt.Errorf("failed updating the status of object '%s': "+err.Error(), upqObject.GetName())
+		return fmt.Errorf("failed updating the status of object %q: "+err.Error(), upqObject.GetName())
 	}
 
 	return nil
@@ -143,7 +143,7 @@ func moveBetweenBranches(ancestorNSName string, upqObject, sourceNS, destNS *uti
 	if er != nil {
 		err := updateUPQStatus(upqObject, danav1.Error, er.Error())
 		if err != nil {
-			return fmt.Errorf("failed updating the status of object '%s': "+err.Error(), upqObject.GetName())
+			return fmt.Errorf("failed updating the status of object %q: "+err.Error(), upqObject.GetName())
 		}
 		return fmt.Errorf("failed move resources up: " + er.Error())
 	}
@@ -152,7 +152,7 @@ func moveBetweenBranches(ancestorNSName string, upqObject, sourceNS, destNS *uti
 	if er != nil {
 		err := updateUPQStatus(upqObject, danav1.Error, er.Error())
 		if err != nil {
-			return fmt.Errorf("failed updating the status of object '%s': "+err.Error(), upqObject.GetName())
+			return fmt.Errorf("failed updating the status of object %q: "+err.Error(), upqObject.GetName())
 		}
 		return fmt.Errorf("failed move resources down: " + er.Error())
 	}
@@ -174,7 +174,7 @@ func moveResourcesDown(ancestorNS string, ns, upqObject *utils.ObjectContext) er
 	for i := 0; i < len(snsListDown); i++ {
 		err := addSnsQuota(snsListDown[i], resourcesToAdd)
 		if err != nil {
-			return fmt.Errorf("updating the quota down the hierarchy failed at namespace '%s': %s", snsListDown[i].GetName(), err.Error())
+			return fmt.Errorf("updating the quota down the hierarchy failed at namespace %q: %s", snsListDown[i].GetName(), err.Error())
 		}
 		logger.Info("successfully added resources to subnamespace", "subnamespace", snsListDown[i].GetName(), "resources", resourcesToAdd.Hard)
 	}
@@ -196,7 +196,7 @@ func moveResourcesUp(ancestorNS string, ns, upqObject *utils.ObjectContext) erro
 	for i := 0; i < len(snsListUp); i++ {
 		err := subSnsQuota(snsListUp[i], resourcesToSub)
 		if err != nil {
-			return fmt.Errorf("updating the quota up the hierarchy failed at namespace '%s': %s", snsListUp[i].GetName(), err.Error())
+			return fmt.Errorf("updating the quota up the hierarchy failed at namespace %q: %s", snsListUp[i].GetName(), err.Error())
 		}
 		logger.Info("successfully subtracted resources from subnamespace", "subnamespace", snsListUp[i].GetName(), "resources", resourcesToSub)
 	}
