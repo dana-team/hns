@@ -21,17 +21,17 @@ func (r *NamespaceReconciler) init(nsObject *utils.ObjectContext) error {
 	nsName := nsObject.Object.GetName()
 
 	if err := addNSFinalizer(nsObject); err != nil {
-		return fmt.Errorf("failed to add finalizer for namespace '%s': "+err.Error(), nsName)
+		return fmt.Errorf("failed to add finalizer for namespace %q: "+err.Error(), nsName)
 	}
 	logger.Info("successfully added finalizer of namespace", "namespace", nsName)
 
 	if err := createNamespaceHNSView(nsObject); err != nil {
-		return fmt.Errorf("failed to create role and roleBinding objects associated with namespace '%s': "+err.Error(), nsName)
+		return fmt.Errorf("failed to create role and roleBinding objects associated with namespace %q: "+err.Error(), nsName)
 	}
 	logger.Info("successfully created role and roleBinding objects associated with namespace", "namespace", nsName)
 
 	if err := createParentRoleBindingsInNS(nsObject); err != nil {
-		return fmt.Errorf("failed to create parent roleBindings objects in namespace '%s': "+err.Error(), nsName)
+		return fmt.Errorf("failed to create parent roleBindings objects in namespace %q: "+err.Error(), nsName)
 	}
 	logger.Info("successfully created parent roleBinding objects in namespace", "namespace", nsName)
 

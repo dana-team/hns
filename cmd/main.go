@@ -75,7 +75,7 @@ func main() {
 		HealthProbeBindAddress: probeAddr,
 
 		// uncomment to debug locally
-		//WebhookServer:          webhook.NewServer(webhook.Options{CertDir: "k8s-webhook-server/serving-certs/"}),
+		//WebhookServer: webhook.NewServer(webhook.Options{CertDir: "k8s-webhook-server/serving-certs/"}),
 	})
 
 	if err != nil {

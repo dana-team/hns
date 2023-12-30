@@ -167,7 +167,7 @@ func (a *MigrationHierarchyAnnotator) validateKeyCountInDB(ctx context.Context, 
 	}
 
 	if (a.NamespaceDB.GetKeyCount(toNSKey) + childrenNum) >= danav1.MaxSNS {
-		message := fmt.Sprintf("it's forbidden to create more than '%v' namespaces under hierarchy '%s'", danav1.MaxSNS, toNSKey)
+		message := fmt.Sprintf("it's forbidden to create more than %v namespaces under hierarchy %q", danav1.MaxSNS, toNSKey)
 		return admission.Denied(message)
 	}
 

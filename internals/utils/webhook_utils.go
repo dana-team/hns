@@ -18,7 +18,7 @@ import (
 // ValidateNamespaceExist validates that a namespace exists
 func ValidateNamespaceExist(ns *ObjectContext) admission.Response {
 	if !(ns.IsPresent()) {
-		message := fmt.Sprintf("namespace '%s' does not exist", ns.Object.GetName())
+		message := fmt.Sprintf("namespace %q does not exist", ns.Object.GetName())
 		return admission.Denied(message)
 	}
 
@@ -31,7 +31,7 @@ func ValidateToNamespaceName(ns *ObjectContext, toNSName string) admission.Respo
 	currentParent := GetNamespaceParent(ns.Object)
 
 	if toNSName == currentParent {
-		message := fmt.Sprintf("'%s' is already under '%s'", ns.Object.GetName(), toNSName)
+		message := fmt.Sprintf("%q is already under %q", ns.Object.GetName(), toNSName)
 		return admission.Denied(message)
 	}
 
@@ -65,8 +65,8 @@ func ValidateSecondaryRoot(ctx context.Context, c client.Client, aNSArray, bNSAr
 
 	if IsSecondaryRootNamespace(aNSSecondaryRoot.Object) || IsSecondaryRootNamespace(bNSSecondaryRoot.Object) {
 		if aNSSecondaryRootName != bNSSecondaryRootName {
-			message := fmt.Sprintf("it is forbidden to perform operations between subnamespaces from hierarchy '%s' and "+
-				"subnamespaces from hierarchy '%s'", aNSSecondaryRootName, bNSSecondaryRootName)
+			message := fmt.Sprintf("it is forbidden to perform operations between subnamespaces from hierarchy %q and "+
+				"subnamespaces from hierarchy %q", aNSSecondaryRootName, bNSSecondaryRootName)
 			return admission.Denied(message)
 		}
 	}
@@ -88,14 +88,14 @@ func ValidatePermissions(ctx context.Context, aNS []string, aNSName, bNSName, an
 
 	if branch {
 		if !hasAncestorPermissions && !(hasSourcePermissions && hasDestPermissions) && !(hasSourcePermissions && inBranch) {
-			message := fmt.Sprintf("you must have permissions on: '%s' and '%s', or permissions on '%s', to perform "+
-				"this operation. Having permissions only on '%s', is enough just when resources are moved in the same branch of the hierarchy",
+			message := fmt.Sprintf("you must have permissions on: %q and %q, or permissions on %q, to perform "+
+				"this operation. Having permissions only on %q, is enough just when resources are moved in the same branch of the hierarchy",
 				aNSName, bNSName, ancestorNSName, aNSName)
 			return admission.Denied(message)
 		}
 	} else {
 		if !hasAncestorPermissions && !(hasSourcePermissions && hasDestPermissions) {
-			message := fmt.Sprintf("you must have permissions on: '%s' and '%s', or permissions on '%s', to perform "+
+			message := fmt.Sprintf("you must have permissions on: %q and %q, or permissions on %q, to perform "+
 				"this operation", aNSName, bNSName, ancestorNSName)
 			return admission.Denied(message)
 		}

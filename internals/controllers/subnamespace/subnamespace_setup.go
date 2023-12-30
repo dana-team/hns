@@ -35,7 +35,7 @@ func (r *SubnamespaceReconciler) setup(snsParentNS, snsObject *utils.ObjectConte
 	})
 
 	if err != nil {
-		return ctrl.Result{}, fmt.Errorf("failed to set status '%s' for subnamespace '%s'", danav1.Missing, snsName)
+		return ctrl.Result{}, fmt.Errorf("failed to set status %q for subnamespace %q", danav1.Missing, snsName)
 	}
 
 	logger.Info("successfully set status for subnamespace", "phase", danav1.Missing, "subnamespace", snsName)
