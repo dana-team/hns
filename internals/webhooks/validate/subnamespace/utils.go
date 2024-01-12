@@ -10,8 +10,6 @@ import (
 	"strings"
 )
 
-const BinarySI = "BinarySI"
-
 // validateResourceQuotaParams validates that in a regular Subnamespace all quota params: storage, cpu, memory, gpu exists and are positive.
 // In a ResourcePool it validates that the upper resource pool cannot be created with an empty quota
 func (a *SubnamespaceAnnotator) validateResourceQuotaParams(snsObject *utils.ObjectContext, isSNSResourcePool bool) admission.Response {
@@ -30,10 +28,6 @@ func (a *SubnamespaceAnnotator) validateResourceQuotaParams(snsObject *utils.Obj
 		if response := validateNegativeResources(resourceQuotaParams, snsQuota); !response.Allowed {
 			return response
 		}
-	}
-
-	if response := validateResourceUnits(snsQuota); !response.Allowed {
-		return response
 	}
 
 	return admission.Allowed("")
@@ -89,22 +83,6 @@ func validateNegativeResources(resourceQuotaParams, snsQuota corev1.ResourceList
 		denyMessage := fmt.Sprintf("it's forbidden to set a subnamespace with negative amount of")
 		message := denyMessage + " " + strings.Join(negativeResources, ", ")
 		return admission.Denied(message)
-	}
-
-	return admission.Allowed("")
-}
-
-// validateResourceUnits checks that relevant resources have correct units
-func validateResourceUnits(snsQuota corev1.ResourceList) admission.Response {
-	resources := []corev1.ResourceName{defaults.Memory, defaults.BasicStorage}
-
-	for _, resourceName := range resources {
-		quantity := snsQuota[resourceName]
-		if quantity.Value() != 0 && quantity.Format != BinarySI {
-			message := fmt.Sprintf("it's forbidden to set the %q resource in units other than %q (Ki, Mi, Gi, Ti)", resourceName, BinarySI)
-			return admission.Denied(message)
-		}
-
 	}
 
 	return admission.Allowed("")
