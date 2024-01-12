@@ -35,7 +35,7 @@ func (a *RoleBindingAnnotator) handle(rbObject *utils.ObjectContext) admission.R
 	}
 
 	message := fmt.Sprintf("it's forbidden to delete a RoleBinding not at the top of the hierarchy."+
-		"Delete the RoleBinding %q in the highest hierarchy it exists", rbName)
+		"Delete the RoleBinding '%s' in the highest hierarchy it exists", rbName)
 	return admission.Denied(message)
 }
 

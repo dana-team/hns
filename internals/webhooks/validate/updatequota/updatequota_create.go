@@ -92,7 +92,7 @@ func (a *UpdateQuotaAnnotator) validateRootNSQuotaObject(ns *utils.ObjectContext
 	}
 
 	if !(quotaObject.IsPresent()) {
-		message := fmt.Sprintf("quota object %q does not exist", ns.GetName())
+		message := fmt.Sprintf("quota object '%s' does not exist", ns.GetName())
 		return admission.Denied(message)
 	}
 
@@ -117,7 +117,7 @@ func (a *UpdateQuotaAnnotator) validateNonRootNSQuotaObject(ns *utils.ObjectCont
 	}
 
 	if !(quotaObject.IsPresent()) {
-		message := fmt.Sprintf("quota object %q does not exist", sns.GetName())
+		message := fmt.Sprintf("quota object '%s' does not exist", sns.GetName())
 		return admission.Denied(message)
 	}
 

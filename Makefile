@@ -168,7 +168,6 @@ undeploy: manifests kustomize ## Undeploy controller from the K8s cluster specif
 
 LOCAL_CERT_DIR ?= ./k8s-webhook-server/serving-certs
 
-.PHONY: dev
 dev: manifests kustomize
 	echo HOSTNAME=`hostname` > config/webhook-dev/hostname.env
 	$(KUSTOMIZE) build config/dev | oc apply -f -
@@ -178,7 +177,6 @@ dev: manifests kustomize
 	kubectl get secret webhook-server-cert -n sns-system -o jsonpath="{.data.ca\.crt}" | base64 --decode > $(LOCAL_CERT_DIR)/ca.crt
 	kubectl get secret webhook-server-cert -n sns-system -o jsonpath="{.data.tls\.key}" | base64 --decode > $(LOCAL_CERT_DIR)/tls.key
 
-.PHONY: undev
 undev: manifests kustomize
 	$(KUSTOMIZE) build config/dev | oc delete -f -
 	rm -r $(LOCAL_CERT_DIR)

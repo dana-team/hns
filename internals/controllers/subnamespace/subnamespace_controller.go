@@ -65,7 +65,7 @@ func (r *SubnamespaceReconciler) Reconcile(ctx context.Context, req ctrl.Request
 	snsName := req.Name
 	snsObject, err := utils.NewObjectContext(ctx, r.Client, req.NamespacedName, &danav1.Subnamespace{})
 	if err != nil {
-		return ctrl.Result{}, fmt.Errorf("failed to get object %q: "+err.Error(), snsName)
+		return ctrl.Result{}, fmt.Errorf("failed to get object '%s': "+err.Error(), snsName)
 	}
 
 	if !snsObject.IsPresent() {
@@ -80,7 +80,7 @@ func (r *SubnamespaceReconciler) Reconcile(ctx context.Context, req ctrl.Request
 	}
 
 	if !snsParentNS.IsPresent() {
-		return ctrl.Result{}, fmt.Errorf("failed to find %q, the parent namespace of subnamespace %q, it may have been deleted", snsParentNSName, snsName)
+		return ctrl.Result{}, fmt.Errorf("failed to find '%s', the parent namespace of subnamespace '%s', it may have been deleted", snsParentNSName, snsName)
 	}
 
 	phase := snsObject.Object.(*danav1.Subnamespace).Status.Phase

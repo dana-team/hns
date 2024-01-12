@@ -56,7 +56,7 @@ func (a *MigrationHierarchyAnnotator) Handle(ctx context.Context, req admission.
 			return admission.Errored(http.StatusBadRequest, err)
 		}
 		if !reflect.DeepEqual(mhObject.Object.(*danav1.MigrationHierarchy).Spec, oldMH.Spec) {
-			message := fmt.Sprintf("it is forbidden to update an object of type %q", oldMH.TypeMeta.Kind)
+			message := fmt.Sprintf("it is forbidden to update an object of type '%s'", oldMH.TypeMeta.Kind)
 			return admission.Denied(message)
 		}
 	}

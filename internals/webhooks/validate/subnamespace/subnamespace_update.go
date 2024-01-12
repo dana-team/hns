@@ -48,8 +48,16 @@ func (a *SubnamespaceAnnotator) handleUpdate(snsObject, snsOldObject *utils.Obje
 		}
 	}
 
-	// validate the request if the subnamespace is a regular subnamespace OR is the upper ResourcePool,
-	// this is because only in that case there would be a RQ or CRQ attached to the SNS.
+	if response := a.validateSNSQuotaObject(snsObject); !response.Allowed {
+		return admission.Allowed("")
+	}
+
+	if response := a.validateEnoughResourcesForChildren(snsObject); !response.Allowed {
+		return response
+	}
+
+	// validate the request if the subnamespace is not a ResourcePool OR the subnamespace is the upper ResourcePool
+	// this is because only in that case the subnamespace would have a RQ or CRQ attached to it.
 	// Otherwise, the subnamespace is part of a ResourcePool (and does not have a RQ/CRQ attached to it) and this check is unneeded
 	isSNSUpperResourcePool, err := utils.IsSNSUpperResourcePool(snsObject)
 	if err != nil {
@@ -57,18 +65,7 @@ func (a *SubnamespaceAnnotator) handleUpdate(snsObject, snsOldObject *utils.Obje
 	}
 
 	if !isSNSResourcePool || isSNSUpperResourcePool {
-		snsQuotaObject, err := utils.GetSNSQuotaObjectFromAnnotation(snsObject)
-		if err != nil {
-			return admission.Errored(http.StatusBadRequest, err)
-		}
-
-		if snsQuotaObject.IsPresent() {
-			if response := a.validateUpdateSnsRequest(snsObject, snsOldObject, snsQuotaObject); !response.Allowed {
-				return response
-			}
-		}
-
-		if response := a.validateEnoughResourcesForChildren(snsObject); !response.Allowed {
+		if response := a.validateUpdateSnsRequest(snsObject, snsOldObject); !response.Allowed {
 			return response
 		}
 	}
@@ -97,10 +94,28 @@ func (a *SubnamespaceAnnotator) validateRPToSubnamespace(snsObject *utils.Object
 
 	if isParentNSResourcePool {
 		if !isSNSResourcePool && isOldSNSResourcePool {
-			message := fmt.Sprintf("it's forbidden to change a ResourcePool label not at the top of hierarchy. %q is "+
-				"part of a ResourcePool, and its parent %q is also part of a ResourcePool", snsName, snsParentName)
+			message := fmt.Sprintf("it's forbidden to change a ResourcePool label not at the top of hierarchy. '%s' is "+
+				"part of a ResourcePool, and its parent '%s' is also part of a ResourcePool", snsName, snsParentName)
 			return admission.Denied(message)
 		}
+	}
+
+	return admission.Allowed("")
+}
+
+// validateSNSQuotaObject validates that a subnamespace has a corresponding quota object
+func (a *SubnamespaceAnnotator) validateSNSQuotaObject(snsObject *utils.ObjectContext) admission.Response {
+	logger := log.FromContext(snsObject.Ctx)
+
+	quotaObject, err := utils.GetSNSQuotaObject(snsObject)
+	if err != nil {
+		logger.Error(err, "failed to get object", "quotaObject", snsObject.Object.GetName())
+		return admission.Errored(http.StatusInternalServerError, err)
+	}
+
+	if !(quotaObject.IsPresent()) {
+		message := fmt.Sprintf("quota object '%s' does not exist", snsObject.Object.GetName())
+		return admission.Denied(message)
 	}
 
 	return admission.Allowed("")
@@ -118,8 +133,8 @@ func (a *SubnamespaceAnnotator) validateEnoughResourcesForChildren(snsObject *ut
 			var vChildren, _ = childrenQuotaResources[resourceName]
 			vMy.Sub(vChildren)
 			if vMy.Value() < 0 {
-				message := fmt.Sprintf("it's forbidden to update %q to have resource of type %q that are "+
-					"fewer than the resources of type %q that are already allocated to the subnamespace children",
+				message := fmt.Sprintf("it's forbidden to update '%s' to have resource of type '%s' that are "+
+					"fewer than the resources of type '%s' that are already allocated to the subnamespace children",
 					snsName, resourceName.String(), resourceName.String())
 				return admission.Denied(message)
 			}
@@ -130,10 +145,15 @@ func (a *SubnamespaceAnnotator) validateEnoughResourcesForChildren(snsObject *ut
 
 // validateUpdateSnsRequest validates that the new requested resources of a subnamespace are
 // not more than what its parent has to allocate, and not less than what the subnamespace already uses
-func (a *SubnamespaceAnnotator) validateUpdateSnsRequest(snsObject, snsOldObject, snsQuotaObject *utils.ObjectContext) admission.Response {
+func (a *SubnamespaceAnnotator) validateUpdateSnsRequest(snsObject, snsOldObject *utils.ObjectContext) admission.Response {
 	logger := log.FromContext(snsObject.Ctx)
 	snsName := snsObject.Object.GetName()
 	snsParentName := snsObject.Object.GetNamespace()
+	snsQuotaObject, err := utils.GetSNSQuotaObjectFromAnnotation(snsObject)
+	if err != nil {
+		logger.Error(err, "unable to get sns quota object")
+		return admission.Denied(err.Error())
+	}
 
 	parentQuotaObject, err := utils.GetSNSParentQuotaObject(snsObject)
 	if err != nil {
@@ -160,14 +180,14 @@ func (a *SubnamespaceAnnotator) validateUpdateSnsRequest(snsObject, snsOldObject
 		parent.Sub(request)
 		parent.Add(old)
 		if parent.Value() < 0 {
-			message := fmt.Sprintf("it's forbidden to update subnamespace %q because there are not enough resources of type %q "+
-				"in parent subnamespace %q to complete the request", snsName, resourceName.String(), snsParentName)
+			message := fmt.Sprintf("it's forbidden to update subnamespace '%s' because there are not enough resources of type '%s' "+
+				"in parent subnamespace '%s' to complete the request", snsName, resourceName.String(), snsParentName)
 			return admission.Denied(message)
 		}
 		request.Sub(used)
 		if request.Value() < 0 {
-			message := fmt.Sprintf("it's forbidden to update subnamespace %q because active workloads "+
-				"in the hierarchy of %q request more resources of type %q than the new desired quantity",
+			message := fmt.Sprintf("it's forbidden to update subnamespace '%s' because active workloads "+
+				"in the hierarchy of '%s' request more resources of type '%s' than the new desired quantity",
 				snsName, snsName, resourceName.String())
 			return admission.Denied(message)
 		}

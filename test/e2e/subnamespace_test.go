@@ -284,16 +284,4 @@ var _ = Describe("Subnamespaces", func() {
 		}
 	})
 
-	It("should not create and delete a subnamespace with invalid memory units", func() {
-		nsA := GenerateE2EName("a", testPrefix, randPrefix)
-
-		ShouldNotCreateSubnamespace(nsA, nsRoot, false, storage, "50Gi", cpu, "50", memory, "50G", pods, "50", gpu, "50")
-	})
-
-	It("should not create and delete a subnamespace with invalid storage units", func() {
-		nsA := GenerateE2EName("a", testPrefix, randPrefix)
-
-		ShouldNotCreateSubnamespace(nsA, nsRoot, false, storage, "50G", cpu, "50", memory, "50Gi", pods, "50", gpu, "50")
-	})
-
 })

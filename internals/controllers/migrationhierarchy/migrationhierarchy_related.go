@@ -23,25 +23,25 @@ func (r *MigrationHierarchyReconciler) updateRelatedObjects(mhObject, toNS, ns *
 	if er := r.UpdateNSBasedOnParent(ctx, toNS, ns); er != nil {
 		err := r.updateMHStatus(mhObject, danav1.Error, er.Error())
 		if err != nil {
-			return fmt.Errorf("failed updating the status of object %q: "+err.Error(), mhObject.GetName())
+			return fmt.Errorf("failed updating the status of object '%s': "+err.Error(), mhObject.GetName())
 		}
-		return fmt.Errorf("failed updating the labels and annotations of namespace %q according to its parent %q: "+er.Error(), ns.GetName(), toNS.GetName())
+		return fmt.Errorf("failed updating the labels and annotations of namespace '%s' according to its parent '%s': "+er.Error(), ns.GetName(), toNS.GetName())
 	}
 
 	if er := r.UpdateAllNSChildrenOfNs(ctx, ns); er != nil {
 		err := r.updateMHStatus(mhObject, danav1.Error, er.Error())
 		if err != nil {
-			return fmt.Errorf("failed updating the status of object %q: "+err.Error(), mhObject.GetName())
+			return fmt.Errorf("failed updating the status of object '%s': "+err.Error(), mhObject.GetName())
 		}
-		return fmt.Errorf("failed updating labels and annotations of child namespaces of sunamespace %q: "+er.Error(), ns.GetName())
+		return fmt.Errorf("failed updating labels and annotations of child namespaces of sunamespace '%s': "+er.Error(), ns.GetName())
 	}
 
 	if er := r.updateRole(toNS, danav1.NoRole); er != nil {
 		err := r.updateMHStatus(mhObject, danav1.Error, er.Error())
 		if err != nil {
-			return fmt.Errorf("failed updating the status of object %q: "+err.Error(), mhObject.GetName())
+			return fmt.Errorf("failed updating the status of object '%s': "+err.Error(), mhObject.GetName())
 		}
-		return fmt.Errorf("failed updating role of subnamespace %q: "+er.Error(), toNS.GetName())
+		return fmt.Errorf("failed updating role of subnamespace '%s': "+er.Error(), toNS.GetName())
 	}
 
 	return nil

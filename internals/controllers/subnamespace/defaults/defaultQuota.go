@@ -1,16 +1,8 @@
 package controllers
 
 import (
-	corev1 "k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
-)
-
-const (
-	BasicStorage corev1.ResourceName = "basic.storageclass.storage.k8s.io/requests.storage"
-	CPU          corev1.ResourceName = "cpu"
-	Memory       corev1.ResourceName = "memory"
-	Pods         corev1.ResourceName = "pods"
-	GPU          corev1.ResourceName = "requests.nvidia.com/gpu"
 )
 
 var (
@@ -30,12 +22,12 @@ var (
 	imagestreams      = resource.NewQuantity(100, resource.DecimalSI)
 	ZeroDecimal       = resource.NewQuantity(0, resource.DecimalSI)
 
-	DefaultQuotaHard = corev1.ResourceList{"configmaps": *Configmaps, "count/builds.build.openshift.io": *Builds, "count/cronjobs.batch": *Cronjobs, "count/daemonsets.apps": *Daemonsets,
+	DefaultQuotaHard = v1.ResourceList{"configmaps": *Configmaps, "count/builds.build.openshift.io": *Builds, "count/cronjobs.batch": *Cronjobs, "count/daemonsets.apps": *Daemonsets,
 		"count/deployments.apps": *Deployments, "count/jobs.batch": *Cronjobs, "count/replicasets.apps": *Replicasets, "count/routes.route.openshift.io": *Routes,
 		"secrets": *Secrets, "count/deploymentconfigs.apps.openshift.io": *deploymentconfigs, "count/buildconfigs.build.openshift.io": *buildconfigs, "count/serviceaccounts": *serviceaccounts,
 		"count/statefulsets.apps": *statefulsets, "count/templates.template.openshift.io": *templates, "openshift.io/imagestreams": *imagestreams}
 
-	ZeroedQuota = corev1.ResourceQuotaSpec{
-		Hard: corev1.ResourceList{BasicStorage: *ZeroDecimal, CPU: *ZeroDecimal, Memory: *ZeroDecimal, Pods: *ZeroDecimal, GPU: *ZeroDecimal},
+	ZeroedQuota = v1.ResourceQuotaSpec{
+		Hard: v1.ResourceList{"basic.storageclass.storage.k8s.io/requests.storage": *ZeroDecimal, "cpu": *ZeroDecimal, "memory": *ZeroDecimal, "pods": *ZeroDecimal, "requests.nvidia.com/gpu": *ZeroDecimal},
 	}
 )

@@ -24,19 +24,19 @@ func (r *RoleBindingReconciler) init(rbObject *utils.ObjectContext, snsList *uti
 
 	if !DoesRBFinalizerExist(rbObject.Object) {
 		if err := addRBFinalizer(rbObject); err != nil {
-			return fmt.Errorf("failed to add finalizer to roleBinding %q: "+err.Error(), rbName)
+			return fmt.Errorf("failed to add finalizer to roleBinding '%s': "+err.Error(), rbName)
 		}
 		logger.Info("successfully added finalizer to roleBinding", "roleBinding", rbName)
 	}
 
 	if err := createRoleBindingsInSNSList(rbObject, snsList); err != nil {
-		return fmt.Errorf("failed to create RoleBinding in every child of namespace %q: "+err.Error(), rbNamespace)
+		return fmt.Errorf("failed to create RoleBinding in every child of namespace '%s': "+err.Error(), rbNamespace)
 	}
 	logger.Info("successfully created RoleBinding in every child of namespace", "roleBinding namespace", rbNamespace)
 
 	if !isServiceAccount(rbObject.Object) {
 		if err := addSubjectsToHNSViewClusterRoleBinding(rbObject); err != nil {
-			return fmt.Errorf("failed to add subjects from roleBinding %q to HNS View ClusterRoleBinding: "+err.Error(), rbName)
+			return fmt.Errorf("failed to add subjects from roleBinding '%s' to HNS View ClusterRoleBinding: "+err.Error(), rbName)
 		}
 		logger.Info("successfully added subjects from roleBinding to HNS View ClusterRoleBinding", "roleBinding", rbName)
 	}

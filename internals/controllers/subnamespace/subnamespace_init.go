@@ -25,38 +25,38 @@ func (r *SubnamespaceReconciler) init(snsParentNS, snsObject *utils.ObjectContex
 	snsName := snsObject.Object.GetName()
 
 	if err := createSNSNamespace(snsParentNS, snsObject); err != nil {
-		return ctrl.Result{}, fmt.Errorf("failed to create namespace for subnamespace %q: "+err.Error(), snsName)
+		return ctrl.Result{}, fmt.Errorf("failed to create namespace for subnamespace '%s': "+err.Error(), snsName)
 	}
 	logger.Info("successfully created namespace for subnamespace", "subnamespace", snsName)
 
 	snsResourcePoolLabel := utils.GetSNSResourcePoolLabel(snsObject.Object)
 	if snsResourcePoolLabel == "" {
 		if err := setSNSResourcePoolLabel(snsParentNS, snsObject); err != nil {
-			return ctrl.Result{}, fmt.Errorf("failed to set ResourcePool label for subnamespace %q: "+err.Error(), snsName)
+			return ctrl.Result{}, fmt.Errorf("failed to set ResourcePool label for subnamespace '%s': "+err.Error(), snsName)
 		}
 	}
 	logger.Info("successfully set ResourcePool label for subnamespace", "subnamespace", snsName)
 
 	rqFlag, err := utils.IsRq(snsObject, danav1.SelfOffset)
 	if err != nil {
-		return ctrl.Result{}, fmt.Errorf("failed to compute isRq flag for subnamespace %q: "+err.Error(), snsName)
+		return ctrl.Result{}, fmt.Errorf("failed to compute isRq flag for subnamespace '%s': "+err.Error(), snsName)
 	}
 
 	// if the subnamespace is a regular SNS (i.e. not a ResourcePool) OR it's an upper-rp, then create a corresponding
 	// quota object for the subnamespace. The quota object can be either a ResourceQuota or a ClusterResourceQuota
 	isSNSResourcePool, err := utils.IsSNSResourcePool(snsObject.Object)
 	if err != nil {
-		return ctrl.Result{}, fmt.Errorf("failed to compute if subnamespace %q is a ResourcePool: "+err.Error(), snsName)
+		return ctrl.Result{}, fmt.Errorf("failed to compute if subnamespace '%s' is a ResourcePool: "+err.Error(), snsName)
 	}
 
 	isSNSUpperResourcePool, err := utils.IsSNSUpperResourcePool(snsObject)
 	if err != nil {
-		return ctrl.Result{}, fmt.Errorf("failed to compute if subnamespace %q is an upper ResourcePool: "+err.Error(), snsName)
+		return ctrl.Result{}, fmt.Errorf("failed to compute if subnamespace '%s' is an upper ResourcePool: "+err.Error(), snsName)
 	}
 
 	if !isSNSResourcePool || isSNSUpperResourcePool {
 		if res, err := ensureSNSQuotaObject(snsObject, rqFlag); err != nil {
-			return ctrl.Result{}, fmt.Errorf("failed to create quota object for subnamespace %q: "+err.Error(), snsName)
+			return ctrl.Result{}, fmt.Errorf("failed to create quota object for subnamespace '%s': "+err.Error(), snsName)
 		} else if !res.IsZero() {
 			// requeue the reconciled object if needed
 			return res, nil
@@ -64,13 +64,13 @@ func (r *SubnamespaceReconciler) init(snsParentNS, snsObject *utils.ObjectContex
 		logger.Info("successfully created quota object for subnamespace", "subnamespace", snsName)
 	} else {
 		if err := createDefaultSNSResourceQuota(snsObject); err != nil {
-			return ctrl.Result{}, fmt.Errorf("failed to create default ResourceQuota object for subnamespace %q: "+err.Error(), snsName)
+			return ctrl.Result{}, fmt.Errorf("failed to create default ResourceQuota object for subnamespace '%s': "+err.Error(), snsName)
 		}
 		logger.Info("successfully created default ResourceQuota object for subnamespace", "subnamespace", snsName)
 	}
 
 	if err := createDefaultSNSLimitRange(snsObject); err != nil {
-		return ctrl.Result{}, fmt.Errorf("failed to create default Limit Range object for subnamespace %q: "+err.Error(), snsName)
+		return ctrl.Result{}, fmt.Errorf("failed to create default Limit Range object for subnamespace '%s': "+err.Error(), snsName)
 	}
 	logger.Info("successfully created default LimitRange object for subnamespace", "subnamespace", snsName)
 
@@ -85,12 +85,12 @@ func (r *SubnamespaceReconciler) init(snsParentNS, snsObject *utils.ObjectContex
 	}
 
 	if err := snsObject.AppendAnnotations(annotations); err != nil {
-		return ctrl.Result{}, fmt.Errorf("failed to append for subnamespace %q: "+err.Error(), snsName)
+		return ctrl.Result{}, fmt.Errorf("failed to append for subnamespace '%s': "+err.Error(), snsName)
 	}
 	logger.Info("successfully appended annotations for subnamespace", "subnamespace", snsObject.Object.GetName())
 
 	if err := r.ensureSNSInDB(ctx, snsObject); err != nil {
-		return ctrl.Result{}, fmt.Errorf("failed to ensure presence in namespaceDB for subnamespace %q", snsObject.Object.GetName())
+		return ctrl.Result{}, fmt.Errorf("failed to ensure presence in namespaceDB for subnamespace '%s'", snsObject.Object.GetName())
 	}
 	logger.Info("successfully ensured presence in namespaceDB for subnamespace", "subnamespace", snsObject.Object.GetName())
 
@@ -99,7 +99,7 @@ func (r *SubnamespaceReconciler) init(snsParentNS, snsObject *utils.ObjectContex
 		log = log.WithValues("updated subnamespace phase", danav1.Created)
 		return object, log
 	}); err != nil {
-		return ctrl.Result{}, fmt.Errorf("failed to set status %q for subnamespace %q", danav1.Created, snsName)
+		return ctrl.Result{}, fmt.Errorf("failed to set status '%s' for subnamespace '%s'", danav1.Created, snsName)
 	}
 	logger.Info("successfully set status for subnamespace", "phase", danav1.Created, "subnamespace", snsName)
 

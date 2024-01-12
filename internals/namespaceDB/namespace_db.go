@@ -74,7 +74,7 @@ func InitDB(scheme *runtime.Scheme, logger logr.Logger) (*NamespaceDB, error) {
 	for _, ns := range nsWithSns.Items {
 		if ok := ns.Annotations[danav1.Role] == danav1.Leaf; ok {
 			if err := addHierarchy(ns, nsList, nDB, rootNS); err != nil {
-				return nDB, fmt.Errorf("failed to add hierarchy for %q: "+err.Error(), ns.Name)
+				return nDB, fmt.Errorf("failed to add hierarchy for '%s': "+err.Error(), ns.Name)
 			}
 			logger.Info("successfully added hierarchy", "namespace", ns.Name)
 		}
@@ -120,14 +120,14 @@ func addHierarchy(ns corev1.Namespace, nsList corev1.NamespaceList, ndb *Namespa
 
 		if !ndb.doesKeyExist(keyName) {
 			if err := ndb.addNSToKey(keyName, keyName); err != nil {
-				return fmt.Errorf("failed to add namespace %q to key %q: "+err.Error(), keyName, keyName)
+				return fmt.Errorf("failed to add namespace '%s' to key '%s': "+err.Error(), keyName, keyName)
 			}
 		}
 
 		for _, namespace := range nsListUp[rqDepth+1:] {
 			if !ndb.valInKeyExist(keyName, namespace.GetName()) {
 				if err := ndb.addNSToKey(keyName, namespace.GetName()); err != nil {
-					return fmt.Errorf("failed to add namespace %q to key %q: "+err.Error(), namespace.GetName(), keyName)
+					return fmt.Errorf("failed to add namespace '%s' to key '%s': "+err.Error(), namespace.GetName(), keyName)
 				}
 			}
 		}
@@ -198,7 +198,7 @@ func (ndb *NamespaceDB) addNSToKey(key string, ns string) error {
 	}
 
 	if _, ok := ndb.crqForest[key]; !ok {
-		return fmt.Errorf("key %q does not exist in NamespaceDB", key)
+		return fmt.Errorf("key '%s' does not exist in NamespaceDB", key)
 	}
 
 	return nil
@@ -212,7 +212,7 @@ func AddNS(ctx context.Context, nDB *NamespaceDB, client client.Client, sns *dan
 
 	if !isKeyEmpty(keyNS) {
 		if err := nDB.addNSToKey(keyNS, sns.Name); err != nil {
-			return fmt.Errorf("failed to add namespace %q to key '%s': "+err.Error(), sns.Name, keyNS)
+			return fmt.Errorf("failed to add namespace '%s' to key '%s': "+err.Error(), sns.Name, keyNS)
 		}
 		logger.Info("added namespace under key in namespaceDB", "namespace", sns.Name, "key", keyNS)
 		return nil

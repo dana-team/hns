@@ -21,21 +21,21 @@ func (r *NamespaceReconciler) sync(nsObject *utils.ObjectContext) error {
 	nsName := nsObject.Object.GetName()
 
 	if err := createNamespaceHNSView(nsObject); err != nil {
-		return fmt.Errorf("failed to create role and roleBinding objects associated with namespace %q: "+err.Error(), nsName)
+		return fmt.Errorf("failed to create role and roleBinding objects associated with namespace '%s': "+err.Error(), nsName)
 	}
 	logger.Info("successfully created role and roleBinding objects associated with namespace", "namespace", nsName)
 
 	if utils.IsChildlessNamespace(nsObject) {
 		if err := updateNSRole(nsObject, danav1.Leaf); err != nil {
-			return fmt.Errorf("failed to update role of namespace %q: "+err.Error(), nsName)
+			return fmt.Errorf("failed to update role of namespace '%s': "+err.Error(), nsName)
 		}
 	} else if err := updateNSRole(nsObject, danav1.NoRole); err != nil {
-		return fmt.Errorf("failed to update role of namespace %q: "+err.Error(), nsName)
+		return fmt.Errorf("failed to update role of namespace '%s': "+err.Error(), nsName)
 	}
 	logger.Info("successfully updated role of namespace", "namespace", nsName)
 
 	if err := ensureChildrenSNSResourcePoolLabel(nsObject); err != nil {
-		return fmt.Errorf("failed to set ResourcePool labels of children subnamespaces of namespace %q: "+err.Error(), nsName)
+		return fmt.Errorf("failed to set ResourcePool labels of children subnamespaces of namespace '%s': "+err.Error(), nsName)
 	}
 	logger.Info("successfully set ResourcePool labels of children subnamespaces of namespace", "namespace", nsName)
 

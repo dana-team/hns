@@ -27,8 +27,8 @@ func (a *NamespaceAnnotator) validateNamespaceRole(nsObject *utils.ObjectContext
 	nsName := nsObject.Object.GetName()
 	nsRole := nsObject.Object.GetAnnotations()[danav1.Role]
 
-	allowedMessage := fmt.Sprintf("deleting root namespace %q is allowed because it has not children", nsName)
-	deniedMessage := fmt.Sprintf("it's forbidden to delete namespace %q because it currently has "+
+	allowedMessage := fmt.Sprintf("deleting root namespace '%s' is allowed because it has not children", nsName)
+	deniedMessage := fmt.Sprintf("it's forbidden to delete namespace '%s' because it currently has "+
 		"children subnamespaces. Please delete them and try again", nsName)
 
 	if nsRole == danav1.Leaf {
@@ -42,6 +42,6 @@ func (a *NamespaceAnnotator) validateNamespaceRole(nsObject *utils.ObjectContext
 		return admission.Denied(deniedMessage)
 	}
 
-	message := fmt.Sprintf("expected error, namespace does not have %q annotation", danav1.Role)
+	message := fmt.Sprintf("expected error, namespace does not have '%s' annotation", danav1.Role)
 	return admission.Denied(message)
 }

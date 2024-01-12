@@ -78,7 +78,7 @@ func (a *SubnamespaceAnnotator) validateUniqueSNSName(snsObject *utils.ObjectCon
 
 	if exists {
 		message := fmt.Sprintf("it's forbidden to create a subnamespace with a name that already exists. A subnamespace "+
-			"name must be unique across the cluster, and a namespace of name %q already exists; change "+
+			"name must be unique across the cluster, and a namespace of name '%s' already exists; change "+
 			"the subnamespace name and try again", snsName)
 		return admission.Denied(message)
 	}
@@ -94,7 +94,7 @@ func (a *SubnamespaceAnnotator) validateKeyCountInDB(snsObject *utils.ObjectCont
 
 	if key != "" {
 		if a.NamespaceDB.GetKeyCount(key) >= danav1.MaxSNS {
-			message := fmt.Sprintf("it's forbidden to create more than '%v' namespaces under hierarchy %q", danav1.MaxSNS, key)
+			message := fmt.Sprintf("it's forbidden to create more than '%v' namespaces under hierarchy '%s'", danav1.MaxSNS, key)
 			return admission.Denied(message)
 		}
 	}
@@ -117,7 +117,7 @@ func (a *SubnamespaceAnnotator) validateSNSUnderRP(snsObject *utils.ObjectContex
 
 	if !isSNSResourcePool && isParentNSResourcePool {
 		message := fmt.Sprintf("it's forbidden to create a regular subnamespace under a ResourcePool. Only a ResourcePool SNS can be "+
-			"created under a ResourcePool. %q is part of a ResourcePool", snsParentNSName)
+			"created under a ResourcePool. '%s' is part of a ResourcePool", snsParentNSName)
 		return admission.Denied(message)
 	}
 
@@ -152,8 +152,8 @@ func (a *SubnamespaceAnnotator) validateEnoughResourcesInParentSNS(snsObject *ut
 		parent.Sub(siblings)
 		parent.Sub(request)
 		if parent.Value() < 0 {
-			message := fmt.Sprintf("it's forbidden to create subnamespace %q under %q when there are are not "+
-				"enough resources of type %q in %q", snsName, snsParentName, resourceName.String(), snsParentName)
+			message := fmt.Sprintf("it's forbidden to create subnamespace '%s' under '%s' when there are are not "+
+				"enough resources of type '%s' in '%s'", snsName, snsParentName, resourceName.String(), snsParentName)
 			return admission.Denied(message)
 		}
 	}
