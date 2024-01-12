@@ -17,10 +17,8 @@ package main
 import (
 	"flag"
 	danav1 "github.com/dana-team/hns/api/v1"
-	"github.com/dana-team/hns/internals/controllers"
-	"github.com/dana-team/hns/internals/namespaceDB"
-	"github.com/dana-team/hns/internals/server"
-	"github.com/dana-team/hns/internals/webhooks"
+	"github.com/dana-team/hns/internal/namespacedb"
+	"github.com/dana-team/hns/internal/setup"
 	buildv1 "github.com/openshift/api/build/v1"
 	quotav1 "github.com/openshift/api/quota/v1"
 	templatev1 "github.com/openshift/api/template/v1"
@@ -44,9 +42,9 @@ func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 	utilruntime.Must(corev1.AddToScheme(scheme))
 	utilruntime.Must(danav1.AddToScheme(scheme))
-	utilruntime.Must(quotav1.AddToScheme(scheme))
-	utilruntime.Must(templatev1.AddToScheme(scheme))
-	utilruntime.Must(buildv1.AddToScheme(scheme))
+	utilruntime.Must(quotav1.Install(scheme))
+	utilruntime.Must(templatev1.Install(scheme))
+	utilruntime.Must(buildv1.Install(scheme))
 	// +kubebuilder:scaffold:scheme
 }
 
@@ -73,9 +71,6 @@ func main() {
 		LeaderElectionID:       "c1382367.dana.io",
 		Metrics:                metricsserver.Options{BindAddress: metricsAddr},
 		HealthProbeBindAddress: probeAddr,
-
-		// uncomment to debug locally
-		//WebhookServer: webhook.NewServer(webhook.Options{CertDir: "k8s-webhook-server/serving-certs/"}),
 	})
 
 	if err != nil {
@@ -83,25 +78,22 @@ func main() {
 		os.Exit(1)
 	}
 
-	var ndb *namespaceDB.NamespaceDB
-	ndb, err = namespaceDB.InitDB(scheme, setupLog.WithName("InitDB Logger"))
+	var ndb *namespacedb.NamespaceDB
+	ndb, err = namespacedb.Init(scheme, setupLog.WithName("InitDB Logger"))
 	if err != nil {
-		setupLog.Error(err, "unable to successfully initialize namespaceDB")
+		setupLog.Error(err, "unable to successfully initialize namespacedb")
 		os.Exit(1)
 	}
 
 	setupLog.Info("setting up reconcilers")
-	if err := controllers.SetupControllers(mgr, ndb); err != nil {
+	if err := setup.Controllers(mgr, ndb); err != nil {
 		setupLog.Error(err, "unable to successfully set up controllers")
 		os.Exit(1)
 	}
 
 	setupLog.Info("setting up webhooks")
-	webhooks.SetupWebhooks(mgr, ndb, scheme)
+	setup.Webhooks(mgr, ndb, scheme)
 	// +kubebuilder:scaffold:builder
-
-	ds := server.NewDiagramServer(mgr.GetClient())
-	go ds.Run()
 
 	setupLog.Info("starting manager")
 	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {

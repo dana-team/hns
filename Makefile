@@ -145,13 +145,17 @@ deploy: manifests kustomize ## Deploy controller to the K8s cluster specified in
 undeploy: ## Undeploy controller from the K8s cluster specified in ~/.kube/config. Call with ignore-not-found=true to ignore resource not found errors during deletion.
 	$(KUSTOMIZE) build config/default | $(KUBECTL) delete --ignore-not-found=$(ignore-not-found) -f -
 
+.PHONY: helm
+helm: manifests kustomize helmify
+	$(KUSTOMIZE) build config/default | $(HELMIFY)
+
 ##@ Development
 
-LOCAL_CERT_DIR ?= ./k8s-webhook-server/serving-certs
+LOCAL_CERT_DIR ?= /tmp/k8s-webhook-server/serving-certs
 
 .PHONY: dev
 dev: manifests kustomize
-	echo HOSTNAME=`hostname` > config/webhook-dev/hostname.env
+	echo HOSTNAME=`hostname`.westeurope.cloudapp.azure.com > config/webhook-dev/hostname.env
 	$(KUSTOMIZE) build config/dev | oc apply -f -
 	mkdir -p $(LOCAL_CERT_DIR)
 	sleep 3
@@ -177,6 +181,7 @@ KUSTOMIZE ?= $(LOCALBIN)/kustomize
 CONTROLLER_GEN ?= $(LOCALBIN)/controller-gen
 ENVTEST ?= $(LOCALBIN)/setup-envtest
 GINKGO ?= $(LOCALBIN)/ginkgo
+HELMIFY ?= $(LOCALBIN)/helmify
 
 ## Tool Versions
 KUSTOMIZE_VERSION ?= v5.2.1
@@ -206,3 +211,8 @@ $(ENVTEST): $(LOCALBIN)
 ginkgo: $(GINKGO) ## Download ginkgo locally if necessary.
 $(GINKGO): $(LOCALBIN)
 	test -s $(LOCALBIN)/ginkgo || GOBIN=$(LOCALBIN) go install github.com/onsi/ginkgo/v2/ginkgo@latest
+
+.PHONY: helmify
+helmify: $(HELMIFY) ## Download helmify locally if necessary.
+$(HELMIFY): $(LOCALBIN)
+	test -s $(LOCALBIN)/helmify || GOBIN=$(LOCALBIN) go install github.com/arttor/helmify/cmd/helmify@latest

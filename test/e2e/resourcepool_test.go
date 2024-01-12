@@ -3,7 +3,7 @@ package e2e
 import (
 	"fmt"
 	danav1 "github.com/dana-team/hns/api/v1"
-	. "github.com/dana-team/hns/pkg/testutils"
+	. "github.com/dana-team/hns/test/testutils"
 	. "github.com/onsi/ginkgo/v2"
 )
 

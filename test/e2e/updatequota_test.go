@@ -1,7 +1,7 @@
 package e2e
 
 import (
-	. "github.com/dana-team/hns/pkg/testutils"
+	. "github.com/dana-team/hns/test/testutils"
 	. "github.com/onsi/ginkgo/v2"
 )
 
