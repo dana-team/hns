@@ -1,10 +1,11 @@
-name: Pre Merge
+name: pre-merge
 
 on:
   pull_request:
     branches:
       - main
     types: [opened, reopened, synchronize]
+
 jobs:
   e2e-tests:
     name: e2e-tests
@@ -24,7 +25,6 @@ jobs:
         uses: actions/setup-go@v4
         with:
           go-version-file: go.mod
-          go-version: '1.20'
       - name: Run go vet
         run: go vet ./...
       - name: Log into ghcr.io
