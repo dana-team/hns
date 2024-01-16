@@ -1,10 +1,5 @@
 package v1
 
-import (
-	"os"
-	"strconv"
-)
-
 type Phase string
 
 const MetaGroup = "dana.hns.io/"
@@ -13,8 +8,6 @@ const (
 	SNSNamespace      = "sns-system"
 	SNSServiceAccount = "default"
 )
-
-var MaxSNS, _ = strconv.Atoi(os.Getenv("MAX_SNS_IN_HIERARCHY"))
 
 var DefaultAnnotations = []string{"scheduler.alpha.kubernetes.io/defaultTolerations", "openshift.io/node-selector"}
 

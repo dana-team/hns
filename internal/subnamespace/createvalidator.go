@@ -2,7 +2,6 @@ package subnamespace
 
 import (
 	"fmt"
-	danav1 "github.com/dana-team/hns/api/v1"
 	"github.com/dana-team/hns/internal/objectcontext"
 	"github.com/dana-team/hns/internal/quota"
 	"github.com/dana-team/hns/internal/subnamespace/resourcepool"
@@ -26,15 +25,19 @@ func (v *SubnamespaceValidator) handleCreate(snsObject *objectcontext.ObjectCont
 		return response
 	}
 
-	// validate that the new parent doesn't already have too many subnamespaces in its branch
-	// the maximum number a subnamespace can have in its branch is called by the "danav1.MaxSNS" var
-	if response := v.validateKeyCountInDB(snsObject); !response.Allowed {
-		return response
-	}
-
 	isSNSResourcePool, err := resourcepool.IsSNSResourcePool(snsObject.Object)
 	if err != nil {
 		return admission.Errored(http.StatusBadRequest, err)
+	}
+
+	if response := v.validateResourcePoolOnly(isSNSResourcePool); !response.Allowed {
+		return response
+	}
+
+	// validate that the new parent doesn't already have too many subnamespaces in its branch
+	// the maximum number a subnamespace can have in its branch is called by the MaxSNS flag
+	if response := v.validateKeyCountInDB(snsObject); !response.Allowed {
+		return response
 	}
 
 	if response := v.validateSNSUnderRP(snsObject, isSNSResourcePool); !response.Allowed {
@@ -88,6 +91,17 @@ func (v *SubnamespaceValidator) validateUniqueSNSName(snsObject *objectcontext.O
 	return admission.Allowed("")
 }
 
+// validateResourcePoolOnly validates whether only ResourcePools can be created
+// in accordance to a set environment variable
+func (v *SubnamespaceValidator) validateResourcePoolOnly(isSNSResourcePool bool) admission.Response {
+	if !isSNSResourcePool && v.OnlyRP {
+		message := "it's forbidden to create a subnamespace which is not a ResourcePool"
+		return admission.Denied(message)
+	}
+
+	return admission.Allowed("")
+}
+
 // validateKeyCountInDB validates that creating a new subnamespace under a given parent
 // will not cause the new parent to exceed the maximum limit of namespaces in its hierarchy.
 func (v *SubnamespaceValidator) validateKeyCountInDB(snsObject *objectcontext.ObjectContext) admission.Response {
@@ -95,8 +109,8 @@ func (v *SubnamespaceValidator) validateKeyCountInDB(snsObject *objectcontext.Ob
 	key := v.NamespaceDB.Key(parentSNSName)
 
 	if key != "" {
-		if v.NamespaceDB.KeyCount(key) >= danav1.MaxSNS {
-			message := fmt.Sprintf("it's forbidden to create more than '%v' namespaces under hierarchy %q", danav1.MaxSNS, key)
+		if v.NamespaceDB.KeyCount(key) >= v.MaxSNS {
+			message := fmt.Sprintf("it's forbidden to create more than '%v' namespaces under hierarchy %q", v.MaxSNS, key)
 			return admission.Denied(message)
 		}
 	}

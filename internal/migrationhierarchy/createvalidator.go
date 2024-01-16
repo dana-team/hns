@@ -107,7 +107,7 @@ func (v *MigrationHierarchyValidator) handleCreate(mhObject *objectcontext.Objec
 
 		if currentNSKey != "" && toNSKey != "" {
 			// validate that the new requested parent doesn't already have too many subnamespaces in its branch
-			// the maximum number a subnamespace can have in its branch is called by the "danav1.MaxSNS" env var
+			// the maximum number a subnamespace can have in its branch is called by the MaxSNS cli flag
 			if response := v.validateKeyCountInDB(ctx, toNSKey, currentNSName); !response.Allowed {
 				return response
 			}
@@ -170,8 +170,8 @@ func (v *MigrationHierarchyValidator) validateKeyCountInDB(ctx context.Context, 
 		return admission.Denied(err.Error())
 	}
 
-	if (v.NamespaceDB.KeyCount(toNSKey) + childrenNum) >= danav1.MaxSNS {
-		message := fmt.Sprintf("it's forbidden to create more than %v namespaces under hierarchy %q", danav1.MaxSNS, toNSKey)
+	if (v.NamespaceDB.KeyCount(toNSKey) + childrenNum) >= v.MaxSNS {
+		message := fmt.Sprintf("it's forbidden to create more than %v namespaces under hierarchy %q", v.MaxSNS, toNSKey)
 		return admission.Denied(message)
 	}
 

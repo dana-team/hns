@@ -8,10 +8,9 @@ import (
 	. "github.com/dana-team/hns/internal/rolebinding"
 	. "github.com/dana-team/hns/internal/subnamespace"
 	. "github.com/dana-team/hns/internal/updatequota"
-	"sigs.k8s.io/controller-runtime/pkg/manager"
-
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	"sigs.k8s.io/controller-runtime/pkg/event"
+	"sigs.k8s.io/controller-runtime/pkg/manager"
 )
 
 var (

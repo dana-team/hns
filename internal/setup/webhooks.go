@@ -16,8 +16,14 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
+type Options struct {
+	NoWebhooks        bool
+	OnlyResourcePool  bool
+	MaxSNSInHierarchy int
+}
+
 // Webhooks registers the different webhooks.
-func Webhooks(mgr manager.Manager, ndb *namespacedb.NamespaceDB, scheme *runtime.Scheme) {
+func Webhooks(mgr manager.Manager, ndb *namespacedb.NamespaceDB, scheme *runtime.Scheme, opts Options) {
 	hookServer := mgr.GetWebhookServer()
 
 	decoder := admission.NewDecoder(scheme)
@@ -31,6 +37,8 @@ func Webhooks(mgr manager.Manager, ndb *namespacedb.NamespaceDB, scheme *runtime
 		Client:      mgr.GetClient(),
 		Decoder:     decoder,
 		NamespaceDB: ndb,
+		MaxSNS:      opts.MaxSNSInHierarchy,
+		OnlyRP:      opts.OnlyResourcePool,
 	}})
 
 	hookServer.Register("/validate-v1-rolebinding", &webhook.Admission{Handler: &RoleBindingValidator{
@@ -52,5 +60,6 @@ func Webhooks(mgr manager.Manager, ndb *namespacedb.NamespaceDB, scheme *runtime
 		Client:      mgr.GetClient(),
 		Decoder:     decoder,
 		NamespaceDB: ndb,
+		MaxSNS:      opts.MaxSNSInHierarchy,
 	}})
 }
