@@ -36,8 +36,8 @@ type UpdatequotaSpec struct {
 type UpdatequotaStatus struct {
 	// Phase acts like a state machine for the Updatequota.
 	// It is a string and can be one of the following:
-	// "Error" - state for a Updatequota indicating that the operation could not be completed due to an error
-	// "Complete" - state for a Updatequota indicating that the operation completed successfully
+	// "Error" - state for an Updatequota indicating that the operation could not be completed due to an error
+	// "Complete" - state for an Updatequota indicating that the operation completed successfully
 	Phase Phase `json:"phase,omitempty"`
 
 	// Reason is a string explaining why an error occurred if it did; otherwise it’s empty

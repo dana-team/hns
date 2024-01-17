@@ -20,6 +20,7 @@ type MigrationHierarchyValidator struct {
 	Client      client.Client
 	Decoder     *admission.Decoder
 	NamespaceDB *namespacedb.NamespaceDB
+	MaxSNS      int
 }
 
 // +kubebuilder:webhook:path=/validate-v1-migrationhierarchy,mutating=false,sideEffects=NoneOnDryRun,failurePolicy=fail,groups="dana.hns.io",resources=migrationhierarchies,verbs=create;update,versions=v1,name=migrationhierarchy.dana.io,admissionReviewVersions=v1;v1beta1

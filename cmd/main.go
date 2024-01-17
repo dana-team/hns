@@ -38,6 +38,15 @@ var (
 	setupLog = ctrl.Log.WithName("setup")
 )
 
+var (
+	metricsAddr          string
+	enableLeaderElection bool
+	probeAddr            string
+	noWebhooks           bool
+	onlyResourcePool     bool
+	maxSNS               int
+)
+
 func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 	utilruntime.Must(corev1.AddToScheme(scheme))
@@ -49,15 +58,7 @@ func init() {
 }
 
 func main() {
-	var metricsAddr string
-	var enableLeaderElection bool
-	var probeAddr string
-	flag.StringVar(&metricsAddr, "metrics-bind-address", ":8080", "The address the metric endpoint binds to.")
-	flag.StringVar(&probeAddr, "health-probe-bind-address", ":8081", "The address the probe endpoint binds to.")
-	flag.BoolVar(&enableLeaderElection, "leader-elect", false,
-		"Enable leader election for controller manager. "+
-			"Enabling this will ensure there is only one active controller manager.")
-	flag.Parse()
+	parseFlags()
 
 	opts := zap.Options{
 		Development: true,
@@ -85,14 +86,22 @@ func main() {
 		os.Exit(1)
 	}
 
+	hnsOpts := setup.Options{
+		NoWebhooks:        noWebhooks,
+		OnlyResourcePool:  onlyResourcePool,
+		MaxSNSInHierarchy: maxSNS,
+	}
+
 	setupLog.Info("setting up reconcilers")
 	if err := setup.Controllers(mgr, ndb); err != nil {
 		setupLog.Error(err, "unable to successfully set up controllers")
 		os.Exit(1)
 	}
 
-	setupLog.Info("setting up webhooks")
-	setup.Webhooks(mgr, ndb, scheme)
+	if !hnsOpts.NoWebhooks {
+		setupLog.Info("setting up webhooks")
+		setup.Webhooks(mgr, ndb, scheme, hnsOpts)
+	}
 	// +kubebuilder:scaffold:builder
 
 	setupLog.Info("starting manager")
@@ -100,4 +109,17 @@ func main() {
 		setupLog.Error(err, "problem running manager")
 		os.Exit(1)
 	}
+}
+
+func parseFlags() {
+	flag.StringVar(&metricsAddr, "metrics-bind-address", ":8080", "The address the metric endpoint binds to.")
+	flag.StringVar(&probeAddr, "health-probe-bind-address", ":8081", "The address the probe endpoint binds to.")
+	flag.BoolVar(&enableLeaderElection, "leader-elect", false,
+		"Enable leader election for controller manager. "+
+			"Enabling this will ensure there is only one active controller manager.")
+	flag.BoolVar(&noWebhooks, "no-webhooks", false, "Disables webhooks")
+	flag.BoolVar(&onlyResourcePool, "only-resourcepool", false, "Only allow creation of resourcepools")
+	flag.IntVar(&maxSNS, "max-sns", 250, "The maximum number of subnamespaces under a single CRQ")
+
+	flag.Parse()
 }

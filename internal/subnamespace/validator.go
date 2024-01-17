@@ -17,6 +17,8 @@ type SubnamespaceValidator struct {
 	Client      client.Client
 	Decoder     *admission.Decoder
 	NamespaceDB *namespacedb.NamespaceDB
+	MaxSNS      int
+	OnlyRP      bool
 }
 
 // +kubebuilder:webhook:path=/validate-v1-subnamespace,mutating=false,sideEffects=NoneOnDryRun,failurePolicy=fail,groups="dana.hns.io",resources=subnamespaces,verbs=create;update,versions=v1,name=subnamespace.dana.io,admissionReviewVersions=v1;v1beta1

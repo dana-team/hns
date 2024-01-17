@@ -32,9 +32,6 @@ spec:
       containers:
         - command:
             - /manager
-          env:
-            - name: MAX_SNS_IN_HIERARCHY
-              value: "250"
           image: controller:latest
           name: manager
           resources:
