@@ -22,17 +22,12 @@ spec:
         command:
         - /manager
         env:
-        - name: MAX_SNS_IN_HIERARCHY
-          value: {{ quote .Values.controllerManager.manager.env.maxSnsInHierarchy }}
         - name: KUBERNETES_CLUSTER_DOMAIN
           value: {{ quote .Values.kubernetesClusterDomain }}
         image: {{ .Values.controllerManager.manager.image.repository }}:{{ .Values.controllerManager.manager.image.tag
           | default .Chart.AppVersion }}
         name: manager
         ports:
-        - containerPort: 8888
-          name: diagram-server
-          protocol: TCP
         - containerPort: 9443
           name: webhook-server
           protocol: TCP
