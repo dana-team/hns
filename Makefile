@@ -155,7 +155,7 @@ LOCAL_CERT_DIR ?= /tmp/k8s-webhook-server/serving-certs
 
 .PHONY: dev
 dev: manifests kustomize
-	echo HOSTNAME=`hostname`.westeurope.cloudapp.azure.com > config/webhook-dev/hostname.env
+	echo HOSTNAME=`hostname` > config/webhook-dev/hostname.env
 	$(KUSTOMIZE) build config/dev | oc apply -f -
 	mkdir -p $(LOCAL_CERT_DIR)
 	sleep 3
