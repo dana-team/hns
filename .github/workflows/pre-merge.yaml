@@ -23,7 +23,7 @@ jobs:
           kubeconfig: ${{ secrets.HNS_CI_CLUSTER }}
           
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         
       - name: Setup go
         uses: actions/setup-go@v4
