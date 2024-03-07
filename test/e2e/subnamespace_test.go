@@ -43,7 +43,7 @@ var _ = Describe("Subnamespaces", func() {
 		FieldShouldContain("clusterresourcequota", "", nsC, ".metadata.name", nsC)
 
 		// delete subnamespace
-		MustRun("kubectl delete subnamespace", nsC, "-n", nsB)
+		MustRun("kubectl delete namespace", nsC, "-n", nsB)
 	})
 
 	It("should create a subnamespace and namespace with the needed labels and annotations", func() {
@@ -282,6 +282,13 @@ var _ = Describe("Subnamespaces", func() {
 		for i := range danav1.DefaultAnnotations {
 			FieldShouldContain("namespace", "", nsB, ".metadata.annotations", danav1.DefaultAnnotations[i])
 		}
+	})
+	It("should fail when deleting a subnamespace directly", func() {
+		nsA := GenerateE2EName("a", testPrefix, randPrefix)
+
+		CreateSubnamespace(nsA, nsRoot, randPrefix, false, storage, "50Gi", cpu, "50", memory, "50Gi", pods, "50", gpu, "50")
+		MustNotRun("kubectl delete subnamespace", nsA)
+
 	})
 
 })

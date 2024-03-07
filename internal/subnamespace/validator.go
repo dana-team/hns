@@ -21,7 +21,7 @@ type SubnamespaceValidator struct {
 	OnlyRP      bool
 }
 
-// +kubebuilder:webhook:path=/validate-v1-subnamespace,mutating=false,sideEffects=NoneOnDryRun,failurePolicy=fail,groups="dana.hns.io",resources=subnamespaces,verbs=create;update,versions=v1,name=subnamespace.dana.io,admissionReviewVersions=v1;v1beta1
+// +kubebuilder:webhook:path=/validate-v1-subnamespace,mutating=false,sideEffects=NoneOnDryRun,failurePolicy=fail,groups="dana.hns.io",resources=subnamespaces,verbs=delete;create;update,versions=v1,name=subnamespace.dana.io,admissionReviewVersions=v1;v1beta1
 
 // Handle implements the validation webhook
 func (v *SubnamespaceValidator) Handle(ctx context.Context, req admission.Request) admission.Response {
@@ -33,7 +33,14 @@ func (v *SubnamespaceValidator) Handle(ctx context.Context, req admission.Reques
 		logger.Error(err, "failed to create object context")
 		return admission.Errored(http.StatusBadRequest, err)
 	}
-
+	if req.Operation == admissionv1.Delete {
+		if err := v.Decoder.DecodeRaw(req.OldObject, snsObject.Object); err != nil {
+			logger.Error(err, "failed to decode object", "request object", req.Object)
+			return admission.Errored(http.StatusBadRequest, err)
+		}
+		response := v.handleDelete(req)
+		return response
+	}
 	if err := v.Decoder.DecodeRaw(req.Object, snsObject.Object); err != nil {
 		logger.Error(err, "failed to decode object", "request object", req.Object)
 		return admission.Errored(http.StatusBadRequest, err)

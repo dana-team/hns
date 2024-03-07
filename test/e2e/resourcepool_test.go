@@ -42,7 +42,7 @@ var _ = Describe("ResourcePool", func() {
 		FieldShouldContain("subnamespace", nsB, nsC, ".metadata.annotations", danav1.IsUpperRp+":"+danav1.True)
 
 		// delete subnamespace
-		MustRun("kubectl delete subnamespace", nsC, "-n", nsB)
+		MustRun("kubectl delete namespace", nsC, "-n", nsB)
 	})
 
 	It("should create a resourcepool under a resourcepool and update the labels accordingly", func() {
@@ -95,7 +95,7 @@ var _ = Describe("ResourcePool", func() {
 		CreateSubnamespace(nsC, nsB, randPrefix, true, storage, "10Gi", cpu, "10", memory, "10Gi", pods, "10", gpu, "10")
 		CreateSubnamespace(nsD, nsC, randPrefix, true)
 
-		MustRun("kubectl delete subnamespace -n", nsC, nsD)
+		MustRun("kubectl delete namespace -n", nsC, nsD)
 	})
 
 	It("should create a clusterresourcequota for a resourcepool regardless of its depth only if it's upper", func() {
