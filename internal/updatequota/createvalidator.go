@@ -2,6 +2,8 @@ package updatequota
 
 import (
 	"fmt"
+	"net/http"
+
 	danav1 "github.com/dana-team/hns/api/v1"
 	"github.com/dana-team/hns/internal/common"
 	"github.com/dana-team/hns/internal/namespace/nsutils"
@@ -9,7 +11,6 @@ import (
 	"github.com/dana-team/hns/internal/quota"
 	"github.com/dana-team/hns/internal/subnamespace/snsutils"
 	corev1 "k8s.io/api/core/v1"
-	"net/http"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"

@@ -1,13 +1,14 @@
 package subnamespace
 
 import (
+	"net/http"
+	"strings"
+
 	"github.com/dana-team/hns/internal/objectcontext"
 	"github.com/dana-team/hns/internal/quota"
 	"github.com/dana-team/hns/internal/subnamespace/resourcepool"
 	corev1 "k8s.io/api/core/v1"
-	"net/http"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
-	"strings"
 )
 
 // ValidateResourceQuotaParams validates that in a regular Subnamespace all quota params: storage, cpu, memory, gpu exists and are positive.

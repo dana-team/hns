@@ -1,6 +1,8 @@
 package quota
 
 import (
+	"strconv"
+
 	danav1 "github.com/dana-team/hns/api/v1"
 	"github.com/dana-team/hns/internal/objectcontext"
 	"github.com/dana-team/hns/internal/subnamespace/resourcepool"
@@ -9,7 +11,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"strconv"
 )
 
 // ResourceQuota returns a ResourceQuota object.

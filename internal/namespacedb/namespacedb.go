@@ -3,6 +3,11 @@ package namespacedb
 import (
 	"context"
 	"fmt"
+	"sort"
+	"strconv"
+	"strings"
+	"sync"
+
 	danav1 "github.com/dana-team/hns/api/v1"
 	"github.com/dana-team/hns/internal/common"
 	"github.com/dana-team/hns/internal/objectcontext"
@@ -17,10 +22,6 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
-	"sort"
-	"strconv"
-	"strings"
-	"sync"
 )
 
 // NamespaceDB is an in-memory DB that contains a map with a key that is a string representing the first

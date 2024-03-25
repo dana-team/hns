@@ -2,6 +2,7 @@ package setup
 
 import (
 	"fmt"
+
 	. "github.com/dana-team/hns/internal/migrationhierarchy"
 	. "github.com/dana-team/hns/internal/namespace"
 	"github.com/dana-team/hns/internal/namespacedb"

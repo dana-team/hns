@@ -2,13 +2,14 @@ package testutils
 
 import (
 	"fmt"
-	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
 	"io"
 	"os"
 	"os/exec"
 	"strings"
 	"time"
+
+	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 )
 
 // The testing label marked on all namespaces created using the testing phase, offering ease when doing cleanups

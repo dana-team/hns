@@ -3,6 +3,8 @@ package migrationhierarchy
 import (
 	"context"
 	"fmt"
+	"strconv"
+
 	danav1 "github.com/dana-team/hns/api/v1"
 	"github.com/dana-team/hns/internal/namespace/nsutils"
 	"github.com/dana-team/hns/internal/objectcontext"
@@ -14,7 +16,6 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/util/retry"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"strconv"
 )
 
 // updateRelatedObjects handles the update of objects related to the

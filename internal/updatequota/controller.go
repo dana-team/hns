@@ -3,14 +3,15 @@ package updatequota
 import (
 	"context"
 	"fmt"
+	"strings"
+	"time"
+
 	"github.com/dana-team/hns/internal/common"
 	"github.com/dana-team/hns/internal/namespace/nsutils"
 	"github.com/dana-team/hns/internal/objectcontext"
 	"github.com/dana-team/hns/internal/quota"
 	"github.com/dana-team/hns/internal/subnamespace/snsutils"
 	"sigs.k8s.io/controller-runtime/pkg/log"
-	"strings"
-	"time"
 
 	danav1 "github.com/dana-team/hns/api/v1"
 	"github.com/go-logr/logr"

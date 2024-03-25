@@ -2,6 +2,7 @@ package subnamespace
 
 import (
 	"fmt"
+
 	"github.com/dana-team/hns/internal/namespace/nsutils"
 	"github.com/dana-team/hns/internal/namespacedb"
 	"github.com/dana-team/hns/internal/objectcontext"

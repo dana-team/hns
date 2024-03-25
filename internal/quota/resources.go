@@ -1,10 +1,11 @@
 package quota
 
 import (
+	"slices"
+
 	"github.com/dana-team/hns/internal/objectcontext"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
-	"slices"
 )
 
 // ResourceListEqual gets two ResourceLists and returns whether their specs are equal.

@@ -2,6 +2,7 @@ package subnamespace
 
 import (
 	"fmt"
+
 	danav1 "github.com/dana-team/hns/api/v1"
 	"github.com/dana-team/hns/internal/namespace/nsutils"
 	"github.com/dana-team/hns/internal/namespacedb"

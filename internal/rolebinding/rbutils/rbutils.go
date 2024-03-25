@@ -1,15 +1,16 @@
 package rbutils
 
 import (
+	"reflect"
+	"strings"
+
 	"github.com/dana-team/hns/internal/common"
 	"github.com/dana-team/hns/internal/objectcontext"
 	"github.com/go-logr/logr"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"reflect"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"strings"
 )
 
 const (

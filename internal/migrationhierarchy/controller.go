@@ -3,6 +3,8 @@ package migrationhierarchy
 import (
 	"context"
 	"fmt"
+	"time"
+
 	"github.com/dana-team/hns/internal/common"
 	"github.com/dana-team/hns/internal/namespace/nsutils"
 	"github.com/dana-team/hns/internal/namespacedb"
@@ -11,7 +13,6 @@ import (
 	"github.com/dana-team/hns/internal/subnamespace/snsutils"
 	"github.com/go-logr/logr"
 	"sigs.k8s.io/controller-runtime/pkg/log"
-	"time"
 
 	danav1 "github.com/dana-team/hns/api/v1"
 	corev1 "k8s.io/api/core/v1"

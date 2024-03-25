@@ -3,10 +3,11 @@ package migrationhierarchy
 import (
 	"context"
 	"fmt"
-	"github.com/dana-team/hns/internal/namespacedb"
-	"github.com/dana-team/hns/internal/objectcontext"
 	"net/http"
 	"reflect"
+
+	"github.com/dana-team/hns/internal/namespacedb"
+	"github.com/dana-team/hns/internal/objectcontext"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 
 	danav1 "github.com/dana-team/hns/api/v1"

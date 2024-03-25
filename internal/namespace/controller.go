@@ -3,6 +3,8 @@ package namespace
 import (
 	"context"
 	"fmt"
+	"reflect"
+
 	danav1 "github.com/dana-team/hns/api/v1"
 	"github.com/dana-team/hns/internal/common"
 	"github.com/dana-team/hns/internal/namespace/nsutils"
@@ -10,7 +12,6 @@ import (
 	"github.com/dana-team/hns/internal/objectcontext"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"reflect"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"

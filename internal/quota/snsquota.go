@@ -2,6 +2,8 @@ package quota
 
 import (
 	"fmt"
+	"strconv"
+
 	danav1 "github.com/dana-team/hns/api/v1"
 	"github.com/dana-team/hns/internal/objectcontext"
 	"github.com/go-logr/logr"
@@ -10,7 +12,6 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"strconv"
 )
 
 // SubnamespaceSpec returns the ResourceQuotaSpec of a subnamespace.
