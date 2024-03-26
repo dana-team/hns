@@ -1,4 +1,4 @@
-package e2e
+package e2e_tests
 
 import (
 	danav1 "github.com/dana-team/hns/api/v1"

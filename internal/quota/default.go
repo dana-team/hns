@@ -30,6 +30,8 @@ var (
 	imagestreams      = resource.NewQuantity(100, resource.DecimalSI)
 	ZeroDecimal       = resource.NewQuantity(0, resource.DecimalSI)
 
+	DefaultQuota = corev1.ResourceQuotaSpec{Hard: DefaultQuotaHard}
+
 	DefaultQuotaHard = corev1.ResourceList{"configmaps": *Configmaps, "count/builds.build.openshift.io": *Builds, "count/cronjobs.batch": *Cronjobs, "count/daemonsets.apps": *Daemonsets,
 		"count/deployments.apps": *Deployments, "count/jobs.batch": *Cronjobs, "count/replicasets.apps": *Replicasets, "count/routes.route.openshift.io": *Routes,
 		"secrets": *Secrets, "count/deploymentconfigs.apps.openshift.io": *deploymentconfigs, "count/buildconfigs.build.openshift.io": *buildconfigs, "count/serviceaccounts": *serviceaccounts,

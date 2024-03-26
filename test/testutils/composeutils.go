@@ -93,6 +93,17 @@ func CreateSubnamespace(nm, nsnm, randPrefix string, isRp bool, args ...string) 
 	LabelTestingNs(nm, randPrefix)
 }
 
+// CreateSubnamespaceWithScope creates/updates the specified Subnamespace in the parent namespace with canned testing
+// labels making it easier to look up and delete later, and with the given resources.
+func CreateSubnamespaceWithScope(nm, nsnm, randPrefix string, isRp bool, operatorValue string, args ...string) {
+	sns := generateSNSManifestWithScope(nm, nsnm, strconv.FormatBool(isRp), operatorValue, args...)
+	MustApplyYAML(sns)
+	RunShouldContain(nm, propagationTime, "kubectl get subnamespace -n", nsnm)
+	RunShouldContain(nm, propagationTime, "kubectl get namespace")
+	FieldShouldContain("subnamespace", nsnm, nm, ".metadata.annotations", danav1.CrqPointer)
+	LabelTestingNs(nm, randPrefix)
+}
+
 // ShouldNotCreateSubnamespace should not be able to create the specified Subnamespace
 // in the parent namespace and with the given resources.
 func ShouldNotCreateSubnamespace(nm, nsnm string, isRp bool, args ...string) {
@@ -200,6 +211,26 @@ metadata:
 spec:
   resourcequota:
     hard: ` + argsToResourceListString(4, args...)
+}
+
+// generateSNSManifestWithScope generates a Subnamespace manifest.
+func generateSNSManifestWithScope(nm, nsnm, isRp string, operatorValue string, args ...string) string {
+	return `# temp file created by sns_test.go
+apiVersion: dana.hns.io/v1
+kind: Subnamespace
+metadata:
+  name: ` + nm + `
+  namespace: ` + nsnm + `
+  labels:
+    ` + danav1.ResourcePool + `: "` + isRp + `"
+spec:
+  resourcequota:
+    hard: ` + argsToResourceListString(4, args...) + `
+    scopeSelector:
+      matchExpressions:
+      - operator: ` + operatorValue + `
+        scopeName: PriorityClass
+        values: ["low"]`
 }
 
 // generateRQManifest generates a ResourceQuota manifest.

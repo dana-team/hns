@@ -1,4 +1,4 @@
-package e2e
+package e2e_tests
 
 import (
 	danav1 "github.com/dana-team/hns/api/v1"
@@ -42,7 +42,7 @@ var _ = Describe("Subnamespaces", func() {
 		CreateSubnamespace(nsC, nsB, randPrefix, false, storage, "10Gi", cpu, "10", memory, "10Gi", pods, "10", gpu, "10")
 		FieldShouldContain("clusterresourcequota", "", nsC, ".metadata.name", nsC)
 
-		// delete subnamespace
+		// delete namespace
 		MustRun("kubectl delete namespace", nsC, "-n", nsB)
 	})
 
@@ -289,6 +289,22 @@ var _ = Describe("Subnamespaces", func() {
 		CreateSubnamespace(nsA, nsRoot, randPrefix, false, storage, "50Gi", cpu, "50", memory, "50Gi", pods, "50", gpu, "50")
 		MustNotRun("kubectl delete subnamespace", nsA)
 
+	})
+	It("should sync entire quota spec to quota object", func() {
+		nsA := GenerateE2EName("a", testPrefix, randPrefix)
+		nsB := GenerateE2EName("b", testPrefix, randPrefix)
+		nsC := GenerateE2EName("c", testPrefix, randPrefix)
+
+		By("creating a subnamespace and a resourcequota for a subnamespace in a high hierarchy")
+		CreateSubnamespaceWithScope(nsA, nsRoot, randPrefix, false, "In", storage, "50Gi", cpu, "50", memory, "50Gi", pods, "50", gpu, "50")
+		CreateSubnamespaceWithScope(nsB, nsA, randPrefix, false, "In", storage, "25Gi", cpu, "25", memory, "25Gi", pods, "25", gpu, "25")
+
+		By("creating a subnamespace and a clusterresourcequota for a subnamespace in a lower hierarchy")
+		CreateSubnamespaceWithScope(nsC, nsB, randPrefix, false, "In", storage, "10Gi", cpu, "10", memory, "10Gi", pods, "10", gpu, "10")
+		ComplexFieldShouldContain("clusterresourcequota", "", nsC, "'{{range.spec.quota.scopeSelector.matchExpressions}}{{.operator}}{{\"\\n\"}}{{end}}'", "In")
+
+		// delete namespace
+		MustRun("kubectl delete namespace", nsC, "-n", nsB)
 	})
 
 })
