@@ -24,15 +24,13 @@ func ResourceQuota(sns *objectcontext.ObjectContext) (*objectcontext.ObjectConte
 }
 
 // composeRQ returns a ResourceQuota object based on the given parameters.
-func composeRQ(name, namespace string, resources corev1.ResourceList) *corev1.ResourceQuota {
+func composeRQ(name, namespace string, resources corev1.ResourceQuotaSpec) *corev1.ResourceQuota {
 	return &corev1.ResourceQuota{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: namespace,
 		},
-		Spec: corev1.ResourceQuotaSpec{
-			Hard: resources,
-		},
+		Spec: resources,
 	}
 }
 
@@ -85,7 +83,7 @@ func IsRQ(sns *objectcontext.ObjectContext, offset int) (bool, error) {
 // have a ClusterResourceQuota.
 func CreateDefaultSNSResourceQuota(snsObject *objectcontext.ObjectContext) error {
 	snsName := snsObject.Name()
-	composedDefaultRQ := composeRQ(snsName, snsName, DefaultQuotaHard)
+	composedDefaultRQ := composeRQ(snsName, snsName, DefaultQuota)
 
 	snsDefaultRQ, err := objectcontext.New(snsObject.Ctx, snsObject.Client, types.NamespacedName{Name: snsName, Namespace: snsName}, composedDefaultRQ)
 	if err != nil {

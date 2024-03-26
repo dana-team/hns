@@ -302,8 +302,8 @@ func syncQuotaObject(snsObject *objectcontext.ObjectContext, isRq bool) (ctrl.Re
 			return ctrl.Result{}, err
 		}
 
-		resources := quota.SubnamespaceSpec(snsObject.Object).Hard
-		return ctrl.Result{}, quota.UpdateHard(quotaObject, resources, isRq)
+		resources := quota.SubnamespaceSpec(snsObject.Object)
+		return ctrl.Result{}, quota.UpdateObject(quotaObject, resources, isRq)
 	}
 
 	if res, err := quota.EnsureSubnamespaceObject(snsObject, isRq); err != nil {

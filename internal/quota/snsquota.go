@@ -75,7 +75,7 @@ func EnsureSubnamespaceObject(snsObject *objectcontext.ObjectContext, isRq bool)
 	}
 
 	if IsZeroed(quotaObject.Object) {
-		if err := UpdateHard(quotaObject, quotaSpec.Hard, isRq); err != nil {
+		if err := UpdateObject(quotaObject, quotaSpec, isRq); err != nil {
 			return ctrl.Result{}, err
 		}
 	}
@@ -94,7 +94,7 @@ func setupObject(quotaObjName string, isRq bool, resources corev1.ResourceQuotaS
 	var err error
 
 	if isRq {
-		composedQuotaObj := composeRQ(quotaObjName, quotaObjName, resources.Hard)
+		composedQuotaObj := composeRQ(quotaObjName, quotaObjName, resources)
 		quotaObj, err = objectcontext.New(snsObject.Ctx, snsObject.Client, types.NamespacedName{Name: quotaObjName, Namespace: quotaObjName}, composedQuotaObj)
 		if err != nil {
 			return quotaObj, err
@@ -125,18 +125,18 @@ func used(snsObject *objectcontext.ObjectContext) (corev1.ResourceList, error) {
 	return GetQuotaUsed(quotaObj.Object), nil
 }
 
-// UpdateHard updates the spec of the quotaObject to be same as the given resources.
-func UpdateHard(quotaObject *objectcontext.ObjectContext, resources corev1.ResourceList, isRq bool) error {
+// UpdateObject updates the spec of the quotaObject to be same as the given resources.
+func UpdateObject(quotaObject *objectcontext.ObjectContext, resources corev1.ResourceQuotaSpec, isRq bool) error {
 	if isRq {
 		return quotaObject.UpdateObject(func(object client.Object, log logr.Logger) (client.Object, logr.Logger) {
-			log = log.WithValues("updated subnamespace", "ResourceQuotaSpecHard", "resources", resources)
-			object.(*corev1.ResourceQuota).Spec.Hard = resources
+			log = log.WithValues("updated subnamespace", "ResourceQuotaSpec", "resources", resources)
+			object.(*corev1.ResourceQuota).Spec = resources
 			return object, log
 		})
 	} else {
 		return quotaObject.UpdateObject(func(object client.Object, log logr.Logger) (client.Object, logr.Logger) {
-			log = log.WithValues("updated subnamespace", "ResourceQuotaSpecQuotaHard", "resources", resources)
-			object.(*quotav1.ClusterResourceQuota).Spec.Quota.Hard = resources
+			log = log.WithValues("updated subnamespace", "ResourceQuotaSpecQuota", "resources", resources)
+			object.(*quotav1.ClusterResourceQuota).Spec.Quota = resources
 			return object, log
 		})
 	}
