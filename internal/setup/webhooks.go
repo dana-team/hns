@@ -50,6 +50,14 @@ func Webhooks(mgr manager.Manager, ndb *namespacedb.NamespaceDB, scheme *runtime
 		Client:  mgr.GetClient(),
 		Decoder: decoder,
 	}})
+	hookServer.Register("/mutate-v1-migrationhierarchy", &webhook.Admission{Handler: &MigrationHierarchyMutator{
+		Client:  mgr.GetClient(),
+		Decoder: decoder,
+	}})
+	hookServer.Register("/mutate-v1-updatequota", &webhook.Admission{Handler: &UpdateQuotaMutator{
+		Client:  mgr.GetClient(),
+		Decoder: decoder,
+	}})
 
 	hookServer.Register("/validate-v1-updatequota", &webhook.Admission{Handler: &UpdateQuotaValidator{
 		Client:  mgr.GetClient(),

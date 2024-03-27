@@ -53,6 +53,11 @@ func GrantTestingUserAdmin(user, ns string) {
 	MustRun("kubectl create rolebinding", "test-admin-"+user+"-"+ns, "--user", user, "--namespace", ns, "--clusterrole admin")
 }
 
+// GrantTestingUserAdmin gives cluster-admin cluster-rolebinding to a user .
+func GrantTestingUserClusterAdmin(user string) {
+	MustRun("kubectl create clusterrolebinding", "test-cluster-admin-"+user, "--user", user, "--clusterrole cluster-admin")
+}
+
 // AnnotateNSSecondaryRoot annotates a namespace as secondary root.
 func AnnotateNSSecondaryRoot(ns string) {
 	MustRun("kubectl annotate --overwrite ns", ns, danav1.IsSecondaryRoot+"="+danav1.True)
@@ -134,10 +139,14 @@ func CreateUpdateQuota(nm, nsnm, dsnm, user string, args ...string) {
 }
 
 // CreateMigrationHierarchy creates the specified MigrationHierarchy.
-func CreateMigrationHierarchy(currentns, tons string) string {
+func CreateMigrationHierarchy(currentns, tons string, user string) string {
 	name := "from" + currentns + "to" + tons
 	mh := generateMigrartionHierarchyManifest(name, currentns, tons)
-	MustApplyYAML(mh)
+	if user != "" {
+		MustApplyYAMLAsUser(mh, user)
+	} else {
+		MustApplyYAML(mh)
+	}
 	RunShouldContain(name, propagationTime, "kubectl get migrationhierarchy")
 	return name
 }
