@@ -45,6 +45,22 @@ var _ = Describe("UpdateQuota", func() {
 		FieldShouldContain("subnamespace", nsB, nsC, ".status.total.free.pods", "20")
 	})
 
+	It("should add a requester annotation to the updatequota object with the account name", func() {
+		nsA := GenerateE2EName("a", testPrefix, randPrefix)
+		nsB := GenerateE2EName("b", testPrefix, randPrefix)
+		CreateSubnamespace(nsA, nsRoot, randPrefix, false, storage, "50Gi", cpu, "50", memory, "50Gi", pods, "50", gpu, "50")
+		CreateSubnamespace(nsB, nsRoot, randPrefix, false, storage, "25Gi", cpu, "25", memory, "25Gi", pods, "25", gpu, "25")
+
+		userA := GenerateE2EUserName("user-a")
+		CreateUser(userA, randPrefix)
+		GrantTestingUserClusterAdmin(userA)
+
+		CreateUpdateQuota("updatequota-from-"+nsA+"-to-"+nsB, nsA, nsB, userA, "pods", "10")
+
+		FieldShouldContain("updatequota", nsA, "updatequota-from-"+nsA+"-to-"+nsB, ".metadata.annotations.requester", userA)
+
+	})
+
 	It("should not move resources from one sns to another if requesting user doesn't have permissions on both subnamespaces", func() {
 		nsA := GenerateE2EName("a", testPrefix, randPrefix)
 		nsB := GenerateE2EName("b", testPrefix, randPrefix)
@@ -68,7 +84,6 @@ var _ = Describe("UpdateQuota", func() {
 		// verify after update
 		FieldShouldContain("subnamespace", nsA, nsC, ".status.total.free.pods", "10")
 	})
-
 	It("should move resources from one sns to another if requesting user has permissions on both subnamespaces", func() {
 		nsA := GenerateE2EName("a", testPrefix, randPrefix)
 		nsB := GenerateE2EName("b", testPrefix, randPrefix)
