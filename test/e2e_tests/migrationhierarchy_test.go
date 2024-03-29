@@ -64,10 +64,12 @@ var _ = Describe("MigrationHierarchy", func() {
 		CreateUser(userA, randPrefix)
 		GrantTestingUserClusterAdmin(userA)
 
-		mhName := CreateMigrationHierarchy(nsA, nsB, userA)
+		mhName := CreateMigrationHierarchy(nsB, nsA, userA)
 
+		// verify phase is complete before labeling it
+		FieldShouldContain("migrationhierarchy", "", mhName, ".status.phase", "Complete")
 		FieldShouldContain("migrationhierarchy", "", mhName, ".metadata.annotations.requester", userA)
-
+		LabelTestingMigrationHierarchies(mhName, randPrefix)
 	})
 
 	It("should migrate subnamespace that doesn't have a CRQ and their direct parent doesn't have a CRQ,", func() {

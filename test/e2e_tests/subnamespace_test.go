@@ -64,6 +64,10 @@ var _ = Describe("Subnamespaces", func() {
 		FieldShouldContain("namespace", "", nsC, ".metadata.labels", danav1.Parent+":"+nsB)
 		FieldShouldContain("namespace", "", nsC, ".metadata.labels", danav1.ResourcePool+":false")
 
+		FieldShouldContain("namespace", "", nsC, ".metadata.labels", nsA+":true")
+		FieldShouldContain("namespace", "", nsC, ".metadata.labels", nsB+":true")
+		FieldShouldContain("namespace", "", nsC, ".metadata.labels", nsC+":true")
+
 		// verify namespace annotations
 		FieldShouldContain("namespace", "", nsC, ".metadata.annotations", danav1.Role+":"+danav1.Leaf)
 		FieldShouldContain("namespace", "", nsC, ".metadata.annotations", danav1.DisplayName+":"+nsRoot+"/"+nsA+"/"+nsB+"/"+nsC)

@@ -75,7 +75,8 @@ func (r *MigrationHierarchyReconciler) UpdateAllNSChildrenOfNs(ctx context.Conte
 // based on its parent labels and annotations.
 func (r *MigrationHierarchyReconciler) UpdateNSBasedOnParent(ctx context.Context, parentNS, childNS *objectcontext.ObjectContext) error {
 	nsName := childNS.Name()
-	labels, annotations := nsutils.LabelsAnnotationsBasedOnParent(parentNS, nsName)
+	labels := nsutils.LabelsBasedOnParent(parentNS, nsName)
+	annotations := nsutils.AnnotationsBasedOnParent(parentNS, nsName)
 
 	if err := childNS.AppendAnnotations(annotations); err != nil {
 		return err

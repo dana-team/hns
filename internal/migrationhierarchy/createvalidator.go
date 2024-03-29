@@ -6,7 +6,7 @@ import (
 	"net/http"
 
 	danav1 "github.com/dana-team/hns/api/v1"
-	common2 "github.com/dana-team/hns/internal/common"
+	"github.com/dana-team/hns/internal/common"
 	"github.com/dana-team/hns/internal/namespace/nsutils"
 	"github.com/dana-team/hns/internal/objectcontext"
 	"github.com/dana-team/hns/internal/subnamespace/resourcepool"
@@ -41,15 +41,15 @@ func (v *MigrationHierarchyValidator) handleCreate(mhObject *objectcontext.Objec
 		return response
 	}
 
-	if response := common2.ValidateNamespaceExist(currentNS); !response.Allowed {
+	if response := common.ValidateNamespaceExist(currentNS); !response.Allowed {
 		return response
 	}
 
-	if response := common2.ValidateNamespaceExist(toNS); !response.Allowed {
+	if response := common.ValidateNamespaceExist(toNS); !response.Allowed {
 		return response
 	}
 
-	if response := common2.ValidateToNamespaceName(currentNS, toNSName); !response.Allowed {
+	if response := common.ValidateToNamespaceName(currentNS, toNSName); !response.Allowed {
 		return response
 	}
 
@@ -68,12 +68,12 @@ func (v *MigrationHierarchyValidator) handleCreate(mhObject *objectcontext.Objec
 	// validate the source and destination namespaces are under the same secondary root only
 	// if you are not trying to migrate to or from the root namespace of the cluster
 	if (isAncestorRoot) && (!nsutils.IsRoot(currentNS.Object) && !nsutils.IsRoot(toNS.Object)) {
-		if response := common2.ValidateSecondaryRoot(ctx, v.Client, currentNSSliced, toNSSliced); !response.Allowed {
+		if response := common.ValidateSecondaryRoot(ctx, v.Client, currentNSSliced, toNSSliced); !response.Allowed {
 			return response
 		}
 	}
 
-	if response := common2.ValidatePermissions(ctx, currentNSSliced, currentNSName, toNSName, ancestorNSName, reqUser, false); !response.Allowed {
+	if response := common.ValidatePermissions(ctx, currentNSSliced, currentNSName, toNSName, ancestorNSName, reqUser, false); !response.Allowed {
 		return response
 	}
 
@@ -131,7 +131,7 @@ func (v *MigrationHierarchyValidator) validateCurrentNSAndToNSEqual(currentNSNam
 // validateMigrationLoop validates that a Subnamespace is not asked to be migrated to be under its own
 // descendant since that can create a loop.
 func (v *MigrationHierarchyValidator) validateMigrationLoop(toNSSliced []string, currentNSName string) admission.Response {
-	if common2.ContainsString(toNSSliced, currentNSName) {
+	if common.ContainsString(toNSSliced, currentNSName) {
 		message := "it's forbidden to migrate a Subnamespace to be under its own descendant since it would create a loop"
 		return admission.Denied(message)
 	}
