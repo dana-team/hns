@@ -43,7 +43,7 @@ var _ = Describe("MigrationHierarchy", func() {
 		CreateSubnamespace(nsE, nsC, randPrefix, false, storage, "5Gi", cpu, "5", memory, "5Gi", pods, "5", gpu, "5")
 		CreateSubnamespace(nsF, nsD, randPrefix, false, storage, "1Gi", cpu, "1", memory, "1Gi", pods, "1", gpu, "1")
 
-		mhName := CreateMigrationHierarchy(nsF, nsE)
+		mhName := CreateMigrationHierarchy(nsF, nsE, "")
 
 		// make sure the subnamespace was migrated and the parent was updated
 		FieldShouldContain("subnamespace", nsE, nsF, ".metadata.namespace", nsE)
@@ -52,6 +52,22 @@ var _ = Describe("MigrationHierarchy", func() {
 		// verify phase is complete before labeling it
 		FieldShouldContain("migrationhierarchy", "", mhName, ".status.phase", "Complete")
 		LabelTestingMigrationHierarchies(mhName, randPrefix)
+	})
+
+	It("should add a requester annotation to the migrationhierarchy object with the account name", func() {
+		nsA := GenerateE2EName("a", testPrefix, randPrefix)
+		nsB := GenerateE2EName("b", testPrefix, randPrefix)
+		CreateSubnamespace(nsA, nsRoot, randPrefix, false, storage, "50Gi", cpu, "50", memory, "50Gi", pods, "50", gpu, "50")
+		CreateSubnamespace(nsB, nsRoot, randPrefix, false, storage, "25Gi", cpu, "25", memory, "25Gi", pods, "25", gpu, "25")
+
+		userA := GenerateE2EUserName("user-a")
+		CreateUser(userA, randPrefix)
+		GrantTestingUserClusterAdmin(userA)
+
+		mhName := CreateMigrationHierarchy(nsA, nsB, userA)
+
+		FieldShouldContain("migrationhierarchy", "", mhName, ".metadata.annotations.requester", userA)
+
 	})
 
 	It("should migrate subnamespace that doesn't have a CRQ and their direct parent doesn't have a CRQ,", func() {
@@ -66,7 +82,7 @@ var _ = Describe("MigrationHierarchy", func() {
 		CreateSubnamespace(nsC, nsA, randPrefix, false, storage, "25Gi", cpu, "25", memory, "25Gi", pods, "25", gpu, "25")
 		CreateSubnamespace(nsD, nsB, randPrefix, false, storage, "10Gi", cpu, "10", memory, "10Gi", pods, "10", gpu, "10")
 
-		mhName := CreateMigrationHierarchy(nsD, nsC)
+		mhName := CreateMigrationHierarchy(nsD, nsC, "")
 
 		// verify phase is complete before labeling it
 		FieldShouldContain("migrationhierarchy", "", mhName, ".status.phase", "Complete")
@@ -91,7 +107,7 @@ var _ = Describe("MigrationHierarchy", func() {
 		CreateSubnamespace(nsE, nsD, randPrefix, false, storage, "2Gi", cpu, "2", memory, "2Gi", pods, "2", gpu, "2")
 		CreateSubnamespace(nsF, nsE, randPrefix, false, storage, "1Gi", cpu, "1", memory, "1Gi", pods, "1", gpu, "1")
 
-		mhName := CreateMigrationHierarchy(nsD, nsA)
+		mhName := CreateMigrationHierarchy(nsD, nsA, "")
 
 		// verify phase is complete before labeling it
 		FieldShouldContain("migrationhierarchy", "", mhName, ".status.phase", "Complete")
@@ -120,7 +136,7 @@ var _ = Describe("MigrationHierarchy", func() {
 		CreateSubnamespace(nsA, nsRoot, randPrefix, false, storage, "50Gi", cpu, "50", memory, "50Gi", pods, "50", gpu, "50")
 		CreateSubnamespace(nsC, nsA, randPrefix, false, storage, "25Gi", cpu, "25", memory, "25Gi", pods, "25", gpu, "25")
 
-		mhName := CreateMigrationHierarchy(nsA, nsF)
+		mhName := CreateMigrationHierarchy(nsA, nsF, "")
 
 		// verify phase is complete before labeling it
 		FieldShouldContain("migrationhierarchy", "", mhName, ".status.phase", "Complete")
@@ -153,7 +169,7 @@ var _ = Describe("MigrationHierarchy", func() {
 		CreateSubnamespace(nsG, nsF, randPrefix, false, storage, "1Gi", cpu, "1", memory, "1Gi", pods, "1", gpu, "1")
 		CreateSubnamespace(nsH, nsG, randPrefix, false, storage, "1Gi", cpu, "1", memory, "1Gi", pods, "1", gpu, "1")
 
-		mhName := CreateMigrationHierarchy(nsF, nsE)
+		mhName := CreateMigrationHierarchy(nsF, nsE, "")
 
 		// make sure the subnamespace was migrated and the parent was updated
 		FieldShouldContain("subnamespace", nsE, nsF, ".metadata.namespace", nsE)
@@ -185,7 +201,7 @@ var _ = Describe("MigrationHierarchy", func() {
 		CreateSubnamespace(nsD, nsC, randPrefix, false, storage, "10Gi", cpu, "10", memory, "10Gi", pods, "10", gpu, "10")
 		CreateSubnamespace(nsE, nsD, randPrefix, false, storage, "5Gi", cpu, "5", memory, "5Gi", pods, "5", gpu, "5")
 
-		mhName := CreateMigrationHierarchy(nsE, nsC)
+		mhName := CreateMigrationHierarchy(nsE, nsC, "")
 
 		// make sure the subnamespace was migrated and the parent was updated
 		FieldShouldContain("subnamespace", nsC, nsE, ".metadata.namespace", nsC)
@@ -241,7 +257,7 @@ var _ = Describe("MigrationHierarchy", func() {
 		CreateSubnamespace(nsG, nsF, randPrefix, true)
 		CreateSubnamespace(nsH, nsG, randPrefix, true)
 
-		mhName := CreateMigrationHierarchy(nsF, nsE)
+		mhName := CreateMigrationHierarchy(nsF, nsE, "")
 
 		// make sure the subnamespace was migrated and the parent was updated
 		FieldShouldContain("subnamespace", nsE, nsF, ".metadata.namespace", nsE)
@@ -284,7 +300,7 @@ var _ = Describe("MigrationHierarchy", func() {
 		CreateSubnamespace(nsG, nsF, randPrefix, true)
 		CreateSubnamespace(nsH, nsG, randPrefix, true)
 
-		mhName := CreateMigrationHierarchy(nsF, nsI)
+		mhName := CreateMigrationHierarchy(nsF, nsI, "")
 
 		// make sure the subnamespace was migrated and the parent was updated
 		FieldShouldContain("subnamespace", nsI, nsF, ".metadata.namespace", nsI)
@@ -364,7 +380,7 @@ var _ = Describe("MigrationHierarchy", func() {
 		CreateSubnamespace(nsF, nsD, randPrefix, false, storage, "2Gi", cpu, "2", memory, "2Gi", pods, "2", gpu, "2")
 		CreateSubnamespace(nsG, nsF, randPrefix, true, storage, "2Gi", cpu, "2", memory, "2Gi", pods, "2", gpu, "2")
 
-		mhName := CreateMigrationHierarchy(nsD, nsI)
+		mhName := CreateMigrationHierarchy(nsD, nsI, "")
 		FieldShouldContain("subnamespace", nsH, nsI, ".spec.resourcequota.hard."+cpu, "6")
 		FieldShouldContain("subnamespace", nsH, nsI, ".spec.resourcequota.hard."+memory, "6Gi")
 		FieldShouldContain("subnamespace", nsH, nsI, ".spec.resourcequota.hard."+pods, "6")
