@@ -152,7 +152,8 @@ func syncNSLabelsAnnotations(snsNamespace *corev1.Namespace, snsNamespaceObject 
 // and annotations based on the namespace linked to the parent of the subnamespace.
 func composeSNSNamespace(snsParentNS, snsObject *objectcontext.ObjectContext) *corev1.Namespace {
 	nsName := snsObject.Name()
-	labels, annotations := nsutils.LabelsAnnotationsBasedOnParent(snsParentNS, nsName)
+	labels := nsutils.LabelsBasedOnParent(snsParentNS, nsName)
+	annotations := nsutils.AnnotationsBasedOnParent(snsParentNS, nsName)
 
 	// add the ResourcePool label separately from the function
 	labels[danav1.ResourcePool] = snsObject.Object.GetLabels()[danav1.ResourcePool]

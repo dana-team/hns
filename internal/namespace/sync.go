@@ -38,6 +38,11 @@ func (r *NamespaceReconciler) sync(nsObject *objectcontext.ObjectContext) error 
 	}
 	logger.Info("successfully updated role of namespace", "namespace", nsName)
 
+	if err := ensureHierarchyLabels(nsObject); err != nil {
+		return fmt.Errorf("failed to set hierarchy labels of namespace %q: "+err.Error(), nsName)
+	}
+	logger.Info("successfully set hierarchy labels of namespace", "namespace", nsName)
+
 	if err := ensureChildrenSNSResourcePoolLabel(nsObject); err != nil {
 		return fmt.Errorf("failed to set ResourcePool labels of children subnamespaces of namespace %q: "+err.Error(), nsName)
 	}
@@ -54,6 +59,23 @@ func updateNSRole(namespace *objectcontext.ObjectContext, role string) error {
 		object.(*corev1.Namespace).Annotations[danav1.Role] = role
 		return object, log
 	})
+}
+
+// ensureHierarchyLabels makes sure that the hierarchy labels of a namespace are set correctly
+func ensureHierarchyLabels(nsObject *objectcontext.ObjectContext) error {
+	snsParentName := nsObject.Object.GetLabels()[danav1.Parent]
+
+	parentNS, err := objectcontext.New(nsObject.Ctx, nsObject.Client, types.NamespacedName{Name: snsParentName}, &corev1.Namespace{})
+	if err != nil {
+		return err
+	}
+
+	labels := nsutils.LabelsBasedOnParent(parentNS, nsObject.Name())
+	if err := nsObject.AppendLabels(labels); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // ensureChildrenSNSResourcePoolLabel makes sure that the ResourcePool label on the children

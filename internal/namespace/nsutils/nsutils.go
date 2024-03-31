@@ -62,15 +62,26 @@ func DisplayNameSlice(ns *objectcontext.ObjectContext) []string {
 	return nsArr
 }
 
-// LabelsAnnotationsBasedOnParent returns labels and annotations for a namespace,
-// the labels and annotations are based on the ones of the namespace of the parent.
-func LabelsAnnotationsBasedOnParent(parentNS *objectcontext.ObjectContext, nsName string) (map[string]string, map[string]string) {
-	childNamespaceDepth := strconv.Itoa(Depth(parentNS.Object) + 1)
-	parentDisplayName := DisplayName(parentNS.Object)
+// LabelsBasedOnParent returns labels for a namespace based on the ones of the namespace of the parent.
+func LabelsBasedOnParent(parentNS *objectcontext.ObjectContext, nsName string) map[string]string {
+	parentDisplayNameSliced := DisplayNameSlice(parentNS)
 
 	labels := make(map[string]string)
 	labels[danav1.Parent] = parentNS.Object.(*corev1.Namespace).Name
 	labels[danav1.Hns] = "true"
+
+	for _, ns := range parentDisplayNameSliced {
+		labels[ns] = "true"
+	}
+	labels[nsName] = "true"
+
+	return labels
+}
+
+// AnnotationsBasedOnParent returns labels for a namespace based on the ones of the namespace of the parent.
+func AnnotationsBasedOnParent(parentNS *objectcontext.ObjectContext, nsName string) map[string]string {
+	childNamespaceDepth := strconv.Itoa(Depth(parentNS.Object) + 1)
+	parentDisplayName := DisplayName(parentNS.Object)
 
 	annotations := crqSelectors(parentNS)
 	defaultAnnotations(parentNS, annotations)
@@ -81,7 +92,7 @@ func LabelsAnnotationsBasedOnParent(parentNS *objectcontext.ObjectContext, nsNam
 	annotations[danav1.SnsPointer] = nsName
 	annotations[danav1.CrqSelector+"-"+childNamespaceDepth] = nsName
 
-	return labels, annotations
+	return annotations
 }
 
 // crqSelectors returns a slice of crq selectors.

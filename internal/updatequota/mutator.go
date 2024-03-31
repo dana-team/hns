@@ -36,7 +36,7 @@ func (m *UpdateQuotaMutator) Handle(ctx context.Context, req admission.Request) 
 	return admission.PatchResponseFromRaw(req.Object.Raw, marshalUpdateQuota)
 }
 
-// UpdateRequester adds a requester annotation to the object
+// UpdateRequester adds a requester annotation to the object.
 func (m *UpdateQuotaMutator) UpdateRequester(updateQuotaObject danav1.Updatequota, requester string) ([]byte, error) {
 	updateQuotaObject.Annotations["requester"] = requester
 	marshalUpdateQuota, err := json.Marshal(updateQuotaObject)

@@ -53,7 +53,7 @@ func GrantTestingUserAdmin(user, ns string) {
 	MustRun("kubectl create rolebinding", "test-admin-"+user+"-"+ns, "--user", user, "--namespace", ns, "--clusterrole admin")
 }
 
-// GrantTestingUserAdmin gives cluster-admin cluster-rolebinding to a user .
+// GrantTestingUserClusterAdmin gives cluster-admin cluster-rolebinding to a user.
 func GrantTestingUserClusterAdmin(user string) {
 	MustRun("kubectl create clusterrolebinding", "test-cluster-admin-"+user, "--user", user, "--clusterrole cluster-admin")
 }
