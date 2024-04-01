@@ -73,7 +73,7 @@ func (v *MigrationHierarchyValidator) handleCreate(mhObject *objectcontext.Objec
 		}
 	}
 
-	if response := common.ValidatePermissions(ctx, currentNSSliced, currentNSName, toNSName, ancestorNSName, reqUser, false); !response.Allowed {
+	if response := common.ValidatePermissions(ctx, currentNSSliced, currentNSName, toNSName, ancestorNSName, reqUser, false, v.Client); !response.Allowed {
 		return response
 	}
 

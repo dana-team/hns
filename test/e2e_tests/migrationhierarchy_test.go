@@ -16,6 +16,7 @@ var _ = Describe("MigrationHierarchy", func() {
 
 		CleanupTestNamespaces(randPrefix)
 		CleanupTestMigrationHierarchies(randPrefix)
+		CleanupTestGroup("test")
 
 		nsRoot = GenerateE2EName("root", testPrefix, randPrefix)
 		CreateRootNS(nsRoot, randPrefix, rqDepth)
@@ -25,6 +26,8 @@ var _ = Describe("MigrationHierarchy", func() {
 	AfterEach(func() {
 		CleanupTestNamespaces(randPrefix)
 		CleanupTestMigrationHierarchies(randPrefix)
+		CleanupTestGroup("test")
+
 	})
 
 	It("should migrate subnamespace that have a CRQ or its direct parent have a CRQ,", func() {
@@ -441,4 +444,5 @@ var _ = Describe("MigrationHierarchy", func() {
 		// make sure the subnamespace was not migrated and the parent has not been updated
 		ShouldNotCreateMigrationHierarchy(nsA, nsC)
 	})
+
 })

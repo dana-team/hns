@@ -61,7 +61,7 @@ func (v *UpdateQuotaValidator) handleCreate(upqObject *objectcontext.ObjectConte
 		}
 	}
 
-	if response := common.ValidatePermissions(ctx, sourceNSSliced, sourceNSName, destNSName, ancestorNSName, username, true); !response.Allowed {
+	if response := common.ValidatePermissions(ctx, sourceNSSliced, sourceNSName, destNSName, ancestorNSName, username, true, v.Client); !response.Allowed {
 		return response
 	}
 
