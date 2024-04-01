@@ -43,9 +43,16 @@ func RandStr() string {
 // GenerateE2EUserName generates a name for a namespace and subnamespace.
 func GenerateE2EUserName(nm string) string {
 	prefix := namespacePrefix + "-" + RandStr() + "-user-"
-	snsName := prefix + nm
+	userName := prefix + nm
 
-	return snsName
+	return userName
+}
+
+func GenerateE2EGroupName(nm string) string {
+	prefix := namespacePrefix + "-" + RandStr() + "-group-"
+	groupName := prefix + nm
+
+	return groupName
 }
 
 // GrantTestingUserAdmin gives admin rolebinding to a user on a namnamespace.
@@ -96,6 +103,10 @@ func CreateSubnamespace(nm, nsnm, randPrefix string, isRp bool, args ...string) 
 	RunShouldContain(nm, propagationTime, "kubectl get namespace")
 	FieldShouldContain("subnamespace", nsnm, nm, ".metadata.annotations", danav1.CrqPointer)
 	LabelTestingNs(nm, randPrefix)
+}
+
+func AddProtectedGroup(group string) {
+
 }
 
 // CreateSubnamespaceWithScope creates/updates the specified Subnamespace in the parent namespace with canned testing
@@ -178,6 +189,22 @@ func CreateUser(u, randPrefix string) {
 	MustApplyYAML(user)
 	RunShouldContain(u, propagationTime, "kubectl get users")
 	labelTestingUsers(u, randPrefix)
+}
+
+// CreatePermittedUser creates a user in the permitted 'test' Group
+func CreatePermittedUser(u, randPrefix string) {
+	user := generatePermittedUserManifest(u)
+	MustApplyYAML(user)
+	RunShouldContain(u, propagationTime, "kubectl get users")
+	labelTestingUsers(u, randPrefix)
+}
+
+// CreateGroup creates the specified Group.
+func CreateGroup(g, u, randPrefix string) {
+	group := generateGroupManifest(g, u)
+	MustApplyYAML(group)
+	RunShouldContain(g, propagationTime, "kubectl get groups")
+	labelTestingGroup(g, randPrefix)
 }
 
 // CreatePod creates a pod in the specified namespace with the required cpu and memory(Gi).
@@ -290,6 +317,28 @@ metadata:
   name: ` + nm + `
 groups: 
   - e2e-test`
+}
+
+// generatePermittedUserManifest generates an permitted User manifest.
+func generatePermittedUserManifest(nm string) string {
+	return `# temp file created by user_test.go
+apiVersion: user.openshift.io/v1
+kind: User
+metadata:
+  name: ` + nm + `
+groups: 
+  - test`
+}
+
+// generateGroupManifest generates an User manifest.
+func generateGroupManifest(nm string, user string) string {
+	return `# temp file created by group_test.go
+apiVersion: user.openshift.io/v1
+kind: Group
+metadata:
+  name: ` + nm + `
+users: 
+  - ` + user
 }
 
 // generatePodManifest generates an Pod manifest.

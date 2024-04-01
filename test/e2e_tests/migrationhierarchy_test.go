@@ -16,6 +16,7 @@ var _ = Describe("MigrationHierarchy", func() {
 
 		CleanupTestNamespaces(randPrefix)
 		CleanupTestMigrationHierarchies(randPrefix)
+		CleanupTestGroup("test")
 
 		nsRoot = GenerateE2EName("root", testPrefix, randPrefix)
 		CreateRootNS(nsRoot, randPrefix, rqDepth)
@@ -25,6 +26,8 @@ var _ = Describe("MigrationHierarchy", func() {
 	AfterEach(func() {
 		CleanupTestNamespaces(randPrefix)
 		CleanupTestMigrationHierarchies(randPrefix)
+		CleanupTestGroup("test")
+
 	})
 
 	It("should migrate subnamespace that have a CRQ or its direct parent have a CRQ,", func() {
@@ -440,5 +443,22 @@ var _ = Describe("MigrationHierarchy", func() {
 
 		// make sure the subnamespace was not migrated and the parent has not been updated
 		ShouldNotCreateMigrationHierarchy(nsA, nsC)
+	})
+	It("should allow the creation of an migrationheirarchy with a user in a permitted group", func() {
+		nsA := GenerateE2EName("a", testPrefix, randPrefix)
+		nsB := GenerateE2EName("b", testPrefix, randPrefix)
+		CreateSubnamespace(nsA, nsRoot, randPrefix, false, storage, "50Gi", cpu, "50", memory, "50Gi", pods, "50", gpu, "50")
+		CreateSubnamespace(nsB, nsRoot, randPrefix, false, storage, "25Gi", cpu, "25", memory, "25Gi", pods, "25", gpu, "25")
+
+		userA := GenerateE2EUserName("user-a")
+
+		CreateUser(userA, randPrefix)
+		CreateGroup("test", userA, randPrefix)
+		mhName := CreateMigrationHierarchy(nsB, nsA, userA)
+
+		// verify phase is complete before labeling it
+		FieldShouldContain("migrationhierarchy", "", mhName, ".status.phase", "Complete")
+		LabelTestingMigrationHierarchies(mhName, randPrefix)
+
 	})
 })

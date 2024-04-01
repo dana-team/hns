@@ -16,6 +16,7 @@ package main
 
 import (
 	"flag"
+	userv1 "github.com/openshift/api/user/v1"
 	"os"
 
 	danav1 "github.com/dana-team/hns/api/v1"
@@ -55,6 +56,7 @@ func init() {
 	utilruntime.Must(quotav1.Install(scheme))
 	utilruntime.Must(templatev1.Install(scheme))
 	utilruntime.Must(buildv1.Install(scheme))
+	utilruntime.Must(userv1.Install(scheme))
 	// +kubebuilder:scaffold:scheme
 }
 

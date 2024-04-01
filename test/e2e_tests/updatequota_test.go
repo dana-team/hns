@@ -15,6 +15,7 @@ var _ = Describe("UpdateQuota", func() {
 
 		CleanupTestNamespaces(randPrefix)
 		CleanupTestUsers(randPrefix)
+		CleanupTestGroup("test")
 
 		nsRoot = GenerateE2EName("root", testPrefix, randPrefix)
 		CreateRootNS(nsRoot, randPrefix, rqDepth)
@@ -24,6 +25,8 @@ var _ = Describe("UpdateQuota", func() {
 	AfterEach(func() {
 		CleanupTestNamespaces(randPrefix)
 		CleanupTestUsers(randPrefix)
+		CleanupTestGroup("test")
+
 	})
 
 	It("should move resources from the root namespace to a subnamespace", func() {
@@ -219,5 +222,20 @@ var _ = Describe("UpdateQuota", func() {
 
 		// verify after update
 		FieldShouldContain("subnamespace", nsA, nsC, ".status.total.free.pods", "25")
+	})
+	It("should allow the creation of an updatequota with a user in a permitted group", func() {
+		nsA := GenerateE2EName("a", testPrefix, randPrefix)
+		nsB := GenerateE2EName("b", testPrefix, randPrefix)
+		CreateSubnamespace(nsA, nsRoot, randPrefix, false, storage, "50Gi", cpu, "50", memory, "50Gi", pods, "50", gpu, "50")
+		CreateSubnamespace(nsB, nsRoot, randPrefix, false, storage, "25Gi", cpu, "25", memory, "25Gi", pods, "25", gpu, "25")
+
+		userA := GenerateE2EUserName("user-a")
+
+		CreateUser(userA, randPrefix)
+		CreateGroup("test", userA, randPrefix)
+		CreateUpdateQuota("updatequota-from-"+nsA+"-to-"+nsB, nsA, nsB, userA, "pods", "10")
+
+		FieldShouldContain("subnamespace", nsB, nsA, ".status.total.free.pods", "35")
+
 	})
 })

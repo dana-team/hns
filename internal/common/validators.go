@@ -3,19 +3,23 @@ package common
 import (
 	"context"
 	"fmt"
-	"net/http"
-
 	danav1 "github.com/dana-team/hns/api/v1"
 	"github.com/dana-team/hns/internal/namespace/nsutils"
 	"github.com/dana-team/hns/internal/objectcontext"
+	userv1 "github.com/openshift/api/user/v1"
 	authv1 "k8s.io/api/authorization/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
+	"net/http"
+	"os"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
+	"slices"
+	"strings"
 )
 
 // ValidateNamespaceExist validates that a namespace exists.
@@ -82,10 +86,10 @@ func ValidateSecondaryRoot(ctx context.Context, c client.Client, aNSArray, bNSAr
 // of the two namespaces; if the user has the needed permissions on both namespaces; if the user has the needed
 // permissions on the namespace from which resources are moved and both namespaces are in the same branch
 // (only checked when the branch flag is true).
-func ValidatePermissions(ctx context.Context, aNS []string, aNSName, bNSName, ancestorNSName, reqUser string, branch bool) admission.Response {
-	hasSourcePermissions := permissionsExist(ctx, reqUser, aNSName)
-	hasDestPermissions := permissionsExist(ctx, reqUser, bNSName)
-	hasAncestorPermissions := permissionsExist(ctx, reqUser, ancestorNSName)
+func ValidatePermissions(ctx context.Context, aNS []string, aNSName, bNSName, ancestorNSName, reqUser string, branch bool, k8sClient client.Client) admission.Response {
+	hasSourcePermissions := permissionsExist(ctx, reqUser, aNSName, k8sClient)
+	hasDestPermissions := permissionsExist(ctx, reqUser, bNSName, k8sClient)
+	hasAncestorPermissions := permissionsExist(ctx, reqUser, ancestorNSName, k8sClient)
 
 	inBranch := ContainsString(aNS, bNSName)
 
@@ -110,7 +114,29 @@ func ValidatePermissions(ctx context.Context, aNS []string, aNSName, bNSName, an
 // permissionsExist checks if a user has permission to create a pod in a given namespace.
 // It impersonates the reqUser and uses SelfSubjectAccessReview API to check if the action is allowed or denied.
 // It returns a boolean value indicating whether the user has permission to create the pod or not.
-func permissionsExist(ctx context.Context, reqUser, namespace string) bool {
+func permissionsExist(ctx context.Context, reqUser, namespace string, k8sClient client.Client) bool {
+	logger := log.FromContext(ctx)
+
+	var permittedGroupsLabel = "PERMITTED_GROUPS"
+	permittedGroups, found := os.LookupEnv(permittedGroupsLabel)
+	if !found {
+		logger.Error(fmt.Errorf("%s must be set", permittedGroups), "no groups found")
+	} else {
+		permittedGroupsSlice := strings.Split(permittedGroups, ",")
+		for _, groupName := range permittedGroupsSlice {
+			group := userv1.Group{}
+			err := k8sClient.Get(ctx, types.NamespacedName{Name: groupName}, &group)
+			if err != nil {
+				logger.Error(err, "failed fetching group", "group", groupName)
+			} else {
+				if slices.Contains(group.Users, reqUser) {
+					logger.Info(fmt.Sprintf("user %s found in group %s", reqUser, groupName))
+					return true
+				}
+			}
+
+		}
+	}
 	if reqUser == fmt.Sprintf("system:serviceaccount:%s:%s", danav1.SNSNamespace, danav1.SNSServiceAccount) {
 		return true
 	}
