@@ -43,9 +43,16 @@ func RandStr() string {
 // GenerateE2EUserName generates a name for a namespace and subnamespace.
 func GenerateE2EUserName(nm string) string {
 	prefix := namespacePrefix + "-" + RandStr() + "-user-"
-	snsName := prefix + nm
+	userName := prefix + nm
 
-	return snsName
+	return userName
+}
+
+func GenerateE2EGroupName(nm string) string {
+	prefix := namespacePrefix + "-" + RandStr() + "-group-"
+	groupName := prefix + nm
+
+	return groupName
 }
 
 // GrantTestingUserAdmin gives admin rolebinding to a user on a namnamespace.
@@ -180,6 +187,14 @@ func CreateUser(u, randPrefix string) {
 	labelTestingUsers(u, randPrefix)
 }
 
+// CreateGroup creates the specified Group.
+func CreateGroup(g, u, randPrefix string) {
+	group := generateGroupManifest(g, u)
+	MustApplyYAML(group)
+	RunShouldContain(g, propagationTime, "kubectl get groups")
+	labelTestingGroup(g, randPrefix)
+}
+
 // CreatePod creates a pod in the specified namespace with the required cpu and memory(Gi).
 func CreatePod(ns, name, randPrefix, cpu, memory string) {
 	pod := generatePodManifest(ns, name, cpu, memory)
@@ -290,6 +305,17 @@ metadata:
   name: ` + nm + `
 groups: 
   - e2e-test`
+}
+
+// generateGroupManifest generates an User manifest.
+func generateGroupManifest(nm string, user string) string {
+	return `# temp file created by group_test.go
+apiVersion: user.openshift.io/v1
+kind: Group
+metadata:
+  name: ` + nm + `
+users: 
+  - ` + user
 }
 
 // generatePodManifest generates an Pod manifest.

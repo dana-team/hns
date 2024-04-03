@@ -29,6 +29,7 @@ type UpdateQuotaReconciler struct {
 
 // +kubebuilder:rbac:groups=dana.hns.io,resources=updatequota,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=dana.hns.io,resources=updatequota/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=user.openshift.io,resources=groups,verbs=get;list;watch
 // +kubebuilder:rbac:groups="",resources=users,verbs=impersonate
 
 func (r *UpdateQuotaReconciler) SetupWithManager(mgr ctrl.Manager) error {

@@ -197,3 +197,11 @@ rules:
   - patch
   - update
   - watch
+- apiGroups:
+  - user.openshift.io
+  resources:
+  - groups
+  verbs:
+  - get
+  - list
+  - watch

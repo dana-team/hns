@@ -16,6 +16,7 @@ import (
 const testingNamespaceLabel = "dana.hns.io/testNamespace"
 const testingMigrationHierarchyLabel = "dana.hns.io/testMigrationHierarchy"
 const testingUserLabel = "dana.hns.io/testUser"
+const testingGroupLabel = "dana.hns.io/testGroup"
 
 func FieldShouldContain(resource, ns, nm, field, want string) {
 	fieldShouldContainMultipleWithTimeout(1, resource, ns, nm, field, []string{want}, eventuallyTimeout)
@@ -219,6 +220,11 @@ func LabelTestingMigrationHierarchies(mh, randPrefix string) {
 	MustRun("kubectl label --overwrite migrationhierarchy", mh, randPrefix+"-"+testingMigrationHierarchyLabel+"=true")
 }
 
+// labelTestingGroups marks testing groups with a label for future search and lookup.
+func labelTestingGroup(group, randPrefix string) {
+	MustRun("kubectl label --overwrite group", group, randPrefix+"-"+testingGroupLabel+"=true")
+}
+
 // labelTestingUsers marks testing users with a label for future search and lookup.
 func labelTestingUsers(user, randPrefix string) {
 	MustRun("kubectl label --overwrite user", user, randPrefix+"-"+testingUserLabel+"=true")
@@ -272,6 +278,15 @@ func CleanupTestUsers(randPrefix string) {
 		return nil
 	}).Should(Succeed(), "while getting list of users to clean up")
 	cleanupUsers(users...)
+}
+
+// CleanupTestGroups deletes a specific group
+func CleanupTestGroup(groupName string) {
+	_, err := RunCommand("kubectl get groups -o custom-columns=:.metadata.name --no-headers=true", groupName)
+	if err != nil {
+		return
+	}
+	cleanupGroup(groupName)
 }
 
 // reverseSlice takes a slice and returns it in reverse order
@@ -340,6 +355,12 @@ func cleanupUsers(users ...string) {
 	}
 }
 
+// cleanupGroups does everything it can to delete the passed-in namespaces
+func cleanupGroup(group string) {
+
+	err := TryRun("kubectl delete group", group)
+	Expect(err).Should(BeNil())
+}
 func writeTempFile(cxt string) string {
 	f, err := os.CreateTemp(os.TempDir(), "e2e-test-*.yaml")
 	Expect(err).Should(BeNil())

@@ -4,19 +4,27 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"os"
+	"slices"
+	"strings"
 
 	danav1 "github.com/dana-team/hns/api/v1"
-	"github.com/dana-team/hns/internal/namespace/nsutils"
-	"github.com/dana-team/hns/internal/objectcontext"
 	authv1 "k8s.io/api/authorization/v1"
-	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
+
+	"github.com/dana-team/hns/internal/namespace/nsutils"
+	"github.com/dana-team/hns/internal/objectcontext"
+	userv1 "github.com/openshift/api/user/v1"
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
+
+const PERMITTEDGROUPLABEL = "PERMITTED_GROUPS"
 
 // ValidateNamespaceExist validates that a namespace exists.
 func ValidateNamespaceExist(ns *objectcontext.ObjectContext) admission.Response {
@@ -78,14 +86,31 @@ func ValidateSecondaryRoot(ctx context.Context, c client.Client, aNSArray, bNSAr
 }
 
 // ValidatePermissions checks if a registered user has the needed permissions on the namespaces and denies otherwise
-// there are 3 scenarios in which things are allowed: if the user has the needed permissions on the Ancestor
+// there are 4 scenarios in which things are allowed: if the user is in a permitted group; if the user has the needed permissions on the Ancestor
 // of the two namespaces; if the user has the needed permissions on both namespaces; if the user has the needed
 // permissions on the namespace from which resources are moved and both namespaces are in the same branch
 // (only checked when the branch flag is true).
-func ValidatePermissions(ctx context.Context, aNS []string, aNSName, bNSName, ancestorNSName, reqUser string, branch bool) admission.Response {
-	hasSourcePermissions := permissionsExist(ctx, reqUser, aNSName)
-	hasDestPermissions := permissionsExist(ctx, reqUser, bNSName)
-	hasAncestorPermissions := permissionsExist(ctx, reqUser, ancestorNSName)
+func ValidatePermissions(ctx context.Context, aNS []string, aNSName, bNSName, ancestorNSName, reqUser string, branch bool, k8sClient client.Client) admission.Response {
+	inGroup, err := ValidatePermittedGroups(ctx, reqUser, k8sClient)
+	if err != nil {
+		return admission.Errored(http.StatusInternalServerError, err)
+	}
+	if inGroup {
+		return admission.Allowed("")
+	}
+
+	hasSourcePermissions, err := permissionsExist(ctx, reqUser, aNSName)
+	if err != nil {
+		return admission.Errored(http.StatusInternalServerError, err)
+	}
+	hasDestPermissions, err := permissionsExist(ctx, reqUser, bNSName)
+	if err != nil {
+		return admission.Errored(http.StatusInternalServerError, err)
+	}
+	hasAncestorPermissions, err := permissionsExist(ctx, reqUser, ancestorNSName)
+	if err != nil {
+		return admission.Errored(http.StatusInternalServerError, err)
+	}
 
 	inBranch := ContainsString(aNS, bNSName)
 
@@ -110,14 +135,15 @@ func ValidatePermissions(ctx context.Context, aNS []string, aNSName, bNSName, an
 // permissionsExist checks if a user has permission to create a pod in a given namespace.
 // It impersonates the reqUser and uses SelfSubjectAccessReview API to check if the action is allowed or denied.
 // It returns a boolean value indicating whether the user has permission to create the pod or not.
-func permissionsExist(ctx context.Context, reqUser, namespace string) bool {
+func permissionsExist(ctx context.Context, reqUser, namespace string) (bool, error) {
+
 	if reqUser == fmt.Sprintf("system:serviceaccount:%s:%s", danav1.SNSNamespace, danav1.SNSServiceAccount) {
-		return true
+		return true, nil
 	}
 
 	config, err := rest.InClusterConfig()
 	if err != nil {
-		panic(err.Error())
+		return false, err
 	}
 
 	// set the user to impersonate in the configuration
@@ -128,7 +154,7 @@ func permissionsExist(ctx context.Context, reqUser, namespace string) bool {
 	// create a new Kubernetes client using the configuration
 	clientSet, err := kubernetes.NewForConfig(config)
 	if err != nil {
-		panic(err.Error())
+		return false, err
 	}
 
 	// create a new SelfSubjectAccessReview API object for checking permissions
@@ -147,15 +173,59 @@ func permissionsExist(ctx context.Context, reqUser, namespace string) bool {
 	// check the permissions for the user
 	resp, err := clientSet.AuthorizationV1().SelfSubjectAccessReviews().Create(ctx, &selfCheck, metav1.CreateOptions{})
 	if err != nil {
-		panic(err.Error())
+		return false, err
 	}
 
 	// check the response status to determine whether the user has permission to create the pod or not
 	if resp.Status.Denied {
-		return false
+		return false, nil
 	}
 	if resp.Status.Allowed {
-		return true
+		return true, nil
 	}
-	return false
+	return false, nil
+}
+
+// IsUserInGroup returns true if given user is in give group
+func IsUserInGroup(user string, group userv1.Group) bool {
+	return slices.Contains(group.Users, user)
+}
+
+// CheckGroup accepts groupname and username. Fetches group and checks if user is int it.
+func CheckGroup(ctx context.Context, user, groupName string, k8sClient client.Client) (bool, error) {
+	group := userv1.Group{}
+	err := k8sClient.Get(ctx, types.NamespacedName{Name: groupName}, &group)
+	if err != nil {
+		return false, err
+	} else {
+		if inGroup := IsUserInGroup(user, group); inGroup {
+			return true, nil
+		}
+	}
+	return false, nil
+}
+
+// ValidatePermittedGroups validate if user is in a permitted group
+func ValidatePermittedGroups(ctx context.Context, user string, k8sClient client.Client) (bool, error) {
+	logger := log.FromContext(ctx)
+
+	permittedGroups, found := os.LookupEnv(PERMITTEDGROUPLABEL)
+	if !found {
+		logger.Info("no permitted groups found")
+	} else {
+		permittedGroupsSlice := strings.Split(permittedGroups, ",")
+		for _, groupName := range permittedGroupsSlice {
+			inGroup, err := CheckGroup(ctx, user, groupName, k8sClient)
+			if err != nil {
+				logger.Info(fmt.Sprintf("group %s not found", groupName))
+				return false, nil
+			}
+			if inGroup {
+				logger.Info(fmt.Sprintf("user %s found in group %s", user, groupName))
+				return true, nil
+			}
+		}
+	}
+
+	return false, nil
 }

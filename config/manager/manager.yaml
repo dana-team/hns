@@ -36,9 +36,12 @@ spec:
           name: manager
           resources:
             limits:
-              cpu: 1
+              cpu: "1"
               memory: 1Gi
             requests:
-              cpu: 1
+              cpu: "1"
               memory: 1Gi
+          envFrom:
+            - configMapRef:
+                name: permitted-groups-cm
       terminationGracePeriodSeconds: 10
