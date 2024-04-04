@@ -16,7 +16,6 @@ var _ = Describe("MigrationHierarchy", func() {
 
 		CleanupTestNamespaces(randPrefix)
 		CleanupTestMigrationHierarchies(randPrefix)
-		CleanupTestGroup("test")
 
 		nsRoot = GenerateE2EName("root", testPrefix, randPrefix)
 		CreateRootNS(nsRoot, randPrefix, rqDepth)
@@ -26,7 +25,6 @@ var _ = Describe("MigrationHierarchy", func() {
 	AfterEach(func() {
 		CleanupTestNamespaces(randPrefix)
 		CleanupTestMigrationHierarchies(randPrefix)
-		CleanupTestGroup("test")
 
 	})
 
