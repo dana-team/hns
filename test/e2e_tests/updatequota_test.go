@@ -15,7 +15,6 @@ var _ = Describe("UpdateQuota", func() {
 
 		CleanupTestNamespaces(randPrefix)
 		CleanupTestUsers(randPrefix)
-		CleanupTestGroup("test")
 
 		nsRoot = GenerateE2EName("root", testPrefix, randPrefix)
 		CreateRootNS(nsRoot, randPrefix, rqDepth)
@@ -25,7 +24,6 @@ var _ = Describe("UpdateQuota", func() {
 	AfterEach(func() {
 		CleanupTestNamespaces(randPrefix)
 		CleanupTestUsers(randPrefix)
-		CleanupTestGroup("test")
 
 	})
 
@@ -238,6 +236,7 @@ var _ = Describe("UpdateQuota", func() {
 		CreateUpdateQuota("updatequota-from-"+nsA+"-to-"+nsB, nsA, nsB, userA, "pods", "10")
 
 		FieldShouldContain("subnamespace", nsRoot, nsB, ".status.total.free.pods", "35")
+		CleanupTestGroup("test")
 
 	})
 })
