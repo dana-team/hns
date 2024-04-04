@@ -8,6 +8,8 @@ import (
 	"slices"
 	"strings"
 
+	"k8s.io/apimachinery/pkg/api/errors"
+
 	danav1 "github.com/dana-team/hns/api/v1"
 	authv1 "k8s.io/api/authorization/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -24,7 +26,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
-const PERMITTEDGROUPLABEL = "PERMITTED_GROUPS"
+const PermittedGroups = "PERMITTED_GROUPS"
 
 // ValidateNamespaceExist validates that a namespace exists.
 func ValidateNamespaceExist(ns *objectcontext.ObjectContext) admission.Response {
@@ -209,7 +211,7 @@ func CheckGroup(ctx context.Context, user, groupName string, k8sClient client.Cl
 func ValidatePermittedGroups(ctx context.Context, user string, k8sClient client.Client) (bool, error) {
 	logger := log.FromContext(ctx)
 
-	permittedGroups, found := os.LookupEnv(PERMITTEDGROUPLABEL)
+	permittedGroups, found := os.LookupEnv(PermittedGroups)
 	if !found {
 		logger.Info("no permitted groups found")
 	} else {
@@ -217,8 +219,12 @@ func ValidatePermittedGroups(ctx context.Context, user string, k8sClient client.
 		for _, groupName := range permittedGroupsSlice {
 			inGroup, err := CheckGroup(ctx, user, groupName, k8sClient)
 			if err != nil {
-				logger.Info(fmt.Sprintf("group %s not found", groupName))
-				return false, nil
+				if errors.IsNotFound(err) {
+					logger.Info(fmt.Sprintf("group %s not found", groupName))
+				} else {
+					logger.Error(err, "failed checking if user in group")
+					return false, nil
+				}
 			}
 			if inGroup {
 				logger.Info(fmt.Sprintf("user %s found in group %s", user, groupName))
