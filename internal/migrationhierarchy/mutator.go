@@ -39,6 +39,9 @@ func (m *MigrationHierarchyMutator) Handle(ctx context.Context, req admission.Re
 
 // UpdateRequester adds a requester annotation to the object.
 func (m *MigrationHierarchyMutator) UpdateRequester(migrationHierarchyObject danav1.MigrationHierarchy, requester string) ([]byte, error) {
+	if migrationHierarchyObject.Annotations == nil {
+		migrationHierarchyObject.Annotations = make(map[string]string)
+	}
 	migrationHierarchyObject.Annotations["requester"] = requester
 	marshalUpdateQuota, err := json.Marshal(migrationHierarchyObject)
 	if err != nil {

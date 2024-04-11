@@ -38,6 +38,9 @@ func (m *UpdateQuotaMutator) Handle(ctx context.Context, req admission.Request) 
 
 // UpdateRequester adds a requester annotation to the object.
 func (m *UpdateQuotaMutator) UpdateRequester(updateQuotaObject danav1.Updatequota, requester string) ([]byte, error) {
+	if updateQuotaObject.Annotations == nil {
+		updateQuotaObject.Annotations = make(map[string]string)
+	}
 	updateQuotaObject.Annotations["requester"] = requester
 	marshalUpdateQuota, err := json.Marshal(updateQuotaObject)
 	if err != nil {
