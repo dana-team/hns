@@ -18,6 +18,8 @@ import (
 	"flag"
 	"os"
 
+	"github.com/dana-team/hns/internal/metrics"
+
 	userv1 "github.com/openshift/api/user/v1"
 
 	danav1 "github.com/dana-team/hns/api/v1"
@@ -107,6 +109,9 @@ func main() {
 		setup.Webhooks(mgr, ndb, scheme, hnsOpts)
 	}
 	// +kubebuilder:scaffold:builder
+
+	// Register the HNS specific metrics
+	metrics.InitializeHNSMetrics()
 
 	setupLog.Info("starting manager")
 	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
