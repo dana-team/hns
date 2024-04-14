@@ -51,3 +51,6 @@ jobs:
         
       - name: Run e2e tests
         run: make test-e2e
+
+      - name: Undeploy HNS
+        run: make undeploy

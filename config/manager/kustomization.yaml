@@ -7,6 +7,6 @@ images:
   newName: controller
   newTag: latest
 configMapGenerator:
-  - literals:
-      - PERMITTED_GROUPS='test'
-    name: permitted-groups-cm
+- literals:
+  - PERMITTED_GROUPS='test'
+  name: permitted-groups-cm

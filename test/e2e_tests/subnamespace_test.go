@@ -276,17 +276,24 @@ var _ = Describe("Subnamespaces", func() {
 		FieldShouldContain("subnamespace", nsA, nsB, ".status.total.free.pods", "10")
 	})
 
-	It("should update the child namespace with the default annotations of its parent", func() {
+	It("should update the child namespace with the default annotations and labels of its parent", func() {
 		nsA := GenerateE2EName("a", testPrefix, randPrefix)
 		nsB := GenerateE2EName("b", testPrefix, randPrefix)
 
 		CreateSubnamespace(nsA, nsRoot, randPrefix, false, storage, "50Gi", cpu, "50", memory, "50Gi", pods, "50", gpu, "50")
-		AnnotateNSDefaultAnnotation(nsA)
+		AnnotateNSDefaultAnnotations(nsA)
+		LabelNSDefaultLabels(nsA)
+
 		CreateSubnamespace(nsB, nsA, randPrefix, false, storage, "25Gi", cpu, "25", memory, "25Gi", pods, "25", gpu, "25")
 		for i := range danav1.DefaultAnnotations {
 			FieldShouldContain("namespace", "", nsB, ".metadata.annotations", danav1.DefaultAnnotations[i])
 		}
+
+		for i := range danav1.DefaultLabels {
+			FieldShouldContain("namespace", "", nsB, ".metadata.labels", danav1.DefaultLabels[i])
+		}
 	})
+
 	It("should fail when deleting a subnamespace directly", func() {
 		nsA := GenerateE2EName("a", testPrefix, randPrefix)
 
@@ -294,6 +301,7 @@ var _ = Describe("Subnamespaces", func() {
 		MustNotRun("kubectl delete subnamespace", nsA)
 
 	})
+
 	It("should sync entire quota spec to quota object", func() {
 		nsA := GenerateE2EName("a", testPrefix, randPrefix)
 		nsB := GenerateE2EName("b", testPrefix, randPrefix)

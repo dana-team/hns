@@ -70,10 +70,15 @@ func AnnotateNSSecondaryRoot(ns string) {
 	MustRun("kubectl annotate --overwrite ns", ns, danav1.IsSecondaryRoot+"="+danav1.True)
 }
 
-// AnnotateNSDefaultAnnotation annotates a namespace with the default annotations.
-func AnnotateNSDefaultAnnotation(ns string) {
+// AnnotateNSDefaultAnnotations annotates a namespace with the default annotations.
+func AnnotateNSDefaultAnnotations(ns string) {
 	MustRun("kubectl annotate --overwrite ns", ns, danav1.DefaultAnnotations[0]+"='[{\"key\":\"test\",\"value\":\"true\",\"effect\":\"NoSchedule\"}]'")
 	MustRun("kubectl annotate --overwrite ns", ns, danav1.DefaultAnnotations[1]+"="+"testServer")
+}
+
+// LabelNSDefaultLabels labels a namespace with the default labels.
+func LabelNSDefaultLabels(ns string) {
+	MustRun("kubectl label --overwrite ns", ns, danav1.DefaultLabels[0]+"=test")
 }
 
 // CreateRootNS creates/updates a root name with a given name
