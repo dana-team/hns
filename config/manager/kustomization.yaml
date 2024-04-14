@@ -1,5 +1,3 @@
-generatorOptions:
-  disableNameSuffixHash: true
 resources:
 - manager.yaml
 apiVersion: kustomize.config.k8s.io/v1beta1
@@ -9,6 +7,6 @@ images:
   newName: controller
   newTag: latest
 configMapGenerator:
-- literals:
-  - PERMITTED_GROUPS='test'
-  name: permitted-groups-cm
+  - literals:
+      - PERMITTED_GROUPS='test'
+    name: permitted-groups-cm

@@ -1,7 +1,0 @@
-apiVersion: v2
-name: sns
-description: A Helm chart for operator enabling hierarchical namespace implementation for OpenShift
-type: application
-version: 0.1.0
-appVersion: latest
-kubeVersion: ">=1.25.0-0"
