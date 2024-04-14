@@ -3,6 +3,8 @@ package subnamespace
 import (
 	"fmt"
 
+	"github.com/dana-team/hns/internal/metrics"
+
 	danav1 "github.com/dana-team/hns/api/v1"
 	"github.com/dana-team/hns/internal/namespace/nsutils"
 	"github.com/dana-team/hns/internal/namespacedb"
@@ -137,6 +139,9 @@ func (r *SubnamespaceReconciler) sync(snsParentNS, snsObject *objectcontext.Obje
 		}
 	}
 	logger.Info("successfully set status for subnamespace", "subnamespace", snsName)
+
+	updateSNSMetrics(snsName, snsParentName, free, resourceAllocatedToChildren, snsObject.Object.(*danav1.Subnamespace).Spec.ResourceQuotaSpec.Hard)
+	logger.Info("successfully set metrics for subnamespace", "subnamespace", snsName)
 
 	// trigger reconciliation for parent subnamespace so that it can be aware of
 	// potential changes in one of its children
@@ -389,10 +394,10 @@ func (r *SubnamespaceReconciler) enqueueChildrenSNSToRPConversionEvents(snsObjec
 
 // IsUpdateNeeded gets a subnamespace object, a []danav1.Namespaces and two resource lists and returns whether
 // the subnamespace object status has to be updated.
-func IsUpdateNeeded(subspace client.Object, childrenRequests []danav1.Namespaces, allocated, free corev1.ResourceList) bool {
-	if !NamespacesEqual(subspace.(*danav1.Subnamespace).Status.Namespaces, childrenRequests) ||
-		!quota.ResourceListEqual(subspace.(*danav1.Subnamespace).Status.Total.Allocated, allocated) ||
-		!quota.ResourceListEqual(subspace.(*danav1.Subnamespace).Status.Total.Free, free) {
+func IsUpdateNeeded(sns client.Object, childrenRequests []danav1.Namespaces, allocated, free corev1.ResourceList) bool {
+	if !NamespacesEqual(sns.(*danav1.Subnamespace).Status.Namespaces, childrenRequests) ||
+		!quota.ResourceListEqual(sns.(*danav1.Subnamespace).Status.Total.Allocated, allocated) ||
+		!quota.ResourceListEqual(sns.(*danav1.Subnamespace).Status.Total.Free, free) {
 		return true
 	}
 	return false
@@ -409,4 +414,17 @@ func NamespacesEqual(nsA, nsB []danav1.Namespaces) bool {
 		}
 	}
 	return true
+}
+
+// updateSNSMetrics updates the metrics for the subnamespace.
+func updateSNSMetrics(snsName, snsNS string, allocated, free, total corev1.ResourceList) {
+	for resourceName := range total {
+		allocatedResource := allocated[resourceName]
+		freeResource := free[resourceName]
+		totalResource := total[resourceName]
+
+		metrics.ObserveSNSAllocatedResource(snsName, snsNS, resourceName.String(), allocatedResource.AsApproximateFloat64())
+		metrics.ObserveSNSFreeResource(snsName, snsNS, resourceName.String(), freeResource.AsApproximateFloat64())
+		metrics.ObserveSNSTotalResource(snsName, snsNS, resourceName.String(), totalResource.AsApproximateFloat64())
+	}
 }
