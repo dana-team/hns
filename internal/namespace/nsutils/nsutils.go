@@ -67,6 +67,8 @@ func LabelsBasedOnParent(parentNS *objectcontext.ObjectContext, nsName string) m
 	parentDisplayNameSliced := DisplayNameSlice(parentNS)
 
 	labels := make(map[string]string)
+	defaultLabels(parentNS, labels)
+
 	labels[danav1.Parent] = parentNS.Object.(*corev1.Namespace).Name
 	labels[danav1.Hns] = "true"
 
@@ -112,6 +114,15 @@ func defaultAnnotations(ns *objectcontext.ObjectContext, annotations map[string]
 	for key, value := range ns.Object.GetAnnotations() {
 		if slices.Contains(danav1.DefaultAnnotations, key) {
 			annotations[key] = value
+		}
+	}
+}
+
+// defaultLabels updates the map of the ns labels with the DefaultLabels.
+func defaultLabels(ns *objectcontext.ObjectContext, labels map[string]string) {
+	for key, value := range ns.Object.GetLabels() {
+		if slices.Contains(danav1.DefaultLabels, key) {
+			labels[key] = value
 		}
 	}
 }

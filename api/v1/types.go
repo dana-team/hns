@@ -6,10 +6,11 @@ const MetaGroup = "dana.hns.io/"
 
 const (
 	SNSNamespace      = "sns-system"
-	SNSServiceAccount = "default"
+	SNSServiceAccount = "sns-controller-manager"
 )
 
 var DefaultAnnotations = []string{"scheduler.alpha.kubernetes.io/defaultTolerations", "openshift.io/node-selector"}
+var DefaultLabels = []string{"environment"}
 
 const (
 	Missing    Phase = "Missing"
