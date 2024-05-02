@@ -140,7 +140,7 @@ func (r *SubnamespaceReconciler) sync(snsParentNS, snsObject *objectcontext.Obje
 	}
 	logger.Info("successfully set status for subnamespace", "subnamespace", snsName)
 
-	updateSNSMetrics(snsName, snsParentName, free, resourceAllocatedToChildren, snsObject.Object.(*danav1.Subnamespace).Spec.ResourceQuotaSpec.Hard)
+	updateSNSMetrics(snsName, snsParentName, resourceAllocatedToChildren, free, snsObject.Object.(*danav1.Subnamespace).Spec.ResourceQuotaSpec.Hard)
 	logger.Info("successfully set metrics for subnamespace", "subnamespace", snsName)
 
 	// trigger reconciliation for parent subnamespace so that it can be aware of
