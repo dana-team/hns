@@ -16,7 +16,7 @@ import (
 
 type SubnamespaceValidator struct {
 	Client      client.Client
-	Decoder     admission.Decoder
+	Decoder     *admission.Decoder
 	NamespaceDB *namespacedb.NamespaceDB
 	MaxSNS      int
 	OnlyRP      bool

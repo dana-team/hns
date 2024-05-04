@@ -15,7 +15,7 @@ import (
 
 type NamespaceValidator struct {
 	Client  client.Client
-	Decoder admission.Decoder
+	Decoder *admission.Decoder
 }
 
 // +kubebuilder:webhook:path=/validate-v1-namespace,mutating=false,sideEffects=NoneOnDryRun,failurePolicy=fail,groups="core",resources=namespaces,verbs=delete,versions=v1,name=namespace.dana.io,admissionReviewVersions=v1;v1beta1

@@ -19,7 +19,7 @@ import (
 
 type MigrationHierarchyValidator struct {
 	Client      client.Client
-	Decoder     admission.Decoder
+	Decoder     *admission.Decoder
 	NamespaceDB *namespacedb.NamespaceDB
 	MaxSNS      int
 }

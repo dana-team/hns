@@ -15,7 +15,7 @@ import (
 
 type RoleBindingValidator struct {
 	Client  client.Client
-	Decoder admission.Decoder
+	Decoder *admission.Decoder
 }
 
 // +kubebuilder:webhook:path=/validate-v1-rolebinding,mutating=false,sideEffects=NoneOnDryRun,failurePolicy=fail,groups="rbac.authorization.k8s.io",resources=rolebindings,verbs=delete,versions=v1,name=rolebinding.dana.io,admissionReviewVersions=v1;v1beta1

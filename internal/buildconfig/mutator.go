@@ -15,7 +15,7 @@ import (
 
 type BuildConfigMutator struct {
 	Client  client.Client
-	Decoder admission.Decoder
+	Decoder *admission.Decoder
 }
 
 // +kubebuilder:webhook:path=/mutate-v1-buildconfig,mutating=true,sideEffects=NoneOnDryRun,failurePolicy=fail,groups="build.openshift.io",resources=buildconfigs,verbs=create,versions=v1,name=buildconfig.dana.io,admissionReviewVersions=v1;v1beta1
