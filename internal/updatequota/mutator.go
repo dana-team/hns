@@ -13,7 +13,7 @@ import (
 
 type UpdateQuotaMutator struct {
 	Client  client.Client
-	Decoder *admission.Decoder
+	Decoder admission.Decoder
 }
 
 // +kubebuilder:webhook:path=/mutate-v1-updatequota,mutating=true,sideEffects=NoneOnDryRun,failurePolicy=fail,groups="dana.hns.io",resources=updatequota,verbs=create,versions=v1,name=updatequota.dana.io,admissionReviewVersions=v1;v1beta1

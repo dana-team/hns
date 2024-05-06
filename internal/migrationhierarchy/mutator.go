@@ -13,7 +13,7 @@ import (
 
 type MigrationHierarchyMutator struct {
 	Client  client.Client
-	Decoder *admission.Decoder
+	Decoder admission.Decoder
 }
 
 // +kubebuilder:webhook:path=/mutate-v1-migrationhierarchy,mutating=true,sideEffects=NoneOnDryRun,failurePolicy=fail,groups="dana.hns.io",resources=migrationhierarchies,verbs=create,versions=v1,name=migrationhierarchy.dana.io,admissionReviewVersions=v1;v1beta1
