@@ -28,38 +28,38 @@ func (r *SubnamespaceReconciler) init(snsParentNS, snsObject *objectcontext.Obje
 	snsName := snsObject.Name()
 
 	if err := createSNSNamespace(snsParentNS, snsObject); err != nil {
-		return ctrl.Result{}, fmt.Errorf("failed to create namespace for subnamespace %q: "+err.Error(), snsName)
+		return ctrl.Result{}, fmt.Errorf("failed to create namespace for subnamespace %q: %v", snsName, err.Error())
 	}
 	logger.Info("successfully created namespace for subnamespace", "subnamespace", snsName)
 
 	snsResourcePoolLabel := resourcepool.SNSLabel(snsObject.Object)
 	if snsResourcePoolLabel == "" {
 		if err := resourcepool.SetSNSResourcePoolLabel(snsParentNS, snsObject); err != nil {
-			return ctrl.Result{}, fmt.Errorf("failed to set ResourcePool label for subnamespace %q: "+err.Error(), snsName)
+			return ctrl.Result{}, fmt.Errorf("failed to set ResourcePool label for subnamespace %q: %v", snsName, err.Error())
 		}
 	}
 	logger.Info("successfully set ResourcePool label for subnamespace", "subnamespace", snsName)
 
 	rqFlag, err := quota.IsRQ(snsObject, danav1.SelfOffset)
 	if err != nil {
-		return ctrl.Result{}, fmt.Errorf("failed to compute isRq flag for subnamespace %q: "+err.Error(), snsName)
+		return ctrl.Result{}, fmt.Errorf("failed to compute isRq flag for subnamespace %q: %v", snsName, err.Error())
 	}
 
 	// if the subnamespace is a regular SNS (i.e. not a ResourcePool) OR it's an upper-rp, then create a corresponding
 	// quota object for the subnamespace. The quota object can be either a ResourceQuota or a ClusterResourceQuota
 	isSNSResourcePool, err := resourcepool.IsSNSResourcePool(snsObject.Object)
 	if err != nil {
-		return ctrl.Result{}, fmt.Errorf("failed to compute if subnamespace %q is a ResourcePool: "+err.Error(), snsName)
+		return ctrl.Result{}, fmt.Errorf("failed to compute if subnamespace %q is a ResourcePool: %v", snsName, err.Error())
 	}
 
 	isSNSUpperResourcePool, err := resourcepool.IsSNSUpper(snsObject)
 	if err != nil {
-		return ctrl.Result{}, fmt.Errorf("failed to compute if subnamespace %q is an upper ResourcePool: "+err.Error(), snsName)
+		return ctrl.Result{}, fmt.Errorf("failed to compute if subnamespace %q is an upper ResourcePool: %v", snsName, err.Error())
 	}
 
 	if !isSNSResourcePool || isSNSUpperResourcePool {
 		if res, err := quota.EnsureSubnamespaceObject(snsObject, rqFlag); err != nil {
-			return ctrl.Result{}, fmt.Errorf("failed to create quota object for subnamespace %q: "+err.Error(), snsName)
+			return ctrl.Result{}, fmt.Errorf("failed to create quota object for subnamespace %q: %v", snsName, err.Error())
 		} else if !res.IsZero() {
 			// requeue the reconciled object if needed
 			return res, nil
@@ -67,13 +67,13 @@ func (r *SubnamespaceReconciler) init(snsParentNS, snsObject *objectcontext.Obje
 		logger.Info("successfully created quota object for subnamespace", "subnamespace", snsName)
 	} else {
 		if err := quota.CreateDefaultSNSResourceQuota(snsObject); err != nil {
-			return ctrl.Result{}, fmt.Errorf("failed to create default ResourceQuota object for subnamespace %q: "+err.Error(), snsName)
+			return ctrl.Result{}, fmt.Errorf("failed to create default ResourceQuota object for subnamespace %q: %v", snsName, err.Error())
 		}
 		logger.Info("successfully created default ResourceQuota object for subnamespace", "subnamespace", snsName)
 	}
 
 	if err := quota.CreateDefaultSNSLimitRange(snsObject); err != nil {
-		return ctrl.Result{}, fmt.Errorf("failed to create default Limit Range object for subnamespace %q: "+err.Error(), snsName)
+		return ctrl.Result{}, fmt.Errorf("failed to create default Limit Range object for subnamespace %q: %v", snsName, err.Error())
 	}
 	logger.Info("successfully created default LimitRange object for subnamespace", "subnamespace", snsName)
 
@@ -88,7 +88,7 @@ func (r *SubnamespaceReconciler) init(snsParentNS, snsObject *objectcontext.Obje
 	}
 
 	if err := snsObject.AppendAnnotations(annotations); err != nil {
-		return ctrl.Result{}, fmt.Errorf("failed to append for subnamespace %q: "+err.Error(), snsName)
+		return ctrl.Result{}, fmt.Errorf("failed to append for subnamespace %q: %v", snsName, err.Error())
 	}
 	logger.Info("successfully appended annotations for subnamespace", "subnamespace", snsObject.Name())
 

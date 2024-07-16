@@ -67,7 +67,7 @@ func (r *NamespaceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 
 	nsObject, err := objectcontext.New(ctx, r.Client, req.NamespacedName, &corev1.Namespace{})
 	if err != nil {
-		return ctrl.Result{}, fmt.Errorf("failed to get object %q: "+err.Error(), nsObject.Name())
+		return ctrl.Result{}, fmt.Errorf("failed to get object %q: %v", req.NamespacedName, err.Error())
 	}
 
 	if !nsObject.IsPresent() {

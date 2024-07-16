@@ -26,18 +26,18 @@ func (r *RoleBindingReconciler) cleanUp(rbObject *objectcontext.ObjectContext, s
 
 	if !rbutils.IsServiceAccount(rbObject.Object) {
 		if err := deleteSubjectsFromHNSViewClusterRoleBinding(rbObject); err != nil {
-			return fmt.Errorf("failed to delete subjects from roleBinding %q to HNS View ClusterRoleBinding: "+err.Error(), rbName)
+			return fmt.Errorf("failed to delete subjects from roleBinding %q to HNS View ClusterRoleBinding: %v", rbName, err.Error())
 		}
 		logger.Info("successfully deleted subjects from roleBinding to HNS View ClusterRoleBinding", "roleBinding", rbName)
 	}
 
 	if err := deleteRoleBindingsInSnsList(rbObject, snsList); err != nil {
-		return fmt.Errorf("failed to delete RoleBinding in every child of namespace %q: "+err.Error(), rbNamespace)
+		return fmt.Errorf("failed to delete RoleBinding in every child of namespace %q: %v", rbNamespace, err.Error())
 	}
 	logger.Info("successfully deleted RoleBinding in every child of namespace", "roleBinding namespace", rbNamespace)
 
 	if err := deleteRBFinalizer(rbObject); err != nil {
-		return fmt.Errorf("failed to delete finalizer to roleBinding %q: "+err.Error(), rbName)
+		return fmt.Errorf("failed to delete finalizer to roleBinding %q: %v", rbName, err.Error())
 	}
 	logger.Info("successfully deleted finalizer to roleBinding", "roleBinding", rbName)
 

@@ -24,17 +24,17 @@ func (r *NamespaceReconciler) init(nsObject *objectcontext.ObjectContext) error 
 	nsName := nsObject.Name()
 
 	if err := addNSFinalizer(nsObject); err != nil {
-		return fmt.Errorf("failed to add finalizer for namespace %q: "+err.Error(), nsName)
+		return fmt.Errorf("failed to add finalizer for namespace %q: %v", nsName, err.Error())
 	}
 	logger.Info("successfully added finalizer of namespace", "namespace", nsName)
 
 	if err := rbutils.CreateHNSView(nsObject); err != nil {
-		return fmt.Errorf("failed to create role and roleBinding objects associated with namespace %q: "+err.Error(), nsName)
+		return fmt.Errorf("failed to create role and roleBinding objects associated with namespace %q: %v", nsName, err.Error())
 	}
 	logger.Info("successfully created role and roleBinding objects associated with namespace", "namespace", nsName)
 
 	if err := createParentRoleBindingsInNS(nsObject); err != nil {
-		return fmt.Errorf("failed to create parent roleBindings objects in namespace %q: "+err.Error(), nsName)
+		return fmt.Errorf("failed to create parent roleBindings objects in namespace %q: %v", nsName, err.Error())
 	}
 	logger.Info("successfully created parent roleBinding objects in namespace", "namespace", nsName)
 

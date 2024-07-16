@@ -18,11 +18,11 @@ import (
 func increaseRootResources(mhObject *objectcontext.ObjectContext, rootNSName string, sourceResources corev1.ResourceQuotaSpec) error {
 	rootNSQuotaObj, err := quota.RootNSObjectFromName(mhObject, rootNSName)
 	if err != nil {
-		return fmt.Errorf("failed to get root namespace quota object: " + err.Error())
+		return fmt.Errorf("failed to get root namespace quota object: %v", err.Error())
 	}
 
 	if err := addRootQuota(rootNSQuotaObj, sourceResources); err != nil {
-		return fmt.Errorf("failed to add resources to root namespace quota object" + err.Error())
+		return fmt.Errorf("failed to add resources to root namespace quota object: %v", err.Error())
 	}
 
 	return nil
@@ -33,11 +33,11 @@ func increaseRootResources(mhObject *objectcontext.ObjectContext, rootNSName str
 func decreaseRootResources(mhObject *objectcontext.ObjectContext, rootNSName string, sourceResources corev1.ResourceQuotaSpec) error {
 	rootNSQuotaObj, err := quota.RootNSObjectFromName(mhObject, rootNSName)
 	if err != nil {
-		return fmt.Errorf("failed to get root namespace quota object: " + err.Error())
+		return fmt.Errorf("failed to get root namespace quota object: %v", err.Error())
 	}
 
 	if err := subRootQuota(rootNSQuotaObj, sourceResources); err != nil {
-		return fmt.Errorf("failed to subtract resources from root namespace quota object" + err.Error())
+		return fmt.Errorf("failed to subtract resources from root namespace quota object: %v", err.Error())
 	}
 
 	return nil
@@ -85,7 +85,7 @@ func createMigrationUPQ(mhObject *objectcontext.ObjectContext, sourceResources c
 	mhName := mhObject.Name()
 
 	if err := createUpdateQuota(mhObject, mhName, sourceNS, destNS, sourceResources); err != nil {
-		return fmt.Errorf("failed to create updateQuota for migration %q", mhObject.Name())
+		return fmt.Errorf("failed to create updateQuota for migration %q: %v", mhObject.Name(), err.Error())
 	}
 
 	return nil
@@ -96,7 +96,7 @@ func createMigrationUPQ(mhObject *objectcontext.ObjectContext, sourceResources c
 func monitorMigrationUPQ(mhObject *objectcontext.ObjectContext, ns string) (ctrl.Result, error) {
 	upqPhase, err := getUpdateQuotaStatus(mhObject, ns)
 	if err != nil {
-		return ctrl.Result{}, fmt.Errorf("failed getting updateQuota object status %q: "+err.Error(), mhObject.Name())
+		return ctrl.Result{}, fmt.Errorf("failed getting updateQuota object status %q: %v", mhObject.Name(), err.Error())
 	}
 
 	if upqPhase == danav1.Error {
@@ -129,7 +129,7 @@ func getUpdateQuotaStatus(mhObject *objectcontext.ObjectContext, upqNamespace st
 	upqObj, err := objectcontext.New(mhObject.Ctx, mhObject.Client, client.ObjectKey{Name: upqName, Namespace: upqNamespace}, &danav1.Updatequota{})
 
 	if err != nil {
-		return "", fmt.Errorf("failed getting updatequota object %q: "+err.Error(), upqName)
+		return "", fmt.Errorf("failed getting updatequota object %q: %v", upqName, err.Error())
 	}
 
 	return upqObj.Object.(*danav1.Updatequota).Status.Phase, nil

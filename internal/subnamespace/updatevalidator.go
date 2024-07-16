@@ -85,7 +85,7 @@ func (v *SubnamespaceValidator) validateRPLabelDeletion(snsObject, snsOldObject 
 	oldSNSResourcePoolLabel := resourcepool.SNSLabel(snsOldObject.Object)
 
 	if snsResourcePoolLabel == "" && oldSNSResourcePoolLabel != "" {
-		message := fmt.Sprintf("it's forbidden to delete the ResourcePool label from '%s", snsObject.Name())
+		message := fmt.Sprintf("it's forbidden to delete the ResourcePool label from %q", snsObject.Name())
 		return admission.Denied(message)
 	}
 

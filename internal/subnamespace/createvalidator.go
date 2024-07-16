@@ -60,11 +60,11 @@ func (v *SubnamespaceValidator) handleCreate(snsObject *objectcontext.ObjectCont
 func (v *SubnamespaceValidator) validateSubnamespaceName(snsObject *objectcontext.ObjectContext) admission.Response {
 	snsName := snsObject.Name()
 	if len(snsName) > 63 {
-		message := fmt.Sprintf("Invalid value: %s: the subnamespace name should be at most 63 characters", snsName)
+		message := fmt.Sprintf("Invalid value: %q: the subnamespace name should be at most 63 characters", snsName)
 		return admission.Denied(message)
 	}
 	if match, _ := regexp.MatchString("^[a-z0-9]([-a-z0-9]*[a-z0-9])?$", snsName); !match {
-		message := fmt.Sprintf("Invalid value: %s: a lowercase RFC 1123 label must consist of lower case alphanumeric characters or '-', and must start and end with an alphanumeric character (e.g. 'my-name', or '123-abc',", snsName)
+		message := fmt.Sprintf("Invalid value: %q: a lowercase RFC 1123 label must consist of lower case alphanumeric characters or '-', and must start and end with an alphanumeric character (e.g. 'my-name', or '123-abc',", snsName)
 		return admission.Denied(message)
 	}
 

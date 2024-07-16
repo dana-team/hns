@@ -25,26 +25,26 @@ func (r *NamespaceReconciler) sync(nsObject *objectcontext.ObjectContext) error 
 	nsName := nsObject.Name()
 
 	if err := rbutils.CreateHNSView(nsObject); err != nil {
-		return fmt.Errorf("failed to create role and roleBinding objects associated with namespace %q: "+err.Error(), nsName)
+		return fmt.Errorf("failed to create role and roleBinding objects associated with namespace %q: %v", nsName, err.Error())
 	}
 	logger.Info("successfully created role and roleBinding objects associated with namespace", "namespace", nsName)
 
 	if nsutils.IsChildless(nsObject) {
 		if err := updateNSRole(nsObject, danav1.Leaf); err != nil {
-			return fmt.Errorf("failed to update role of namespace %q: "+err.Error(), nsName)
+			return fmt.Errorf("failed to update role of namespace %q: %v", nsName, err.Error())
 		}
 	} else if err := updateNSRole(nsObject, danav1.NoRole); err != nil {
-		return fmt.Errorf("failed to update role of namespace %q: "+err.Error(), nsName)
+		return fmt.Errorf("failed to update role of namespace %q: %v", nsName, err.Error())
 	}
 	logger.Info("successfully updated role of namespace", "namespace", nsName)
 
 	if err := ensureHierarchyLabels(nsObject); err != nil {
-		return fmt.Errorf("failed to set hierarchy labels of namespace %q: "+err.Error(), nsName)
+		return fmt.Errorf("failed to set hierarchy labels of namespace %q: %v", nsName, err.Error())
 	}
 	logger.Info("successfully set hierarchy labels of namespace", "namespace", nsName)
 
 	if err := ensureChildrenSNSResourcePoolLabel(nsObject); err != nil {
-		return fmt.Errorf("failed to set ResourcePool labels of children subnamespaces of namespace %q: "+err.Error(), nsName)
+		return fmt.Errorf("failed to set ResourcePool labels of children subnamespaces of namespace %q: %v", nsName, err.Error())
 	}
 	logger.Info("successfully set ResourcePool labels of children subnamespaces of namespace", "namespace", nsName)
 
