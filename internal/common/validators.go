@@ -220,14 +220,14 @@ func ValidatePermittedGroups(ctx context.Context, user string, k8sClient client.
 			inGroup, err := CheckGroup(ctx, user, groupName, k8sClient)
 			if err != nil {
 				if errors.IsNotFound(err) {
-					logger.Info(fmt.Sprintf("group %s not found", groupName))
+					logger.Info(fmt.Sprintf("group %q not found", groupName))
 				} else {
 					logger.Error(err, "failed checking if user in group")
 					return false, nil
 				}
 			}
 			if inGroup {
-				logger.Info(fmt.Sprintf("user %s found in group %s", user, groupName))
+				logger.Info(fmt.Sprintf("user %q found in group %q", user, groupName))
 				return true, nil
 			}
 		}

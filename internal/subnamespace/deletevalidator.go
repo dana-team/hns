@@ -18,7 +18,7 @@ func (v *SubnamespaceValidator) handleDelete(req admission.Request) admission.Re
 // is the service account of the sns operator. Otherwise it will deny the request
 func (v *SubnamespaceValidator) validateServiceAccount(userName string) admission.Response {
 	if userName != fmt.Sprintf("system:serviceaccount:%s:%s", danav1.SNSNamespace, danav1.SNSServiceAccount) {
-		return admission.Denied(fmt.Sprintf("%s is not allowed to delete subnamespaces", userName))
+		return admission.Denied(fmt.Sprintf("%q is not allowed to delete subnamespaces", userName))
 
 	}
 	return admission.Allowed("")

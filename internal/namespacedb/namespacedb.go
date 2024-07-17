@@ -77,7 +77,7 @@ func Init(scheme *runtime.Scheme, logger logr.Logger) (*NamespaceDB, error) {
 	for _, ns := range nsWithSns.Items {
 		if ok := ns.Annotations[danav1.Role] == danav1.Leaf; ok {
 			if err := addHierarchy(ns, nsList, nDB, rootNS); err != nil {
-				return nDB, fmt.Errorf("failed to add hierarchy for %q: "+err.Error(), ns.Name)
+				return nDB, fmt.Errorf("failed to add hierarchy for %q: %v", ns.Name, err.Error())
 			}
 			logger.Info("successfully added hierarchy", "namespace", ns.Name)
 		}
@@ -123,14 +123,14 @@ func addHierarchy(ns corev1.Namespace, nsList corev1.NamespaceList, ndb *Namespa
 
 		if !ndb.doesKeyExist(keyName) {
 			if err := ndb.addNSToKey(keyName, keyName); err != nil {
-				return fmt.Errorf("failed to add namespace %q to key %q: "+err.Error(), keyName, keyName)
+				return fmt.Errorf("failed to add namespace %q to key %q: %v", keyName, keyName, err.Error())
 			}
 		}
 
 		for _, namespace := range nsListUp[rqDepth+1:] {
 			if !ndb.valInKeyExist(keyName, namespace.GetName()) {
 				if err := ndb.addNSToKey(keyName, namespace.GetName()); err != nil {
-					return fmt.Errorf("failed to add namespace %q to key %q: "+err.Error(), namespace.GetName(), keyName)
+					return fmt.Errorf("failed to add namespace %q to key %q: %v", namespace.GetName(), keyName, err.Error())
 				}
 			}
 		}
@@ -215,7 +215,7 @@ func AddNS(ctx context.Context, nDB *NamespaceDB, client client.Client, sns *dan
 
 	if !isKeyEmpty(keyNS) {
 		if err := nDB.addNSToKey(keyNS, sns.Name); err != nil {
-			return fmt.Errorf("failed to add namespace %q to key '%s': "+err.Error(), sns.Name, keyNS)
+			return fmt.Errorf("failed to add namespace %q to key %q: %v", sns.Name, keyNS, err.Error())
 		}
 		logger.Info("added namespace under key in namespacedb", "namespace", sns.Name, "key", keyNS)
 		return nil
@@ -232,7 +232,7 @@ func AddNS(ctx context.Context, nDB *NamespaceDB, client client.Client, sns *dan
 	// if a key does not already exist for the namespace, but the namespace has a CRQ then it means
 	// that the namespace itself should be the key in the DB.
 	if err := nDB.addNSToKey(sns.Name, sns.Name); err != nil {
-		return fmt.Errorf("failed to add namespace '%s' to key '%s': "+err.Error(), sns.Name, sns.Name)
+		return fmt.Errorf("failed to add namespace %q to key %q: %v", sns.Name, sns.Name, err.Error())
 	}
 	logger.Info("added namespace under key in namespacedb", "namespace", sns.Name, "key", sns.Name)
 
@@ -257,13 +257,13 @@ func MigrateNSHierarchy(ctx context.Context, ndb *NamespaceDB, client client.Cli
 
 		if !isKeyEmpty(oldKeyNS) && oldKeyNS != snsName {
 			if err := ndb.RemoveNS(childName, oldKeyNS); err != nil {
-				return fmt.Errorf("removing namespace '%s' from key '%s' failed: "+err.Error(), childName, oldKeyNS)
+				return fmt.Errorf("removing namespace %q from key %q failed: %v", childName, oldKeyNS, err.Error())
 			}
 		}
 
 		if !isKeyEmpty(newKeyNS) {
 			if err := ndb.addNSToKey(newKeyNS, childName); err != nil {
-				return fmt.Errorf("adding namespace '%s' to key '%s' failed: "+err.Error(), childName, newKeyNS)
+				return fmt.Errorf("adding namespace %q to key %q failed: %v", childName, newKeyNS, err.Error())
 			}
 		}
 	}
@@ -276,7 +276,7 @@ func (ndb *NamespaceDB) RemoveNS(nsname string, key string) error {
 	defer ndb.mutex.Unlock()
 
 	if _, ok := ndb.crqForest[key]; !ok {
-		return fmt.Errorf("key '%s' does not exist in NamespaceDB", key)
+		return fmt.Errorf("key %q does not exist in NamespaceDB", key)
 	}
 
 	for i, namespace := range ndb.crqForest[key] {

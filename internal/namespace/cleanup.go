@@ -28,34 +28,34 @@ func (r *NamespaceReconciler) cleanUp(ctx context.Context, nsObject *objectconte
 	nsName := nsObject.Name()
 
 	if err := r.deleteNamespaceFromNamespaceDB(nsName); err != nil {
-		return fmt.Errorf("failed to delete namespace %q from namespacedb: "+err.Error(), nsName)
+		return fmt.Errorf("failed to delete namespace %q from namespacedb: %v", nsName, err.Error())
 	}
 	logger.Info("successfully deleted namespace from namespacedb", "namespace", nsName)
 
 	if err := deleteNamespaceQuotaObject(nsObject); err != nil {
-		return fmt.Errorf("failed to delete quota object of namespace %q: "+err.Error(), nsName)
+		return fmt.Errorf("failed to delete quota object of namespace %q: %v", nsName, err.Error())
 	}
 	logger.Info("successfully deleted quota object of namespace", "namespace", nsName)
 
 	if err := deleteSNSFromParentNS(nsName, nsObject); err != nil {
-		return fmt.Errorf("failed to delete subnamespace object '%s' from parent namespace: "+err.Error(), nsName)
+		return fmt.Errorf("failed to delete subnamespace object %q from parent namespace: %v", nsName, err.Error())
 	}
 	logger.Info("successfully deleted subnamespace object from parent namespace", "namespace", nsName)
 
 	if err := deleteNSHnsView(nsObject); err != nil {
-		return fmt.Errorf("failed to delete role and rolebinding objects associated with namespace '%s': "+err.Error(), nsName)
+		return fmt.Errorf("failed to delete role and rolebinding objects associated with namespace %q: %v", nsName, err.Error())
 	}
 	logger.Info("successfully deleted role and rolebinding objects associated with namespace", "namespace", nsName)
 
 	// trigger reconciliation for parent subnamespace so that it can be aware of
 	// potential changes in one of its children
 	if err := r.enqueueParentSNSEvent(nsObject); err != nil {
-		return fmt.Errorf("failed to trigger sns event for parent of namespace '%s': "+err.Error(), nsName)
+		return fmt.Errorf("failed to trigger sns event for parent of namespace %q: %v", nsName, err.Error())
 	}
 	logger.Info("successfully triggered sns event for parent of namespace", "namespace", nsName)
 
 	if err := deleteNSFinalizer(nsObject); err != nil {
-		return fmt.Errorf("failed to delete finalizer of namespace '%s': "+err.Error(), nsName)
+		return fmt.Errorf("failed to delete finalizer of namespace %q: %v", nsName, err.Error())
 	}
 	logger.Info("successfully deleted finalizer of namespace", "namespace", nsName)
 
@@ -108,7 +108,7 @@ func (r *NamespaceReconciler) deleteNamespaceFromNamespaceDB(nsName string) erro
 			r.NamespaceDB.DeleteKey(keyNS)
 		} else {
 			if err := r.NamespaceDB.RemoveNS(nsName, keyNS); err != nil {
-				return fmt.Errorf("failed to remove namespace '%s' from key in DB: "+err.Error(), nsName)
+				return fmt.Errorf("failed to remove namespace %q from key in DB: %v", nsName, err.Error())
 			}
 		}
 	}

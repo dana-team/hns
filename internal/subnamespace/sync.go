@@ -35,13 +35,13 @@ func (r *SubnamespaceReconciler) sync(snsParentNS, snsObject *objectcontext.Obje
 	// and the allocated still free to allocate
 	snsChildren, err := objectcontext.NewList(snsObject.Ctx, snsObject.Client, &danav1.SubnamespaceList{}, client.InNamespace(snsName))
 	if err != nil {
-		return ctrl.Result{}, fmt.Errorf("failed to get children subnamespace objects under namespace %q: "+err.Error(), snsName)
+		return ctrl.Result{}, fmt.Errorf("failed to get children subnamespace objects under namespace %q: %v", snsName, err.Error())
 	}
 	childrenRequests, resourceAllocatedToChildren := getResourcesAllocatedToSNSChildren(snsChildren)
 	free := getFreeToAllocateSNSResources(snsObject, resourceAllocatedToChildren)
 	if resourcepool.SNSLabel(snsObject.Object) == "" {
 		if err := resourcepool.SetSNSResourcePoolLabel(snsParentNS, snsObject); err != nil {
-			return ctrl.Result{}, fmt.Errorf("failed to set ResourcePool label for subnamespace %q: "+err.Error(), snsName)
+			return ctrl.Result{}, fmt.Errorf("failed to set ResourcePool label for subnamespace %q: %v", snsName, err.Error())
 		}
 		logger.Info("successfully set ResourcePool label for subnamespace", "subnamespace", snsName)
 		return ctrl.Result{Requeue: true}, nil
@@ -49,22 +49,22 @@ func (r *SubnamespaceReconciler) sync(snsParentNS, snsObject *objectcontext.Obje
 
 	rqFlag, err := quota.IsRQ(snsObject, danav1.SelfOffset)
 	if err != nil {
-		return ctrl.Result{}, fmt.Errorf("failed to compute isRq flag for subnamespace %q: "+err.Error(), snsName)
+		return ctrl.Result{}, fmt.Errorf("failed to compute isRq flag for subnamespace %q: %v", snsName, err.Error())
 	}
 
 	isSNSResourcePool, err := resourcepool.IsSNSResourcePool(snsObject.Object)
 	if err != nil {
-		return ctrl.Result{}, fmt.Errorf("failed to compute if subnamespace %q is a ResourcePool: "+err.Error(), snsName)
+		return ctrl.Result{}, fmt.Errorf("failed to compute if subnamespace %q is a ResourcePool: %v", snsName, err.Error())
 	}
 
 	isParentNSResourcePool, err := resourcepool.IsNSResourcePool(snsParentNS)
 	if err != nil {
-		return ctrl.Result{}, fmt.Errorf("failed to compute if subnamespace %q is a ResourcePool: "+err.Error(), snsParentName)
+		return ctrl.Result{}, fmt.Errorf("failed to compute if subnamespace %q is a ResourcePool: %v", snsParentName, err.Error())
 	}
 
 	isSNSUpperResourcePool, err := resourcepool.IsSNSUpper(snsObject)
 	if err != nil {
-		return ctrl.Result{}, fmt.Errorf("failed to compute if subnamespace %q is an upper ResourcePool: "+err.Error(), snsName)
+		return ctrl.Result{}, fmt.Errorf("failed to compute if subnamespace %q is an upper ResourcePool: %v", snsName, err.Error())
 	}
 
 	// if the subnamespace is a regular SNS (i.e. not a ResourcePool) OR it's an upper-rp, then create a corresponding
@@ -72,24 +72,24 @@ func (r *SubnamespaceReconciler) sync(snsParentNS, snsObject *objectcontext.Obje
 	if !isSNSResourcePool || isSNSUpperResourcePool {
 		exists, quotaObject, err := quota.DoesSNSCRQExists(snsObject)
 		if err != nil {
-			return ctrl.Result{}, fmt.Errorf("failed to get quota object")
+			return ctrl.Result{}, fmt.Errorf("failed to get quota object: %v", err.Error())
 		} else if exists && rqFlag {
 			if err := quotaObject.EnsureDelete(); err != nil {
-				return ctrl.Result{}, fmt.Errorf("failed to get quota object")
+				return ctrl.Result{}, fmt.Errorf("failed to get quota object: %v", err.Error())
 			}
 		}
 
 		exists, quotaObject, err = quota.DoesSNSRQExists(snsObject)
 		if err != nil {
-			return ctrl.Result{}, fmt.Errorf("failed to get quota object")
+			return ctrl.Result{}, fmt.Errorf("failed to get quota object: %v", err.Error())
 		} else if exists && !rqFlag {
 			if err := quotaObject.EnsureDelete(); err != nil {
-				return ctrl.Result{}, fmt.Errorf("failed to get quota object")
+				return ctrl.Result{}, fmt.Errorf("failed to get quota object: %v", err.Error())
 			}
 		}
 
 		if res, err := syncQuotaObject(snsObject, rqFlag); err != nil {
-			return ctrl.Result{}, fmt.Errorf("failed to sync quota object for subnamespace %q: "+err.Error(), snsName)
+			return ctrl.Result{}, fmt.Errorf("failed to sync quota object for subnamespace %q: %v", snsName, err.Error())
 		} else if !res.IsZero() {
 			return res, nil
 		}
@@ -104,7 +104,7 @@ func (r *SubnamespaceReconciler) sync(snsParentNS, snsObject *objectcontext.Obje
 	if isSNSResourcePool && isParentNSResourcePool {
 		err := deleteNonUpperResourcePoolCRQ(snsObject)
 		if err != nil {
-			return ctrl.Result{}, fmt.Errorf("failed to delete quota object for subnamespace %q: "+err.Error(), snsName)
+			return ctrl.Result{}, fmt.Errorf("failed to delete quota object for subnamespace %q: %v", snsName, err.Error())
 		}
 		logger.Info("successfully deleted quota object for subnamespace", "subnamespace", snsName)
 
@@ -113,29 +113,29 @@ func (r *SubnamespaceReconciler) sync(snsParentNS, snsObject *objectcontext.Obje
 			log = log.WithValues("updated subnamespace", "removed spec.resourcequotaspec")
 			return object, log
 		}); err != nil {
-			return ctrl.Result{}, fmt.Errorf("failed to update status for subnamespace %q: "+err.Error(), snsName)
+			return ctrl.Result{}, fmt.Errorf("failed to update status for subnamespace %q: %v", snsName, err.Error())
 		}
 	}
 
 	snsParentNamespace := snsParentNS.Object.(*corev1.Namespace).Labels[danav1.Parent]
 	parentSNS, err := objectcontext.New(snsObject.Ctx, snsObject.Client, types.NamespacedName{Name: snsParentName, Namespace: snsParentNamespace}, &danav1.Subnamespace{})
 	if err != nil {
-		return ctrl.Result{}, fmt.Errorf("failed to get object %q: "+err.Error(), snsParentName)
+		return ctrl.Result{}, fmt.Errorf("failed to get object %q: %v", snsParentName, err.Error())
 	}
 
 	if err := syncSNSAnnotations(snsObject, snsParentNS, parentSNS, rqFlag); err != nil {
-		return ctrl.Result{}, fmt.Errorf("failed to sync annotations for subnamespace %q: "+err.Error(), snsName)
+		return ctrl.Result{}, fmt.Errorf("failed to sync annotations for subnamespace %q: %v", snsName, err.Error())
 	}
 	logger.Info("successfully synced annotations for subnamespace", "subnamespace", snsName)
 
 	if err := namespacedb.EnsureSNSInDB(ctx, snsObject, r.NamespaceDB); err != nil {
-		return ctrl.Result{}, fmt.Errorf("failed to ensure presence in namespacedb for subnamespace %q: "+err.Error(), snsObject.Name())
+		return ctrl.Result{}, fmt.Errorf("failed to ensure presence in namespacedb for subnamespace %q: %v", snsObject.Name(), err.Error())
 	}
 	logger.Info("successfully ensured presence in namespacedb for subnamespace", "subnamespace", snsObject.Name())
 
 	if IsUpdateNeeded(snsObject.Object, childrenRequests, resourceAllocatedToChildren, free) {
 		if err := updateSNSResourcesStatus(snsObject, childrenRequests, resourceAllocatedToChildren, free); err != nil {
-			return ctrl.Result{}, fmt.Errorf("failed to set status for subnamespace %q: "+err.Error(), snsName)
+			return ctrl.Result{}, fmt.Errorf("failed to set status for subnamespace %q: %v", snsName, err.Error())
 		}
 	}
 	logger.Info("successfully set status for subnamespace", "subnamespace", snsName)
@@ -149,14 +149,14 @@ func (r *SubnamespaceReconciler) sync(snsParentNS, snsObject *objectcontext.Obje
 	logger.Info("successfully enqueued parent subnamespace for reconcliation", "parent subnamespace", parentSNS.Name(), "subnamespace", snsName)
 
 	if err := r.enqueueChildrenRPToSNSConversionEvents(snsObject, snsChildren); err != nil {
-		return ctrl.Result{}, fmt.Errorf("failed to enqueue children subnamespaces of subnamespace %q for reconciliation: "+err.Error(), snsName)
+		return ctrl.Result{}, fmt.Errorf("failed to enqueue children subnamespaces of subnamespace %q for reconciliation: %v", snsName, err.Error())
 	}
 
 	// trigger the child subnamespaces if the subnamespace was converted into a ResourcePool
 	// it will update the isUpperRp annotation and the quotas accordingly
 	if isSNSResourcePool {
 		if err := r.enqueueChildrenSNSToRPConversionEvents(snsObject, snsChildren); err != nil {
-			return ctrl.Result{}, fmt.Errorf("failed to enqueue children subnamespaces of subnamespace %q for reconciliation: "+err.Error(), snsName)
+			return ctrl.Result{}, fmt.Errorf("failed to enqueue children subnamespaces of subnamespace %q for reconciliation: %v", snsName, err.Error())
 		}
 	}
 

@@ -23,28 +23,28 @@ import (
 func (r *MigrationHierarchyReconciler) updateRelatedObjects(mhObject, toNS, ns *objectcontext.ObjectContext) error {
 	ctx := mhObject.Ctx
 
-	if er := r.UpdateNSBasedOnParent(ctx, toNS, ns); er != nil {
-		err := r.updateMHStatus(mhObject, danav1.Error, er.Error())
-		if err != nil {
-			return fmt.Errorf("failed updating the status of object %q: "+err.Error(), mhObject.Name())
+	if err := r.UpdateNSBasedOnParent(ctx, toNS, ns); err != nil {
+		updateErr := updateMHStatus(mhObject, danav1.Error, err.Error())
+		if updateErr != nil {
+			return updateErr
 		}
-		return fmt.Errorf("failed updating the labels and annotations of namespace %q according to its parent %q: "+er.Error(), ns.Name(), toNS.Name())
+		return fmt.Errorf("failed updating the labels and annotations of namespace %q according to its parent %q: %v", ns.Name(), toNS.Name(), err.Error())
 	}
 
-	if er := r.UpdateAllNSChildrenOfNs(ctx, ns); er != nil {
-		err := r.updateMHStatus(mhObject, danav1.Error, er.Error())
-		if err != nil {
-			return fmt.Errorf("failed updating the status of object %q: "+err.Error(), mhObject.Name())
+	if err := r.UpdateAllNSChildrenOfNs(ctx, ns); err != nil {
+		updateErr := updateMHStatus(mhObject, danav1.Error, err.Error())
+		if updateErr != nil {
+			return updateErr
 		}
-		return fmt.Errorf("failed updating labels and annotations of child namespaces of sunamespace %q: "+er.Error(), ns.Name())
+		return fmt.Errorf("failed updating labels and annotations of child namespaces of sunamespace %q: %v", ns.Name(), err.Error())
 	}
 
-	if er := r.updateRole(toNS, danav1.NoRole); er != nil {
-		err := r.updateMHStatus(mhObject, danav1.Error, er.Error())
-		if err != nil {
-			return fmt.Errorf("failed updating the status of object %q: "+err.Error(), mhObject.Name())
+	if err := r.updateRole(toNS, danav1.NoRole); err != nil {
+		updateErr := updateMHStatus(mhObject, danav1.Error, err.Error())
+		if updateErr != nil {
+			return updateErr
 		}
-		return fmt.Errorf("failed updating role of subnamespace %q: "+er.Error(), toNS.Name())
+		return fmt.Errorf("failed updating role of subnamespace %q: %v", toNS.Name(), err.Error())
 	}
 
 	return nil

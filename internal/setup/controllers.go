@@ -28,7 +28,7 @@ func Controllers(mgr manager.Manager, ndb *namespacedb.NamespaceDB) error {
 		SNSEvents:   snsEvents,
 		NamespaceDB: ndb,
 	}).SetupWithManager(mgr); err != nil {
-		return fmt.Errorf("unable to create controller: "+err.Error(), "controller", "Namespace")
+		return fmt.Errorf("unable to create controller: %v", err.Error())
 	}
 
 	if err := (&SubnamespaceReconciler{
@@ -38,21 +38,21 @@ func Controllers(mgr manager.Manager, ndb *namespacedb.NamespaceDB) error {
 		SNSEvents:   snsEvents,
 		NamespaceDB: ndb,
 	}).SetupWithManager(mgr); err != nil {
-		return fmt.Errorf("unable to create controller: "+err.Error(), "controller", "Subnamespace")
+		return fmt.Errorf("unable to create controller: %v", err.Error())
 	}
 
 	if err := (&RoleBindingReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
-		return fmt.Errorf("unable to create controller: "+err.Error(), "controller", "RoleBinding")
+		return fmt.Errorf("unable to create controller: %v", err.Error())
 	}
 
 	if err := (&UpdateQuotaReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
-		return fmt.Errorf("unable to create controller: "+err.Error(), "controller", "UpdateQuota")
+		return fmt.Errorf("unable to create controller: %v", err.Error())
 	}
 
 	if err := (&MigrationHierarchyReconciler{
@@ -61,7 +61,7 @@ func Controllers(mgr manager.Manager, ndb *namespacedb.NamespaceDB) error {
 		NamespaceDB: ndb,
 		SnsEvents:   snsEvents,
 	}).SetupWithManager(mgr); err != nil {
-		return fmt.Errorf("unable to create controller: "+err.Error(), "controller", "MigrationHierarchy")
+		return fmt.Errorf("unable to create controller: %v", err.Error())
 	}
 
 	return nil

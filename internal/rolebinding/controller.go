@@ -70,7 +70,7 @@ func (r *RoleBindingReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 
 	rbObject, err := objectcontext.New(ctx, r.Client, req.NamespacedName, &rbacv1.RoleBinding{})
 	if err != nil {
-		return ctrl.Result{}, fmt.Errorf("failed to get object %q: "+err.Error(), rbObject.Name())
+		return ctrl.Result{}, fmt.Errorf("failed to get object %q: %v", req.NamespacedName, err.Error())
 	}
 
 	if !rbObject.IsPresent() {
@@ -85,7 +85,7 @@ func (r *RoleBindingReconciler) Reconcile(ctx context.Context, req ctrl.Request)
 
 	snsList, err := objectcontext.NewList(ctx, r.Client, &danav1.SubnamespaceList{}, client.InNamespace(req.Namespace))
 	if err != nil {
-		return ctrl.Result{}, fmt.Errorf("failed to get list of subnamespaces in namespace %q: "+err.Error(), req.Namespace)
+		return ctrl.Result{}, fmt.Errorf("failed to get list of subnamespaces in namespace %q: %v", req.Namespace, err.Error())
 	}
 
 	isBeingDeleted := common.DeletionTimeStampExists(rbObject.Object)
