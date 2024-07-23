@@ -100,11 +100,11 @@ spec:
         # More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
         resources:
           limits:
-            cpu: 500m
-            memory: 128Mi
+            cpu: 1
+            memory: 1Gi
           requests:
-            cpu: 10m
-            memory: 64Mi
+            cpu: 500m
+            memory: 0.5Gi
         envFrom:
           - configMapRef:
               name: permitted-groups-cm
