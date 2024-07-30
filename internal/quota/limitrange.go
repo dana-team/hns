@@ -21,9 +21,13 @@ var (
 	defaultLimitPodMem = resource.MustParse("300Mi")
 	defaultLimit       = corev1.ResourceList{"cpu": defaultLimitPodCpu, "memory": defaultLimitPodMem}
 
+	maxRequestPodCpu = resource.MustParse("128")
+	maxRequest       = corev1.ResourceList{"cpu": maxRequestPodCpu}
+
 	ContainerLimits = corev1.LimitRangeItem{
 		Type:           "Container",
 		Min:            minContainer,
+		Max:            maxRequest,
 		Default:        defaultLimit,
 		DefaultRequest: defaultRequest,
 	}
