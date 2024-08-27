@@ -10,3 +10,8 @@ configMapGenerator:
 - literals:
   - PERMITTED_GROUPS='test'
   name: permitted-groups-cm
+- files:
+  - limitRangeDefaults
+  name: config
+  options:
+    disableNameSuffixHash: true

@@ -311,7 +311,7 @@ func (r *MigrationHierarchyReconciler) createSNS(sns *objectcontext.ObjectContex
 	}
 
 	if err := newSNS.EnsureCreate(); err != nil {
-		return newSNS, fmt.Errorf("creating the subnamespace under the destination namespace failed because: " + err.Error())
+		return newSNS, fmt.Errorf("creating the subnamespace under the destination namespace failed: %w", err)
 	}
 
 	return newSNS, nil
@@ -333,7 +333,7 @@ func ComposeSNS(name string, namespace string, quota corev1.ResourceList, labels
 // deleteSNS deletes a subnamespace
 func (r *MigrationHierarchyReconciler) deleteSNS(sns *objectcontext.ObjectContext) error {
 	if err := sns.EnsureDelete(); err != nil {
-		return fmt.Errorf("deleting the subnamespace failed because: " + err.Error())
+		return fmt.Errorf("deleting the subnamespace failed: %w", err)
 	}
 
 	return nil

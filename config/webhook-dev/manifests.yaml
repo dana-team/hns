@@ -138,7 +138,9 @@ webhooks:
       - operations:
           - CREATE
           - UPDATE
-          - DELETE
+#          Since only the sns service account is allowed to delete subnamespaces and when running with make dev, the dana account is used,
+#          We skip the delete validations when running locally
+#          - DELETE
         apiGroups:
           - dana.hns.io
         apiVersions:

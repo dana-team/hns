@@ -11,6 +11,8 @@ spec:
     kind: Subnamespace
     listKind: SubnamespaceList
     plural: subnamespaces
+    shortNames:
+    - sns
     singular: subnamespace
   scope: Namespaced
   versions:
@@ -97,11 +99,13 @@ spec:
                               items:
                                 type: string
                               type: array
+                              x-kubernetes-list-type: atomic
                           required:
                           - operator
                           - scopeName
                           type: object
                         type: array
+                        x-kubernetes-list-type: atomic
                     type: object
                     x-kubernetes-map-type: atomic
                   scopes:
@@ -113,6 +117,7 @@ spec:
                         match each object tracked by a quota
                       type: string
                     type: array
+                    x-kubernetes-list-type: atomic
                 type: object
             type: object
           status:
@@ -174,11 +179,13 @@ spec:
                                     items:
                                       type: string
                                     type: array
+                                    x-kubernetes-list-type: atomic
                                 required:
                                 - operator
                                 - scopeName
                                 type: object
                               type: array
+                              x-kubernetes-list-type: atomic
                           type: object
                           x-kubernetes-map-type: atomic
                         scopes:
@@ -190,6 +197,7 @@ spec:
                               must match each object tracked by a quota
                             type: string
                           type: array
+                          x-kubernetes-list-type: atomic
                       type: object
                   type: object
                 type: array

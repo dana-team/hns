@@ -74,6 +74,7 @@ type SubnamespaceStatus struct {
 }
 
 // +kubebuilder:object:root=true
+// +kubebuilder:resource:shortName=sns
 
 // Subnamespace is the Schema for the subnamespaces API
 type Subnamespace struct {
