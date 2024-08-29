@@ -24,8 +24,8 @@ func IndexOf(element string, a []string) (int, error) {
 }
 
 // ContainsString checks if a string is present in a slice of strings.
-func ContainsString(sslice []string, s string) bool {
-	for _, a := range sslice {
+func ContainsString(slice []string, s string) bool {
+	for _, a := range slice {
 		if a == s {
 			return true
 		}
