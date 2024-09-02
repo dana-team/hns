@@ -1,16 +1,18 @@
 package quota
 
 import (
+	"context"
+	"fmt"
+	"strings"
+
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
+	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const (
-	BasicStorage corev1.ResourceName = "basic.storageclass.storage.k8s.io/requests.storage"
-	CPU          corev1.ResourceName = "cpu"
-	Memory       corev1.ResourceName = "memory"
-	Pods         corev1.ResourceName = "pods"
-	GPU          corev1.ResourceName = "requests.nvidia.com/gpu"
+	resourcesKey string = "resources"
 )
 
 var (
@@ -30,14 +32,29 @@ var (
 	imagestreams      = resource.NewQuantity(100, resource.DecimalSI)
 	ZeroDecimal       = resource.NewQuantity(0, resource.DecimalSI)
 
+	quotaConfig = "sns-quota-resources"
+
 	DefaultQuota = corev1.ResourceQuotaSpec{Hard: DefaultQuotaHard}
 
 	DefaultQuotaHard = corev1.ResourceList{"configmaps": *Configmaps, "count/builds.build.openshift.io": *Builds, "count/cronjobs.batch": *Cronjobs, "count/daemonsets.apps": *Daemonsets,
 		"count/deployments.apps": *Deployments, "count/jobs.batch": *Cronjobs, "count/replicasets.apps": *Replicasets, "count/routes.route.openshift.io": *Routes,
 		"secrets": *Secrets, "count/deploymentconfigs.apps.openshift.io": *deploymentconfigs, "count/buildconfigs.build.openshift.io": *buildconfigs, "count/serviceaccounts": *serviceaccounts,
 		"count/statefulsets.apps": *statefulsets, "count/templates.template.openshift.io": *templates, "openshift.io/imagestreams": *imagestreams}
-
-	ZeroedQuota = corev1.ResourceQuotaSpec{
-		Hard: corev1.ResourceList{BasicStorage: *ZeroDecimal, CPU: *ZeroDecimal, Memory: *ZeroDecimal, Pods: *ZeroDecimal, GPU: *ZeroDecimal},
-	}
 )
+
+// GetObservedResources returns default values for all observed resources inside a ResourceQuotaSpec object.
+// The observed resources are read from a configMap.
+func GetObservedResources(ctx context.Context, k8sClient client.Client) (corev1.ResourceQuotaSpec, error) {
+	resourcesConfig := &corev1.ConfigMap{}
+	if err := k8sClient.Get(ctx, types.NamespacedName{Name: quotaConfig, Namespace: namespaceName}, resourcesConfig); err != nil {
+		return corev1.ResourceQuotaSpec{}, fmt.Errorf("failed to get ConfigMap %q: %v", resourcesConfig, err)
+	}
+
+	resources := corev1.ResourceList{}
+	resourceNames := strings.Split(resourcesConfig.Data[resourcesKey], ",")
+	for _, name := range resourceNames {
+		resources[corev1.ResourceName(name)] = *ZeroDecimal
+	}
+
+	return corev1.ResourceQuotaSpec{Hard: resources}, nil
+}

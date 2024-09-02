@@ -28,10 +28,10 @@ func ResourceListEqual(resourceListA, resourceListB corev1.ResourceList) bool {
 }
 
 // ResourceQuotaSpecEqual gets two ResourceQuotaSpecs and returns whether their specs are equal.
-func ResourceQuotaSpecEqual(resourceQuotaSpecA, resourceQuotaSpecB corev1.ResourceQuotaSpec) bool {
+func ResourceQuotaSpecEqual(resourceQuotaSpecA, resourceQuotaSpecB corev1.ResourceQuotaSpec, observedResourcesSpec corev1.ResourceQuotaSpec) bool {
 	var resources []string
 
-	for resourceName := range ZeroedQuota.Hard {
+	for resourceName := range observedResourcesSpec.Hard {
 		resources = append(resources, resourceName.String())
 	}
 

@@ -1,6 +1,7 @@
 package subnamespace
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/dana-team/hns/internal/metrics"
@@ -133,7 +134,7 @@ func (r *SubnamespaceReconciler) sync(snsParentNS, snsObject *objectcontext.Obje
 	}
 	logger.Info("successfully ensured presence in namespacedb for subnamespace", "subnamespace", snsObject.Name())
 
-	if IsUpdateNeeded(snsObject.Object, childrenRequests, resourceAllocatedToChildren, free) {
+	if IsUpdateNeeded(snsObject.Ctx, snsObject.Client, snsObject.Object, childrenRequests, resourceAllocatedToChildren, free) {
 		if err := updateSNSResourcesStatus(snsObject, childrenRequests, resourceAllocatedToChildren, free); err != nil {
 			return ctrl.Result{}, fmt.Errorf("failed to set status for subnamespace %q: %v", snsName, err.Error())
 		}
@@ -394,8 +395,8 @@ func (r *SubnamespaceReconciler) enqueueChildrenSNSToRPConversionEvents(snsObjec
 
 // IsUpdateNeeded gets a subnamespace object, a []danav1.Namespaces and two resource lists and returns whether
 // the subnamespace object status has to be updated.
-func IsUpdateNeeded(sns client.Object, childrenRequests []danav1.Namespaces, allocated, free corev1.ResourceList) bool {
-	if !NamespacesEqual(sns.(*danav1.Subnamespace).Status.Namespaces, childrenRequests) ||
+func IsUpdateNeeded(ctx context.Context, k8sClient client.Client, sns client.Object, childrenRequests []danav1.Namespaces, allocated, free corev1.ResourceList) bool {
+	if !NamespacesEqual(ctx, k8sClient, sns.(*danav1.Subnamespace).Status.Namespaces, childrenRequests) ||
 		!quota.ResourceListEqual(sns.(*danav1.Subnamespace).Status.Total.Allocated, allocated) ||
 		!quota.ResourceListEqual(sns.(*danav1.Subnamespace).Status.Total.Free, free) {
 		return true
@@ -404,12 +405,16 @@ func IsUpdateNeeded(sns client.Object, childrenRequests []danav1.Namespaces, all
 }
 
 // NamespacesEqual gets two []danav1.Namespaces and returns whether they are equal.
-func NamespacesEqual(nsA, nsB []danav1.Namespaces) bool {
+func NamespacesEqual(ctx context.Context, k8sClient client.Client, nsA, nsB []danav1.Namespaces) bool {
 	if len(nsA) != len(nsB) {
 		return false
 	}
+	observedResources, err := quota.GetObservedResources(ctx, k8sClient)
+	if err != nil {
+		return false
+	}
 	for i, nameQuotaPair := range nsA {
-		if !quota.ResourceQuotaSpecEqual(nameQuotaPair.ResourceQuotaSpec, nsB[i].ResourceQuotaSpec) {
+		if !quota.ResourceQuotaSpecEqual(nameQuotaPair.ResourceQuotaSpec, nsB[i].ResourceQuotaSpec, observedResources) {
 			return false
 		}
 	}
