@@ -38,10 +38,15 @@ func EnsureSubnamespaceObject(snsObject *objectcontext.ObjectContext, isRq bool)
 	quotaObjectName := snsObject.Name()
 	quotaSpec := SubnamespaceSpec(snsObject.Object)
 
+	observedResources, err := GetObservedResources(snsObject.Ctx, snsObject.Client)
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+
 	// if the subnamespace does not have a quota in its Spec, then set it to be equal to what it
 	// currently uses, and create a quotaObject for it. This can happen when converting a ResourcePool to an SNS
 	if len(quotaSpec.Hard) == 0 {
-		quotaObject, err := setupObject(quotaObjectName, isRq, ZeroedQuota, snsObject)
+		quotaObject, err := setupObject(quotaObjectName, isRq, observedResources, snsObject)
 		if err != nil {
 			return ctrl.Result{}, err
 		}

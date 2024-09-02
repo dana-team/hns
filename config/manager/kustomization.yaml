@@ -15,3 +15,9 @@ configMapGenerator:
   name: config
   options:
     disableNameSuffixHash: true
+- literals:
+  - resources="basic.storageclass.storage.k8s.io/requests.storage,cpu,memory,pods,requests.nvidia.com/gpu"
+  name: quota-resources
+  namespace: sns-system
+  options:
+    disableNameSuffixHash: true

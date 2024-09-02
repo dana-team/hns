@@ -15,7 +15,13 @@ import (
 // In a ResourcePool it validates that the upper resource pool cannot be created with an empty quota.
 func ValidateResourceQuotaParams(snsObject *objectcontext.ObjectContext, isSNSResourcePool bool) admission.Response {
 	snsQuota := quota.SubnamespaceSpec(snsObject.Object).Hard
-	resourceQuotaParams := quota.ZeroedQuota.Hard
+
+	observedResources, err := quota.GetObservedResources(snsObject.Ctx, snsObject.Client)
+	if err != nil {
+		return admission.Errored(http.StatusBadRequest, err)
+	}
+
+	resourceQuotaParams := observedResources.Hard
 
 	if isSNSResourcePool {
 		if response := validateUpperResourcePool(snsObject, snsQuota); !response.Allowed {
