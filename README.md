@@ -9,6 +9,14 @@ In order to use `HNS`, you need to have:
 2. `cert-manager` installed on the cluster.
 3. At least 3 nodes with an `infra` taint and without a `master` taint (`HNS` runs by default on `infra` nodes)
 
+## Install with Helm
+
+Helm chart docs are available on `charts/hns` directory. The release name must be `sns`:
+
+```bash
+$ helm upgrade sns --install --namespace sns-system --create-namespace oci://ghcr.io/dana-team/helm-charts/hns --version <release>
+```
+
 ### Build
 To build the `HNS` controller, login into an image registry, and run:
 
