@@ -24,26 +24,14 @@ func (r *MigrationHierarchyReconciler) updateRelatedObjects(mhObject, toNS, ns *
 	ctx := mhObject.Ctx
 
 	if err := r.UpdateNSBasedOnParent(ctx, toNS, ns); err != nil {
-		updateErr := updateMHStatus(mhObject, danav1.Error, err.Error())
-		if updateErr != nil {
-			return updateErr
-		}
 		return fmt.Errorf("failed updating the labels and annotations of namespace %q according to its parent %q: %v", ns.Name(), toNS.Name(), err.Error())
 	}
 
 	if err := r.UpdateAllNSChildrenOfNs(ctx, ns); err != nil {
-		updateErr := updateMHStatus(mhObject, danav1.Error, err.Error())
-		if updateErr != nil {
-			return updateErr
-		}
 		return fmt.Errorf("failed updating labels and annotations of child namespaces of sunamespace %q: %v", ns.Name(), err.Error())
 	}
 
 	if err := r.updateRole(toNS, danav1.NoRole); err != nil {
-		updateErr := updateMHStatus(mhObject, danav1.Error, err.Error())
-		if updateErr != nil {
-			return updateErr
-		}
 		return fmt.Errorf("failed updating role of subnamespace %q: %v", toNS.Name(), err.Error())
 	}
 

@@ -173,7 +173,7 @@ func (r *MigrationHierarchyReconciler) reconcile(mhObject *objectcontext.ObjectC
 	}
 
 	// resources have been added to the new parent to complete the migration, so continue with migration
-	newSNS, err := r.createNewSNS(oldSNS, mhObject, currentNamespace, toNamespace)
+	newSNS, err := r.createNewSNS(oldSNS, currentNamespace, toNamespace)
 	if err != nil {
 		updateErr := updateMHStatus(mhObject, danav1.Error, err.Error())
 		if updateErr != nil {
@@ -184,7 +184,7 @@ func (r *MigrationHierarchyReconciler) reconcile(mhObject *objectcontext.ObjectC
 
 	logger.Info("successfully created new subnamespace under new parent", "subnamespace", currentNamespace, "new parent", toNamespace)
 
-	if err := r.deleteOldSNS(oldSNS, newSNS, mhObject); err != nil {
+	if err := r.deleteOldSNS(oldSNS, newSNS, toNamespace); err != nil {
 		updateErr := updateMHStatus(mhObject, danav1.Error, err.Error())
 		if updateErr != nil {
 			return ctrl.Result{}, updateErr
@@ -263,12 +263,9 @@ func (r *MigrationHierarchyReconciler) reconcile(mhObject *objectcontext.ObjectC
 }
 
 // createNewSNS handles the creation of the migrated subnamespace under a new parent.
-func (r *MigrationHierarchyReconciler) createNewSNS(sns, mhObject *objectcontext.ObjectContext, currentNamespace, toNamespace string) (*objectcontext.ObjectContext, error) {
+func (r *MigrationHierarchyReconciler) createNewSNS(sns *objectcontext.ObjectContext, currentNamespace, toNamespace string) (*objectcontext.ObjectContext, error) {
 	newSNS, err := r.createSNS(sns, currentNamespace, toNamespace)
 	if err != nil {
-		if updateErr := updateMHStatus(mhObject, danav1.Error, err.Error()); updateErr != nil {
-			return nil, fmt.Errorf("failed updating the status of object %q: %v", mhObject.Name(), updateErr.Error())
-		}
 		return nil, err
 	}
 
@@ -276,20 +273,19 @@ func (r *MigrationHierarchyReconciler) createNewSNS(sns, mhObject *objectcontext
 }
 
 // deleteOldSNS handles the deleting the migrated subnamespace.
-func (r *MigrationHierarchyReconciler) deleteOldSNS(oldSNS, newSNS, mhObject *objectcontext.ObjectContext) error {
+// If deleting the old subnamespace fails, delete the newly created subnamespace.
+// If the subnamespace parent is already the toNS for some reason, don't do anything.
+func (r *MigrationHierarchyReconciler) deleteOldSNS(oldSNS, newSNS *objectcontext.ObjectContext, toNamespace string) error {
+	if oldSNS.Object.GetAnnotations()[danav1.Parent] == toNamespace {
+		return nil
+	}
+
 	if err := r.deleteSNS(oldSNS); err != nil {
-		updateErr := updateMHStatus(mhObject, danav1.Error, err.Error())
-		if updateErr != nil {
-			return fmt.Errorf("failed updating the status of object %q: %v", mhObject.Name(), updateErr.Error())
+		if err := r.deleteSNS(newSNS); err != nil {
+			return fmt.Errorf("failed deleting new subnamespace %q: %v", newSNS.Name(), err.Error())
 		}
 
-		// if deleting the old subnamespace fails, delete the newly created subnamespace
-		if err := r.deleteSNS(newSNS); err != nil {
-			if updateErr := updateMHStatus(mhObject, danav1.Error, err.Error()); updateErr != nil {
-				return fmt.Errorf("failed updating the status of object %q: %v", mhObject.Name(), updateErr.Error())
-			}
-			return fmt.Errorf("failed deleting subnamespace %q: %v", newSNS.Name(), err.Error())
-		}
+		return fmt.Errorf("failed deleting old subnamespace %q: %v", oldSNS.Name(), err.Error())
 	}
 
 	return nil
