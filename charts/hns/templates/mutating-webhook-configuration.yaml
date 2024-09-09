@@ -1,0 +1,69 @@
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingWebhookConfiguration
+metadata:
+  name: {{ include "hns.fullname" . }}-mutating-webhook-configuration
+  annotations:
+    cert-manager.io/inject-ca-from: {{ .Release.Namespace }}/{{ include "hns.fullname" . }}-serving-cert
+  labels:
+  {{- include "hns.labels" . | nindent 4 }}
+webhooks:
+- admissionReviewVersions:
+  - v1
+  - v1beta1
+  clientConfig:
+    service:
+      name: {{ include "hns.fullname" . }}-webhook-service
+      namespace: {{ .Release.Namespace }}
+      path: /mutate-v1-buildconfig
+  failurePolicy: Fail
+  name: buildconfig.dana.io
+  rules:
+  - apiGroups:
+    - build.openshift.io
+    apiVersions:
+    - v1
+    operations:
+    - CREATE
+    resources:
+    - buildconfigs
+  sideEffects: NoneOnDryRun
+- admissionReviewVersions:
+  - v1
+  - v1beta1
+  clientConfig:
+    service:
+      name: {{ include "hns.fullname" . }}-webhook-service
+      namespace: {{ .Release.Namespace }}
+      path: /mutate-v1-migrationhierarchy
+  failurePolicy: Fail
+  name: migrationhierarchy.dana.io
+  rules:
+  - apiGroups:
+    - dana.hns.io
+    apiVersions:
+    - v1
+    operations:
+    - CREATE
+    resources:
+    - migrationhierarchies
+  sideEffects: NoneOnDryRun
+- admissionReviewVersions:
+  - v1
+  - v1beta1
+  clientConfig:
+    service:
+      name: {{ include "hns.fullname" . }}-webhook-service
+      namespace: {{ .Release.Namespace }}
+      path: /mutate-v1-updatequota
+  failurePolicy: Fail
+  name: updatequota.dana.io
+  rules:
+  - apiGroups:
+    - dana.hns.io
+    apiVersions:
+    - v1
+    operations:
+    - CREATE
+    resources:
+    - updatequota
+  sideEffects: NoneOnDryRun

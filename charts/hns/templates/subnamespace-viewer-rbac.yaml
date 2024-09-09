@@ -1,0 +1,21 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ include "hns.fullname" . }}-subnamespace-viewer-role
+  labels:
+  {{- include "hns.labels" . | nindent 4 }}
+rules:
+- apiGroups:
+  - dana.hns.io
+  resources:
+  - subnamespaces
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - dana.hns.io
+  resources:
+  - subnamespaces/status
+  verbs:
+  - get

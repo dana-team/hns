@@ -1,0 +1,244 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.14.0
+  name: subnamespaces.dana.hns.io
+spec:
+  group: dana.hns.io
+  names:
+    kind: Subnamespace
+    listKind: SubnamespaceList
+    plural: subnamespaces
+    shortNames:
+    - sns
+    singular: subnamespace
+  scope: Namespaced
+  versions:
+  - name: v1
+    schema:
+      openAPIV3Schema:
+        description: Subnamespace is the Schema for the subnamespaces API
+        properties:
+          apiVersion:
+            description: |-
+              APIVersion defines the versioned schema of this representation of an object.
+              Servers should convert recognized schemas to the latest internal value, and
+              may reject unrecognized values.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources
+            type: string
+          kind:
+            description: |-
+              Kind is a string value representing the REST resource this object represents.
+              Servers may infer this from the endpoint the client submits requests to.
+              Cannot be updated.
+              In CamelCase.
+              More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: SubnamespaceSpec defines the desired state of Subnamespace
+            properties:
+              namespaceRef:
+                description: The name of the namespace that this Subnamespace is bound
+                  to
+                properties:
+                  name:
+                    description: Name is the name of the namespace that a Subnamespace
+                      is bound to
+                    type: string
+                type: object
+              resourcequota:
+                description: |-
+                  ResourceQuotaSpec represents the limitations that are associated with the Subnamespace.
+                  This quota represents both the resources that can be allocated to children Subnamespaces
+                  and the overall maximum quota consumption of the current Subnamespace and its children.
+                properties:
+                  hard:
+                    additionalProperties:
+                      anyOf:
+                      - type: integer
+                      - type: string
+                      pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                      x-kubernetes-int-or-string: true
+                    description: |-
+                      hard is the set of desired hard limits for each named resource.
+                      More info: https://kubernetes.io/docs/concepts/policy/resource-quotas/
+                    type: object
+                  scopeSelector:
+                    description: |-
+                      scopeSelector is also a collection of filters like scopes that must match each object tracked by a quota
+                      but expressed using ScopeSelectorOperator in combination with possible values.
+                      For a resource to match, both scopes AND scopeSelector (if specified in spec), must be matched.
+                    properties:
+                      matchExpressions:
+                        description: A list of scope selector requirements by scope
+                          of the resources.
+                        items:
+                          description: |-
+                            A scoped-resource selector requirement is a selector that contains values, a scope name, and an operator
+                            that relates the scope name and values.
+                          properties:
+                            operator:
+                              description: |-
+                                Represents a scope's relationship to a set of values.
+                                Valid operators are In, NotIn, Exists, DoesNotExist.
+                              type: string
+                            scopeName:
+                              description: The name of the scope that the selector
+                                applies to.
+                              type: string
+                            values:
+                              description: |-
+                                An array of string values. If the operator is In or NotIn,
+                                the values array must be non-empty. If the operator is Exists or DoesNotExist,
+                                the values array must be empty.
+                                This array is replaced during a strategic merge patch.
+                              items:
+                                type: string
+                              type: array
+                              x-kubernetes-list-type: atomic
+                          required:
+                          - operator
+                          - scopeName
+                          type: object
+                        type: array
+                        x-kubernetes-list-type: atomic
+                    type: object
+                    x-kubernetes-map-type: atomic
+                  scopes:
+                    description: |-
+                      A collection of filters that must match each object tracked by a quota.
+                      If not specified, the quota matches all objects.
+                    items:
+                      description: A ResourceQuotaScope defines a filter that must
+                        match each object tracked by a quota
+                      type: string
+                    type: array
+                    x-kubernetes-list-type: atomic
+                type: object
+            type: object
+          status:
+            description: SubnamespaceStatus defines the observed state of Subnamespace
+            properties:
+              namespaces:
+                description: |-
+                  Namespaces is an array of (name, ResourceQuotaSpec) pairs which are logically under the
+                  Subnamespace in the hierarchy.
+                items:
+                  properties:
+                    namespace:
+                      description: Namespace is the name of a Subnamespace
+                      type: string
+                    resourcequota:
+                      description: ResourceQuotaSpec represents the quota allocated
+                        to the Subnamespace
+                      properties:
+                        hard:
+                          additionalProperties:
+                            anyOf:
+                            - type: integer
+                            - type: string
+                            pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                            x-kubernetes-int-or-string: true
+                          description: |-
+                            hard is the set of desired hard limits for each named resource.
+                            More info: https://kubernetes.io/docs/concepts/policy/resource-quotas/
+                          type: object
+                        scopeSelector:
+                          description: |-
+                            scopeSelector is also a collection of filters like scopes that must match each object tracked by a quota
+                            but expressed using ScopeSelectorOperator in combination with possible values.
+                            For a resource to match, both scopes AND scopeSelector (if specified in spec), must be matched.
+                          properties:
+                            matchExpressions:
+                              description: A list of scope selector requirements by
+                                scope of the resources.
+                              items:
+                                description: |-
+                                  A scoped-resource selector requirement is a selector that contains values, a scope name, and an operator
+                                  that relates the scope name and values.
+                                properties:
+                                  operator:
+                                    description: |-
+                                      Represents a scope's relationship to a set of values.
+                                      Valid operators are In, NotIn, Exists, DoesNotExist.
+                                    type: string
+                                  scopeName:
+                                    description: The name of the scope that the selector
+                                      applies to.
+                                    type: string
+                                  values:
+                                    description: |-
+                                      An array of string values. If the operator is In or NotIn,
+                                      the values array must be non-empty. If the operator is Exists or DoesNotExist,
+                                      the values array must be empty.
+                                      This array is replaced during a strategic merge patch.
+                                    items:
+                                      type: string
+                                    type: array
+                                    x-kubernetes-list-type: atomic
+                                required:
+                                - operator
+                                - scopeName
+                                type: object
+                              type: array
+                              x-kubernetes-list-type: atomic
+                          type: object
+                          x-kubernetes-map-type: atomic
+                        scopes:
+                          description: |-
+                            A collection of filters that must match each object tracked by a quota.
+                            If not specified, the quota matches all objects.
+                          items:
+                            description: A ResourceQuotaScope defines a filter that
+                              must match each object tracked by a quota
+                            type: string
+                          type: array
+                          x-kubernetes-list-type: atomic
+                      type: object
+                  type: object
+                type: array
+              phase:
+                description: |-
+                  Phase acts like a state machine for the Subnamespace.
+                  It is a string and can be one of the following:
+                  "" (Empty) - state for a Subnameapce that is being reconciled for the first time.
+                  "Missing" - state for a Subnamespace that does not currently have a namespace bound to it
+                  "Created" - state for a Subnamespace that exists and has a namespace bound to it and is being synced
+                  "Migrated" - state for a Subnamespace that is currently undergoing migration to a different hierarchy
+                type: string
+              total:
+                description: |-
+                  Total represents a summary of the resources allocated to children Subnamespaces
+                  and the resources that are still free to allocate, from the total resources made
+                  available in the ResourceQuotaSpec field in Spec
+                properties:
+                  allocated:
+                    additionalProperties:
+                      anyOf:
+                      - type: integer
+                      - type: string
+                      pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                      x-kubernetes-int-or-string: true
+                    description: |-
+                      Allocated is a set of (resource name, quantity) pairs representing the total resources that
+                      are allocated to the children Subnamespaces of a Subnamespace.
+                    type: object
+                  free:
+                    additionalProperties:
+                      anyOf:
+                      - type: integer
+                      - type: string
+                      pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                      x-kubernetes-int-or-string: true
+                    description: |-
+                      Free is a set of (resource name, quantity) pairs representing the total free/available/allocatable
+                      resources that can still be allocated to the children Subnamespaces of a Subnamespace.
+                    type: object
+                type: object
+            type: object
+        type: object
+    served: true
+    storage: true
