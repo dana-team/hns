@@ -11,10 +11,10 @@ In order to use `HNS`, you need to have:
 
 ## Install with Helm
 
-Helm chart docs are available on `charts/hns` directory. The release name must be `sns`:
+Helm chart docs are available on `charts/hns` directory.
 
 ```bash
-$ helm upgrade sns --install --namespace sns-system --create-namespace oci://ghcr.io/dana-team/helm-charts/hns --version <release>
+$ helm upgrade hns --install --namespace hns-system --create-namespace oci://ghcr.io/dana-team/helm-charts/hns --version <release>
 ```
 
 ### Build

@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"strings"
 
+	danav1 "github.com/dana-team/hns/api/v1"
+
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/types"
@@ -32,7 +34,7 @@ var (
 	imagestreams      = resource.NewQuantity(100, resource.DecimalSI)
 	ZeroDecimal       = resource.NewQuantity(0, resource.DecimalSI)
 
-	quotaConfig = "sns-quota-resources"
+	quotaConfig = "hns-quota-resources"
 
 	DefaultQuota = corev1.ResourceQuotaSpec{Hard: DefaultQuotaHard}
 
@@ -46,7 +48,7 @@ var (
 // The observed resources are read from a configMap.
 func GetObservedResources(ctx context.Context, k8sClient client.Client) (corev1.ResourceQuotaSpec, error) {
 	resourcesConfig := &corev1.ConfigMap{}
-	if err := k8sClient.Get(ctx, types.NamespacedName{Name: quotaConfig, Namespace: namespaceName}, resourcesConfig); err != nil {
+	if err := k8sClient.Get(ctx, types.NamespacedName{Name: quotaConfig, Namespace: danav1.HNSNamespace}, resourcesConfig); err != nil {
 		return corev1.ResourceQuotaSpec{}, fmt.Errorf("failed to get ConfigMap %q: %v", resourcesConfig, err)
 	}
 

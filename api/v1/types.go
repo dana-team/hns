@@ -5,8 +5,8 @@ type Phase string
 const MetaGroup = "dana.hns.io/"
 
 const (
-	SNSNamespace      = "sns-system"
-	SNSServiceAccount = "sns-controller-manager"
+	HNSNamespace      = "hns-system"
+	HNSServiceAccount = "hns-controller-manager"
 )
 
 var DefaultAnnotations = []string{"scheduler.alpha.kubernetes.io/defaultTolerations", "openshift.io/node-selector"}

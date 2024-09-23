@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	danav1 "github.com/dana-team/hns/api/v1"
+
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/types"
@@ -26,14 +28,13 @@ type resourceQuantities struct {
 }
 
 const (
-	namespaceName = "sns-system"
-	configMapName = "sns-config"
+	configMapName = "hns-config"
 )
 
 // getConfigMapData retrieves the ConfigMap data from the cluster.
 func getConfigMapData(ctx context.Context, k8sClient client.Client, key string) (string, error) {
 	cm := &corev1.ConfigMap{}
-	err := k8sClient.Get(ctx, types.NamespacedName{Name: configMapName, Namespace: namespaceName}, cm)
+	err := k8sClient.Get(ctx, types.NamespacedName{Name: configMapName, Namespace: danav1.HNSNamespace}, cm)
 	if err != nil {
 		return "", err
 	}
