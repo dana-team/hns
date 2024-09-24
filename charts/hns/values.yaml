@@ -174,7 +174,7 @@ config:
     groups:
     - test
   observedResources:
-    name: sns-quota-resources
+    name: hns-quota-resources
     resources:
     - basic.storageclass.storage.k8s.io/requests.storage
     - cpu
@@ -182,7 +182,7 @@ config:
     - pods
     - requests.nvidia.com/gpu
   limitRange:
-    name: sns-config
+    name: hns-config
     defaults: |-
       minimum:
          memory: 50Mi

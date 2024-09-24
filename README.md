@@ -7,7 +7,6 @@
 In order to use `HNS`, you need to have:
 1. An operating OpenShift cluster of version 4.x.
 2. `cert-manager` installed on the cluster.
-3. At least 3 nodes with an `infra` taint and without a `master` taint (`HNS` runs by default on `infra` nodes)
 
 ## Install with Helm
 
