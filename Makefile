@@ -86,8 +86,8 @@ dev: manifests kustomize
 	$(KUSTOMIZE) build config/dev | oc apply -f -
 	mkdir -p $(LOCAL_CERT_DIR)
 	sleep 3
-	kubectl get secret webhook-server-cert -n sns-system -o jsonpath="{.data.tls\.crt}" | base64 --decode > $(LOCAL_CERT_DIR)/tls.crt
-	kubectl get secret webhook-server-cert -n sns-system -o jsonpath="{.data.tls\.key}" | base64 --decode > $(LOCAL_CERT_DIR)/tls.key
+	kubectl get secret webhook-server-cert -n hns-system -o jsonpath="{.data.tls\.crt}" | base64 --decode > $(LOCAL_CERT_DIR)/tls.crt
+	kubectl get secret webhook-server-cert -n hns-system -o jsonpath="{.data.tls\.key}" | base64 --decode > $(LOCAL_CERT_DIR)/tls.key
 
 .PHONY: undev
 undev: manifests kustomize

@@ -139,7 +139,7 @@ func ValidatePermissions(ctx context.Context, aNS []string, aNSName, bNSName, an
 // It returns a boolean value indicating whether the user has permission to create the pod or not.
 func permissionsExist(ctx context.Context, reqUser, namespace string) (bool, error) {
 
-	if reqUser == fmt.Sprintf("system:serviceaccount:%s:%s", danav1.SNSNamespace, danav1.SNSServiceAccount) {
+	if reqUser == fmt.Sprintf("system:serviceaccount:%s:%s", danav1.HNSNamespace, danav1.HNSServiceAccount) {
 		return true, nil
 	}
 

@@ -54,3 +54,4 @@ jobs:
 
       - name: Undeploy HNS
         run: make undeploy
+        if: always()
