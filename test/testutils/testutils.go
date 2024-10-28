@@ -17,6 +17,8 @@ const testingNamespaceLabel = "dana.hns.io/testNamespace"
 const testingMigrationHierarchyLabel = "dana.hns.io/testMigrationHierarchy"
 const testingUserLabel = "dana.hns.io/testUser"
 const testingGroupLabel = "dana.hns.io/testGroup"
+const testingServiceAccountLabel = "dana.hns.io/testServiceAccount"
+const notFound = "NotFound"
 
 func FieldShouldContain(resource, ns, nm, field, want string) {
 	fieldShouldContainMultipleWithTimeout(1, resource, ns, nm, field, []string{want}, eventuallyTimeout)
@@ -24,6 +26,16 @@ func FieldShouldContain(resource, ns, nm, field, want string) {
 
 func ComplexFieldShouldContain(resource, ns, nm, field, want string) {
 	complexFieldShouldContainMultipleWithTimeout(1, resource, ns, nm, field, []string{want}, eventuallyTimeout)
+}
+
+func ShouldNotExist(resource, ns, want string) {
+	EventuallyWithOffset(1, func() bool {
+		err := TryRun("kubectl get", resource, want, "-n", ns)
+		if err == nil {
+			return false
+		}
+		return strings.Contains(err.Error(), notFound)
+	}, eventuallyTimeout).Should(BeTrue())
 }
 
 func fieldShouldContainMultipleWithTimeout(offset int, resource, ns, nm, field string, want []string, timeout float64) {
@@ -46,11 +58,23 @@ func FieldShouldNotContain(resource, ns, nm, field, want string) {
 	fieldShouldNotContainMultipleWithTimeout(1, resource, ns, nm, field, []string{want}, eventuallyTimeout)
 }
 
+func ComplexFieldShouldNotContain(resource, ns, nm, field, want string) {
+	complexFieldShouldNotContainMultipleWithTimeout(1, resource, ns, nm, field, []string{want}, eventuallyTimeout)
+}
+
 func fieldShouldNotContainMultipleWithTimeout(offset int, resource, ns, nm, field string, want []string, timeout float64) {
 	if ns != "" {
 		runShouldNotContainMultiple(offset+1, want, timeout, "kubectl get", resource, nm, "-n", ns, "-o template --template={{"+field+"}}")
 	} else {
 		runShouldNotContainMultiple(offset+1, want, timeout, "kubectl get", resource, nm, "-o template --template={{"+field+"}}")
+	}
+}
+
+func complexFieldShouldNotContainMultipleWithTimeout(offset int, resource, ns, nm, field string, want []string, timeout float64) {
+	if ns != "" {
+		runShouldNotContainMultiple(offset+1, want, timeout, "kubectl get", resource, nm, "-n", ns, "-o template --template="+field)
+	} else {
+		runShouldNotContainMultiple(offset+1, want, timeout, "kubectl get", resource, nm, "-o template --template="+field)
 	}
 }
 
@@ -185,6 +209,11 @@ func MustNotApplyYAMLAsUser(s, u string) {
 	MustNotRun("kubectl apply -f", filename, "--as", u)
 }
 
+func ShouldDelete(resource, ns, nm string) {
+	MustRun("kubectl delete", resource, nm, "-n", ns)
+	ShouldNotExist(resource, ns, nm)
+}
+
 // RunCommand passes all arguments to the OS to execute, and returns the combined stdout/stderr
 // and error object. By default, each arg to this function may contain strings (e.g. "echo hello
 // world"), in which case we split the strings on the spaces (so this would be equivalent to calling
@@ -228,6 +257,11 @@ func labelTestingGroup(group, randPrefix string) {
 // labelTestingUsers marks testing users with a label for future search and lookup.
 func labelTestingUsers(user, randPrefix string) {
 	MustRun("kubectl label --overwrite user", user, randPrefix+"-"+testingUserLabel+"=true")
+}
+
+// labelTestingServiceAccount marks testing service accounts with a label for future search and lookup.
+func labelTestingServiceAccount(sa, ns, randPrefix string) {
+	MustRun("kubectl label --overwrite sa", sa, "-n", ns, randPrefix+"-"+testingServiceAccountLabel+"=true")
 }
 
 // CleanupTestNamespaces finds the list of namespaces labeled as test namespaces and delegates
@@ -280,7 +314,7 @@ func CleanupTestUsers(randPrefix string) {
 	cleanupUsers(users...)
 }
 
-// CleanupTestGroups deletes a specific group
+// CleanupTestGroup deletes a specific group
 func CleanupTestGroup(groupName string) {
 	_, err := RunCommand("kubectl get groups -o custom-columns=:.metadata.name --no-headers=true", groupName)
 	if err != nil {

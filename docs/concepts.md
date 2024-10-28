@@ -38,6 +38,7 @@ metadata:
   annotations:
     dana.hns.io/role: root
     openshift.io/display-name: <root namespace name>
+    dana.hns.io/display-name: <root namespace name>
     dana.hns.io/crq-selector-0: <root namespace name>
     dana.hns.io/depth: '0'
     dana.hns.io/rq-depth: '<rq-depth>'

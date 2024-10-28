@@ -60,6 +60,11 @@ func GrantTestingUserAdmin(user, ns string) {
 	MustRun("kubectl create rolebinding", "test-admin-"+user+"-"+ns, "--user", user, "--namespace", ns, "--clusterrole admin")
 }
 
+// GrantTestingServiceAccountAdmin gives admin rolebinding to a serviceaccount on a namnamespace.
+func GrantTestingServiceAccountAdmin(sa, ns string) {
+	MustRun("kubectl create rolebinding", "test-admin-"+sa+"-"+ns, "--serviceaccount", ns+":"+sa, "--namespace", ns, "--clusterrole admin")
+}
+
 // GrantTestingUserClusterAdmin gives cluster-admin cluster-rolebinding to a user.
 func GrantTestingUserClusterAdmin(user string) {
 	MustRun("kubectl create clusterrolebinding", "test-cluster-admin-"+user, "--user", user, "--clusterrole cluster-admin")
@@ -184,12 +189,23 @@ func ShouldNotCreateUpdateQuota(nm, nsnm, dsnm, user string, args ...string) {
 	RunShouldNotContain(nm, propagationTime, "kubectl get updatequota -n", nsnm)
 }
 
+// ShouldNotDelete should not be able to delete the specified resource.
+func ShouldNotDelete(resource, ns, nm string) {
+	MustNotRun("kubectl delete", resource, nm, "--namespace", ns)
+}
+
 // CreateUser creates the specified User.
 func CreateUser(u, randPrefix string) {
 	user := generateUserManifest(u)
 	MustApplyYAML(user)
 	RunShouldContain(u, propagationTime, "kubectl get users")
 	labelTestingUsers(u, randPrefix)
+}
+
+func CreateServiceAccount(sa, ns, randprefix string) {
+	MustRun("kubectl create sa", sa, "-n", ns)
+	RunShouldContain(sa, propagationTime, "kubectl get sa -n", ns)
+	labelTestingServiceAccount(sa, ns, randprefix)
 }
 
 // CreateGroup creates the specified Group.
