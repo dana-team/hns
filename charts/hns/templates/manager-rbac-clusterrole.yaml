@@ -39,6 +39,7 @@ rules:
   - ""
   resources:
   - users
+  - serviceaccounts
   verbs:
   - impersonate
 - apiGroups:
