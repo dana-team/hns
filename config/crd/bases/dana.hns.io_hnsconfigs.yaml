@@ -1,0 +1,97 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: hnsconfigs.rcs.dana.io
+spec:
+  group: rcs.dana.io
+  names:
+    kind: HnsConfig
+    listKind: HnsConfigList
+    plural: hnsconfigs
+    singular: hnsconfig
+  scope: Namespaced
+  versions:
+    - name: v1alpha1
+      served: true
+      storage: true
+      schema:
+        openAPIV3Schema:
+          type: object
+          properties:
+            spec:
+              type: object
+              properties:
+                permittedGroups:
+                  type: object
+                  properties:
+                    name:
+                      type: string
+                      description: Name of the permitted groups configuration.
+                    groups:
+                      type: array
+                      items:
+                        type: string
+                      description: List of permitted groups.
+                  description: Configuration for permitted groups.
+                observedDataResources:
+                  type: object
+                  properties:
+                    name:
+                      type: string
+                      description: Name of the observed data resources configuration.
+                    resources:
+                      type: array
+                      items:
+                        type: string
+                      description: List of observed data resource names.
+                  description: Configuration for observed data resources.
+                limitRange:
+                  type: object
+                  properties:
+                    name:
+                      type: string
+                      description: Name of the limit range configuration.
+                    defaults:
+                      type: object
+                      properties:
+                        minimum:
+                          type: object
+                          properties:
+                            memory:
+                              type: string
+                              description: Minimum memory requirement.
+                            cpu:
+                              type: string
+                              description: Minimum CPU requirement.
+                        defaultRequest:
+                          type: object
+                          properties:
+                            memory:
+                              type: string
+                              description: Default memory request.
+                            cpu:
+                              type: string
+                              description: Default CPU request.
+                        defaultLimit:
+                          type: object
+                          properties:
+                            memory:
+                              type: string
+                              description: Default memory limit.
+                            cpu:
+                              type: string
+                              description: Default CPU limit.
+                        maximum:
+                          type: object
+                          properties:
+                            cpu:
+                              type: string
+                              description: Maximum CPU limit.
+                        minimumPVC:
+                          type: object
+                          properties:
+                            storage:
+                              type: string
+                              description: Minimum PVC storage requirement.
+                      description: Defaults for resource limits and requests.
+                  description: Configuration for limit range defaults.

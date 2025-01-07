@@ -1,0 +1,11 @@
+apiVersion: rcs.dana.io/v1alpha1
+kind: HnsConfig
+metadata:
+  name: "hns-config"
+  labels:
+    {{- include "hns.labels" . | nindent 4 }}
+spec:
+  permittedGroups: {{ join "," .Values.hnsConfig.permittedGroups.groups }}
+  observedDataResources: {{ join "," .Values.hnsConfig.observedDataResources.resources }}
+  limitRangeDefaults: {{ .Values.hnsConfig.limitRange.defaults | toYaml | indent 1 }}
+

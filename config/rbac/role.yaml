@@ -45,6 +45,7 @@ rules:
   - ""
   resources:
   - configmaps
+  - hnsconfigs
   verbs:
   - get
   - list

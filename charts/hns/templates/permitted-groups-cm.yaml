@@ -1,8 +1,0 @@
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: {{ .Values.config.permittedGroups.name }}
-  labels:
-  {{- include "hns.labels" . | nindent 4 }}
-data:
-  PERMITTED_GROUPS: {{ join "," .Values.config.permittedGroups.groups }}

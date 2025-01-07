@@ -5,6 +5,7 @@ resources:
 - bases/dana.hns.io_subnamespaces.yaml
 - bases/dana.hns.io_updatequota.yaml
 - bases/dana.hns.io_migrationhierarchies.yaml
+- bases/dana.hns.io_hnsconfigs.yaml
 # +kubebuilder:scaffold:crdkustomizeresource
 
 patchesStrategicMerge:
