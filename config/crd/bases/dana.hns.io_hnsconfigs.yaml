@@ -1,0 +1,88 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.16.2
+  name: hnsconfigs.dana.hns.io
+spec:
+  group: dana.hns.io
+  names:
+    kind: HNSConfig
+    listKind: HNSConfigList
+    plural: hnsconfigs
+    singular: hnsconfig
+  scope: Namespaced
+  versions:
+    - name: v1
+      schema:
+        openAPIV3Schema:
+          description: HNSConfig is the Schema for the HNSConfigs API
+          type: object
+          properties:
+            apiVersion:
+              description: |-
+                APIVersion defines the versioned schema of this representation of an object.
+                Servers should convert recognized schemas to the latest internal value, and
+                may reject unrecognized values.
+              type: string
+            kind:
+              description: |-
+                Kind is a string value representing the REST resource this object represents.
+                Servers may infer this from the endpoint the client submits requests to.
+                Cannot be updated.
+              type: string
+            metadata:
+              type: object
+            spec:
+              description: HNSConfigSpec defines the desired state of HNSConfig
+              type: object
+              properties:
+                permittedGroups:
+                  description: List of permitted groups for the HNSConfig.
+                  type: array
+                  items:
+                    type: string
+                observedResources:
+                  description: List of resources observed by the HNSConfig.
+                  type: array
+                  items:
+                    type: string
+                limitRange:
+                  description: Defines the resource limit ranges for the configuration.
+                  type: object
+                  properties:
+                    minimum:
+                      description: Minimum resource limits.
+                      type: object
+                      additionalProperties:
+                        type: string
+                    defaultRequest:
+                      description: Default resource requests.
+                      type: object
+                      additionalProperties:
+                        type: string
+                    defaultLimit:
+                      description: Default resource limits.
+                      type: object
+                      additionalProperties:
+                        type: string
+                    maximum:
+                      description: Maximum resource limits.
+                      type: object
+                      additionalProperties:
+                        type: string
+                    minimumPVC:
+                      description: Minimum resource limits for persistent volume claims.
+                      type: object
+                      additionalProperties:
+                        type: string
+              required:
+                - permittedGroups
+                - observedResources
+                - limitRange
+            status:
+              description: HNSConfigStatus defines the observed state of HNSConfig
+              type: object
+      served: true
+      storage: true

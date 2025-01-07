@@ -4,6 +4,8 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/dana-team/hns/internal/common"
+
 	"github.com/dana-team/hns/internal/objectcontext"
 	"github.com/dana-team/hns/internal/quota"
 	"github.com/dana-team/hns/internal/subnamespace/resourcepool"
@@ -16,7 +18,7 @@ import (
 func ValidateResourceQuotaParams(snsObject *objectcontext.ObjectContext, isSNSResourcePool bool) admission.Response {
 	snsQuota := quota.SubnamespaceSpec(snsObject.Object).Hard
 
-	observedResources, err := quota.GetObservedResources(snsObject.Ctx, snsObject.Client)
+	observedResources, err := common.GetObservedResources(snsObject.Ctx, snsObject.Client)
 	if err != nil {
 		return admission.Errored(http.StatusBadRequest, err)
 	}
