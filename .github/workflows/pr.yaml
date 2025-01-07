@@ -48,6 +48,9 @@ jobs:
         
       - name: Deploy HNS
         run: make install deploy IMG=${{ env.REGISTRY }}/${{ env.REPOSITORY_NAME }}:${IMAGE_TAG}
+
+      - name: Create HNSConfig
+        run: make create-hnsConfig
         
       - name: Run e2e tests
         run: make test-e2e

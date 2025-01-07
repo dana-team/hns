@@ -31,6 +31,7 @@ type snsPhaseFunc func(*objectcontext.ObjectContext, *objectcontext.ObjectContex
 
 // +kubebuilder:rbac:groups=dana.hns.io,resources=subnamespaces,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=dana.hns.io,resources=subnamespaces/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=dana.hns.io,resources=hnsconfig,verbs=get;list;watch
 // +kubebuilder:rbac:groups=dana.hns.io,resources=subnamespaces/finalizers,verbs=update
 // +kubebuilder:rbac:groups="",resources=namespaces/finalizers,verbs=update
 // +kubebuilder:rbac:groups="",resources=resourcequotas,verbs=get;list;watch;create;update;patch;delete

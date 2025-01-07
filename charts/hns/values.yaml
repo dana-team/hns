@@ -168,12 +168,13 @@ volumes:
       secretName: webhook-server-cert
       defaultMode: 420
 
-config:
+hnsConfig:
+  name: "hns-config"
   permittedGroups:
     name: permitted-groups
     groups:
     - test
-  observedResources:
+  observedDataResources:
     name: hns-quota-resources
     resources:
     - basic.storageclass.storage.k8s.io/requests.storage
