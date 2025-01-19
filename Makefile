@@ -166,6 +166,11 @@ undeploy: kustomize ## Undeploy controller from the K8s cluster specified in ~/.
 doc-chart: helm-docs helm helm-plugins
 	$(HELM_DOCS) charts/
 
+.PHONY: create-HNSConfig
+create-HNSConfig: ## Run the setup-hnsConfig-deployer script
+	$(KUBECTL) apply -f $(shell pwd)/hack/manifests/hnsconfig.yaml
+
+
 ##@ Dependencies
 
 ## Location to install dependencies to

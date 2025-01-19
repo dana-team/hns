@@ -4,6 +4,10 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/dana-team/hns/internal/common"
+
+	"k8s.io/apimachinery/pkg/api/resource"
+
 	"github.com/dana-team/hns/internal/objectcontext"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -11,44 +15,56 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-const limitConfigMapKey = "limitRangeDefaults"
+const (
+	cpu                   = "cpu"
+	memory                = "memory"
+	storage               = "storage"
+	persistentVolumeClaim = "PersistentVolumeClaim"
+	container             = "Container"
+)
 
-// getLimits returns the limits that are set in the limitRange.yaml field in the sns-config configmap.
+// getLimits returns the limits that are set in the limitRange.yaml field in HNSconfig.
 func getLimits(ctx context.Context, k8sClient client.Client) ([]corev1.LimitRangeItem, error) {
-	limitRangeData, err := getConfigMapData(ctx, k8sClient, limitConfigMapKey)
+	HNSConfigData, err := common.GetHNSConfigData(ctx, k8sClient)
 	if err != nil {
 		return nil, err
 	}
-	parsedLimits, err := parseLimitRangeData(limitRangeData)
-	if err != nil {
-		return nil, err
+
+	limitRangeData := HNSConfigData.Spec.LimitRange
+
+	minContainer := corev1.ResourceList{
+		cpu:    resource.MustParse(limitRangeData.Minimum[cpu]),
+		memory: resource.MustParse(limitRangeData.Minimum[memory]),
 	}
-	minPodCpu := parsedLimits.Minimum.CPU
-	minPodMem := parsedLimits.Minimum.Memory
-	minContainer := corev1.ResourceList{"cpu": minPodCpu, "memory": minPodMem}
 
-	defaultRequestPodCpu := parsedLimits.DefaultRequest.CPU
-	defaultRequestPodMem := parsedLimits.DefaultRequest.Memory
-	defaultRequest := corev1.ResourceList{"cpu": defaultRequestPodCpu, "memory": defaultRequestPodMem}
+	defaultRequest := corev1.ResourceList{
+		cpu:    resource.MustParse(limitRangeData.DefaultRequest[cpu]),
+		memory: resource.MustParse(limitRangeData.DefaultRequest[memory]),
+	}
 
-	defaultLimitPodCpu := parsedLimits.DefaultLimit.CPU
-	defaultLimitPodMem := parsedLimits.DefaultLimit.Memory
-	defaultLimit := corev1.ResourceList{"cpu": defaultLimitPodCpu, "memory": defaultLimitPodMem}
+	defaultLimit := corev1.ResourceList{
+		cpu:    resource.MustParse(limitRangeData.DefaultLimit[cpu]),
+		memory: resource.MustParse(limitRangeData.DefaultLimit[memory]),
+	}
 
-	maxRequestPodCpu := parsedLimits.Maximum.CPU
-	maxRequest := corev1.ResourceList{"cpu": maxRequestPodCpu}
+	maxRequest := corev1.ResourceList{
+		cpu: resource.MustParse(limitRangeData.Maximum[cpu]),
+	}
 
 	ContainerLimits := corev1.LimitRangeItem{
-		Type:           "Container",
+		Type:           container,
 		Min:            minContainer,
 		Max:            maxRequest,
 		Default:        defaultLimit,
 		DefaultRequest: defaultRequest,
 	}
 
-	minPVC := corev1.ResourceList{"storage": parsedLimits.MinimumPVC.Storage}
+	minPVC := corev1.ResourceList{
+		storage: resource.MustParse(limitRangeData.MinimumPVC[storage]),
+	}
+
 	PVCLimits := corev1.LimitRangeItem{
-		Type: "PersistentVolumeClaim",
+		Type: persistentVolumeClaim,
 		Min:  minPVC,
 	}
 

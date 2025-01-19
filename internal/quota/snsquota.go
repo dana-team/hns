@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"strconv"
 
+	"github.com/dana-team/hns/internal/common"
+
 	danav1 "github.com/dana-team/hns/api/v1"
 	"github.com/dana-team/hns/internal/objectcontext"
 	"github.com/go-logr/logr"
@@ -38,7 +40,7 @@ func EnsureSubnamespaceObject(snsObject *objectcontext.ObjectContext, isRq bool)
 	quotaObjectName := snsObject.Name()
 	quotaSpec := SubnamespaceSpec(snsObject.Object)
 
-	observedResources, err := GetObservedResources(snsObject.Ctx, snsObject.Client)
+	observedResources, err := common.GetObservedResources(snsObject.Ctx, snsObject.Client)
 	if err != nil {
 		return ctrl.Result{}, err
 	}

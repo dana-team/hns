@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/dana-team/hns/internal/common"
+
 	"github.com/dana-team/hns/internal/metrics"
 
 	danav1 "github.com/dana-team/hns/api/v1"
@@ -409,7 +411,7 @@ func NamespacesEqual(ctx context.Context, k8sClient client.Client, nsA, nsB []da
 	if len(nsA) != len(nsB) {
 		return false
 	}
-	observedResources, err := quota.GetObservedResources(ctx, k8sClient)
+	observedResources, err := common.GetObservedResources(ctx, k8sClient)
 	if err != nil {
 		return false
 	}

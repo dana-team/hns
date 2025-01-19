@@ -4,9 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"os"
 	"slices"
-	"strings"
 
 	"k8s.io/apimachinery/pkg/api/errors"
 
@@ -211,12 +209,16 @@ func CheckGroup(ctx context.Context, user, groupName string, k8sClient client.Cl
 func ValidatePermittedGroups(ctx context.Context, user string, k8sClient client.Client) (bool, error) {
 	logger := log.FromContext(ctx)
 
-	permittedGroups, found := os.LookupEnv(PermittedGroups)
-	if !found {
+	HNSconfig, err := GetHNSConfigData(ctx, k8sClient)
+	if err != nil {
+		return false, err
+	}
+
+	permittedGroups := HNSconfig.Spec.PermittedGroups
+	if permittedGroups == nil {
 		logger.Info("no permitted groups found")
 	} else {
-		permittedGroupsSlice := strings.Split(permittedGroups, ",")
-		for _, groupName := range permittedGroupsSlice {
+		for _, groupName := range permittedGroups {
 			inGroup, err := CheckGroup(ctx, user, groupName, k8sClient)
 			if err != nil {
 				if errors.IsNotFound(err) {

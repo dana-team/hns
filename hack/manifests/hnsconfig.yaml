@@ -1,0 +1,28 @@
+apiVersion: dana.hns.io/v1
+kind: HNSConfig
+metadata:
+  name: hns-config
+  namespace: hns-system
+spec:
+  permittedGroups:
+    - test
+  observedResources:
+    - basic.storageclass.storage.k8s.io/requests.storage
+    - cpu
+    - memory
+    - pods
+    - requests.nvidia.com/gpu
+  limitRange:
+    minimum:
+      memory: "50Mi"
+      cpu: "25m"
+    defaultRequest:
+      memory: "100Mi"
+      cpu: "50m"
+    defaultLimit:
+      memory: "300Mi"
+      cpu: "150m"
+    maximum:
+      cpu: "128"
+    minimumPVC:
+      storage: "20Mi"

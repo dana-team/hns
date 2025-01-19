@@ -1,0 +1,13 @@
+{{- if .Values.hnsConfig.enabled }}
+apiVersion: dana.hns.io/v1
+kind: HnsConfig
+metadata:
+  name: "hns-config"
+  labels:
+    {{- include "hns.labels" . | nindent 4 }}
+spec:
+  permittedGroups: {{ join "," .Values.hnsConfig.permittedGroups }}
+  observedResources: {{ join "," .Values.hnsConfig.observedResources }}
+  limitRange: {{ .Values.hnsConfig.limitRange | toYaml | indent 1 }}
+  {{- end }}
+
