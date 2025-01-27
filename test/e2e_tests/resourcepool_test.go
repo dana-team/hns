@@ -8,6 +8,10 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 )
 
+const (
+	podName = "example"
+)
+
 var _ = Describe("ResourcePool", func() {
 	testPrefix := "rp-test"
 	var randPrefix string
@@ -214,7 +218,7 @@ var _ = Describe("ResourcePool", func() {
 		CreateSubnamespace(nsF, nsC, randPrefix, true)
 
 		// create pods in leafs
-		podName := "example"
+		podName := podName
 		CreatePod(nsD, podName, randPrefix, "1", "1")
 		CreatePod(nsE, podName, randPrefix, "1", "1")
 		CreatePod(nsF, podName, randPrefix, "1", "1")
@@ -243,9 +247,12 @@ var _ = Describe("ResourcePool", func() {
 		FieldShouldContain("clusterresourcequota", "", nsF, ".metadata.name", nsF)
 
 		// make sure the subnamespace has the upper resource pool in its status
-		ComplexFieldShouldContain("subnamespace", nsB, nsC, "'{{range.status.namespaces}}{{.namespace}}{{\"\\n\"}}{{end}}'", nsD)
-		ComplexFieldShouldContain("subnamespace", nsB, nsC, "'{{range.status.namespaces}}{{.namespace}}{{\"\\n\"}}{{end}}'", nsE)
-		ComplexFieldShouldContain("subnamespace", nsB, nsC, "'{{range.status.namespaces}}{{.namespace}}{{\"\\n\"}}{{end}}'", nsF)
+		ComplexFieldShouldContain("subnamespace", nsB, nsC,
+			"'{{range.status.namespaces}}{{.namespace}}{{\"\\n\"}}{{end}}'", nsD)
+		ComplexFieldShouldContain("subnamespace", nsB, nsC,
+			"'{{range.status.namespaces}}{{.namespace}}{{\"\\n\"}}{{end}}'", nsE)
+		ComplexFieldShouldContain("subnamespace", nsB, nsC,
+			"'{{range.status.namespaces}}{{.namespace}}{{\"\\n\"}}{{end}}'", nsF)
 	})
 
 	It("should sum the children workloads correctly", func() {
@@ -262,7 +269,8 @@ var _ = Describe("ResourcePool", func() {
 		nsK := GenerateE2EName("k", testPrefix, randPrefix)
 
 		// create hierarchy
-		CreateSubnamespace(nsA, nsRoot, randPrefix, false, storage, "100Gi", cpu, "100", memory, "100Gi", pods, "100", gpu, "100")
+		CreateSubnamespace(nsA, nsRoot, randPrefix, false, storage, "100Gi", cpu, "100", memory, "100Gi",
+			pods, "100", gpu, "100")
 		CreateSubnamespace(nsB, nsA, randPrefix, false, storage, "50Gi", cpu, "50", memory, "50Gi", pods, "50", gpu, "50")
 		CreateSubnamespace(nsC, nsB, randPrefix, true, storage, "25Gi", cpu, "25", memory, "25Gi", pods, "25", gpu, "25")
 		CreateSubnamespace(nsD, nsC, randPrefix, true)
@@ -275,7 +283,7 @@ var _ = Describe("ResourcePool", func() {
 		CreateSubnamespace(nsK, nsE, randPrefix, true)
 
 		// create pods in leafs
-		podName := "example"
+		podName := podName
 		CreatePod(nsF, podName, randPrefix, "1", "1")
 		CreatePod(nsF, podName+"2", randPrefix, "1", "1")
 		CreatePod(nsF, podName+"3", randPrefix, "1", "1")
@@ -326,8 +334,10 @@ var _ = Describe("ResourcePool", func() {
 		FieldShouldContain("clusterresourcequota", "", nsE, ".spec.quota.hard.memory", "6Gi")
 
 		// make sure the subnamespace has the upper resource pool in its status
-		ComplexFieldShouldContain("subnamespace", nsB, nsC, "'{{range.status.namespaces}}{{.namespace}}{{\"\\n\"}}{{end}}'", nsD)
-		ComplexFieldShouldContain("subnamespace", nsB, nsC, "'{{range.status.namespaces}}{{.namespace}}{{\"\\n\"}}{{end}}'", nsE)
+		ComplexFieldShouldContain("subnamespace", nsB, nsC,
+			"'{{range.status.namespaces}}{{.namespace}}{{\"\\n\"}}{{end}}'", nsD)
+		ComplexFieldShouldContain("subnamespace", nsB, nsC,
+			"'{{range.status.namespaces}}{{.namespace}}{{\"\\n\"}}{{end}}'", nsE)
 	})
 
 	It("should delete the crq and update annotations for upper resource pools when converting their father", func() {
@@ -344,7 +354,8 @@ var _ = Describe("ResourcePool", func() {
 		nsK := GenerateE2EName("k", testPrefix, randPrefix)
 
 		// create hierarchy
-		CreateSubnamespace(nsA, nsRoot, randPrefix, false, storage, "100Gi", cpu, "100", memory, "100Gi", pods, "100", gpu, "100")
+		CreateSubnamespace(nsA, nsRoot, randPrefix, false,
+			storage, "100Gi", cpu, "100", memory, "100Gi", pods, "100", gpu, "100")
 		CreateSubnamespace(nsB, nsA, randPrefix, false, storage, "50Gi", cpu, "50", memory, "50Gi", pods, "50", gpu, "50")
 		CreateSubnamespace(nsC, nsB, randPrefix, true, storage, "25Gi", cpu, "25", memory, "25Gi", pods, "25", gpu, "25")
 		CreateSubnamespace(nsD, nsC, randPrefix, true)
@@ -357,7 +368,7 @@ var _ = Describe("ResourcePool", func() {
 		CreateSubnamespace(nsK, nsE, randPrefix, true)
 
 		// create pods in leafs
-		podName := "example"
+		podName := podName
 		CreatePod(nsF, podName, randPrefix, "1", "1")
 		CreatePod(nsF, podName+"2", randPrefix, "1", "1")
 		CreatePod(nsF, podName+"3", randPrefix, "1", "1")
@@ -425,6 +436,7 @@ var _ = Describe("ResourcePool", func() {
 		CreateSubnamespace(nsB, nsA, randPrefix, true, storage, "25Gi", cpu, "25", memory, "25Gi", pods, "25", gpu, "25")
 		CreateSubnamespace(nsC, nsB, randPrefix, true)
 
-		ComplexFieldShouldContain("subnamespace", nsA, nsB, "'{{range.status.namespaces}}{{.namespace}}{{\"\\n\"}}{{end}}'", nsC)
+		ComplexFieldShouldContain("subnamespace", nsA, nsB,
+			"'{{range.status.namespaces}}{{.namespace}}{{\"\\n\"}}{{end}}'", nsC)
 	})
 })

@@ -70,8 +70,10 @@ var _ = Describe("Subnamespaces", func() {
 
 		// verify namespace annotations
 		FieldShouldContain("namespace", "", nsC, ".metadata.annotations", danav1.Role+":"+danav1.Leaf)
-		FieldShouldContain("namespace", "", nsC, ".metadata.annotations", danav1.DisplayName+":"+nsRoot+"/"+nsA+"/"+nsB+"/"+nsC)
-		FieldShouldContain("namespace", "", nsC, ".metadata.annotations", danav1.DisplayName+":"+nsRoot+"/"+nsA+"/"+nsB+"/"+nsC)
+		FieldShouldContain("namespace", "", nsC, ".metadata.annotations",
+			danav1.DisplayName+":"+nsRoot+"/"+nsA+"/"+nsB+"/"+nsC)
+		FieldShouldContain("namespace", "", nsC, ".metadata.annotations",
+			danav1.DisplayName+":"+nsRoot+"/"+nsA+"/"+nsB+"/"+nsC)
 
 		FieldShouldContain("namespace", "", nsC, ".metadata.annotations", danav1.CrqSelector+"-0:"+nsRoot)
 		FieldShouldContain("namespace", "", nsC, ".metadata.annotations", danav1.CrqSelector+"-1:"+nsA)
@@ -90,7 +92,8 @@ var _ = Describe("Subnamespaces", func() {
 		FieldShouldContain("subnamespace", nsB, nsC, ".metadata.annotations", danav1.CrqPointer+":"+nsC)
 		FieldShouldContain("subnamespace", nsB, nsC, ".metadata.annotations", danav1.IsRq+":"+danav1.False)
 		FieldShouldContain("subnamespace", nsB, nsC, ".metadata.annotations", danav1.IsUpperRp+":"+danav1.False)
-		FieldShouldContain("subnamespace", nsB, nsC, ".metadata.annotations", danav1.DisplayName+":"+nsRoot+"/"+nsA+"/"+nsB+"/"+nsC)
+		FieldShouldContain("subnamespace", nsB, nsC, ".metadata.annotations",
+			danav1.DisplayName+":"+nsRoot+"/"+nsA+"/"+nsB+"/"+nsC)
 	})
 
 	It("should update the role of a subnamespace after it creates children", func() {
@@ -143,12 +146,16 @@ var _ = Describe("Subnamespaces", func() {
 		CreateSubnamespace(nsC, nsA, randPrefix, false, storage, "10Gi", cpu, "10", memory, "10Gi", pods, "10", gpu, "10")
 
 		// verify
-		ComplexFieldShouldContain("subnamespace", nsRoot, nsA, "'{{range.status.namespaces}}{{.namespace}}{{\"\\n\"}}{{end}}'", nsB)
-		ComplexFieldShouldContain("subnamespace", nsRoot, nsA, "'{{range.status.namespaces}}{{.namespace}}{{\"\\n\"}}{{end}}'", nsC)
+		ComplexFieldShouldContain("subnamespace", nsRoot, nsA,
+			"'{{range.status.namespaces}}{{.namespace}}{{\"\\n\"}}{{end}}'", nsB)
+		ComplexFieldShouldContain("subnamespace", nsRoot, nsA,
+			"'{{range.status.namespaces}}{{.namespace}}{{\"\\n\"}}{{end}}'", nsC)
 
 		FieldShouldContain("subnamespace", nsRoot, nsA, ".status.phase", "Created")
-		ComplexFieldShouldContain("subnamespace", nsRoot, nsA, "'{{range.status.namespaces}}{{.resourcequota.hard.pods}}{{\"\\n\"}}{{end}}'", "25")
-		ComplexFieldShouldContain("subnamespace", nsRoot, nsA, "'{{range.status.namespaces}}{{.resourcequota.hard.pods}}{{\"\\n\"}}{{end}}'", "10")
+		ComplexFieldShouldContain("subnamespace", nsRoot, nsA,
+			"'{{range.status.namespaces}}{{.resourcequota.hard.pods}}{{\"\\n\"}}{{end}}'", "25")
+		ComplexFieldShouldContain("subnamespace", nsRoot, nsA,
+			"'{{range.status.namespaces}}{{.resourcequota.hard.pods}}{{\"\\n\"}}{{end}}'", "10")
 		FieldShouldContain("subnamespace", nsRoot, nsA, ".status.total.allocated.pods", "35")
 		FieldShouldContain("subnamespace", nsRoot, nsA, ".status.total.free.pods", "15")
 	})
@@ -308,12 +315,16 @@ var _ = Describe("Subnamespaces", func() {
 		nsC := GenerateE2EName("c", testPrefix, randPrefix)
 
 		By("creating a subnamespace and a resourcequota for a subnamespace in a high hierarchy")
-		CreateSubnamespaceWithScope(nsA, nsRoot, randPrefix, false, "In", storage, "50Gi", cpu, "50", memory, "50Gi", pods, "50", gpu, "50")
-		CreateSubnamespaceWithScope(nsB, nsA, randPrefix, false, "In", storage, "25Gi", cpu, "25", memory, "25Gi", pods, "25", gpu, "25")
+		CreateSubnamespaceWithScope(nsA, nsRoot, randPrefix, false, "In",
+			storage, "50Gi", cpu, "50", memory, "50Gi", pods, "50", gpu, "50")
+		CreateSubnamespaceWithScope(nsB, nsA, randPrefix, false, "In",
+			storage, "25Gi", cpu, "25", memory, "25Gi", pods, "25", gpu, "25")
 
 		By("creating a subnamespace and a clusterresourcequota for a subnamespace in a lower hierarchy")
-		CreateSubnamespaceWithScope(nsC, nsB, randPrefix, false, "In", storage, "10Gi", cpu, "10", memory, "10Gi", pods, "10", gpu, "10")
-		ComplexFieldShouldContain("clusterresourcequota", "", nsC, "'{{range.spec.quota.scopeSelector.matchExpressions}}{{.operator}}{{\"\\n\"}}{{end}}'", "In")
+		CreateSubnamespaceWithScope(nsC, nsB, randPrefix, false, "In",
+			storage, "10Gi", cpu, "10", memory, "10Gi", pods, "10", gpu, "10")
+		ComplexFieldShouldContain("clusterresourcequota", "", nsC,
+			"'{{range.spec.quota.scopeSelector.matchExpressions}}{{.operator}}{{\"\\n\"}}{{end}}'", "In")
 
 		// delete namespace
 		MustRun("kubectl delete namespace", nsC, "-n", nsB)

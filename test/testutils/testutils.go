@@ -40,15 +40,18 @@ func ShouldNotExist(resource, ns, want string) {
 
 func fieldShouldContainMultipleWithTimeout(offset int, resource, ns, nm, field string, want []string, timeout float64) {
 	if ns != "" {
-		runShouldContainMultiple(offset+1, want, timeout, "kubectl get", resource, nm, "-n", ns, "-o template --template={{"+field+"}}")
+		runShouldContainMultiple(offset+1, want, timeout, "kubectl get",
+			resource, nm, "-n", ns, "-o template --template={{"+field+"}}")
 	} else {
 		runShouldContainMultiple(offset+1, want, timeout, "kubectl get", resource, nm, "-o template --template={{"+field+"}}")
 	}
 }
 
-func complexFieldShouldContainMultipleWithTimeout(offset int, resource, ns, nm, field string, want []string, timeout float64) {
+func complexFieldShouldContainMultipleWithTimeout(
+	offset int, resource, ns, nm, field string, want []string, timeout float64) {
 	if ns != "" {
-		runShouldContainMultiple(offset+1, want, timeout, "kubectl get", resource, nm, "-n", ns, "-o template --template="+field)
+		runShouldContainMultiple(offset+1, want, timeout,
+			"kubectl get", resource, nm, "-n", ns, "-o template --template="+field)
 	} else {
 		runShouldContainMultiple(offset+1, want, timeout, "kubectl get", resource, nm, "-o template --template="+field)
 	}
@@ -62,17 +65,22 @@ func ComplexFieldShouldNotContain(resource, ns, nm, field, want string) {
 	complexFieldShouldNotContainMultipleWithTimeout(1, resource, ns, nm, field, []string{want}, eventuallyTimeout)
 }
 
-func fieldShouldNotContainMultipleWithTimeout(offset int, resource, ns, nm, field string, want []string, timeout float64) {
+func fieldShouldNotContainMultipleWithTimeout(
+	offset int, resource, ns, nm, field string, want []string, timeout float64) {
 	if ns != "" {
-		runShouldNotContainMultiple(offset+1, want, timeout, "kubectl get", resource, nm, "-n", ns, "-o template --template={{"+field+"}}")
+		runShouldNotContainMultiple(offset+1, want, timeout,
+			"kubectl get", resource, nm, "-n", ns, "-o template --template={{"+field+"}}")
 	} else {
-		runShouldNotContainMultiple(offset+1, want, timeout, "kubectl get", resource, nm, "-o template --template={{"+field+"}}")
+		runShouldNotContainMultiple(offset+1, want, timeout,
+			"kubectl get", resource, nm, "-o template --template={{"+field+"}}")
 	}
 }
 
-func complexFieldShouldNotContainMultipleWithTimeout(offset int, resource, ns, nm, field string, want []string, timeout float64) {
+func complexFieldShouldNotContainMultipleWithTimeout(
+	offset int, resource, ns, nm, field string, want []string, timeout float64) {
 	if ns != "" {
-		runShouldNotContainMultiple(offset+1, want, timeout, "kubectl get", resource, nm, "-n", ns, "-o template --template="+field)
+		runShouldNotContainMultiple(offset+1, want, timeout,
+			"kubectl get", resource, nm, "-n", ns, "-o template --template="+field)
 	} else {
 		runShouldNotContainMultiple(offset+1, want, timeout, "kubectl get", resource, nm, "-o template --template="+field)
 	}
@@ -95,14 +103,14 @@ func MustNotRun(cmdln ...string) {
 func mustNotRun(offset int, cmdln ...string) {
 	ConsistentlyWithOffset(offset+1, func() error {
 		return TryRun(cmdln...)
-	}).ShouldNot(BeNil(), "Command: %s", cmdln)
+	}).ShouldNot(Succeed(), "Command: %s", cmdln)
 }
 
 func TryRun(cmdln ...string) error {
 	stdout, err := RunCommand(cmdln...)
 	if err != nil {
 		// Add stdout to the error, since it's the error that gets displayed when a test fails, and it
-		// can be very hard looking at the log to see which failures are intended and which are not.
+		// can be very hard looking at the log to see which failures are intended and which are not..
 		err = fmt.Errorf("Error: %s\nOutput: %s", err, stdout)
 		GinkgoT().Log("Output (failed): ", err)
 	} else {
@@ -270,7 +278,9 @@ func CleanupTestNamespaces(randPrefix string) {
 	var nses []string
 	EventuallyWithOffset(1, func() error {
 		LabelQuery := randPrefix + "-" + testingNamespaceLabel + "=true"
-		out, err := RunCommand("kubectl get ns -o custom-columns=:.metadata.name --no-headers=true --sort-by=.metadata.creationTimestamp", "-l", LabelQuery)
+		out, err := RunCommand(
+			"kubectl get ns -o custom-columns=:.metadata.name --no-headers=true --sort-by=.metadata.creationTimestamp",
+			"-l", LabelQuery)
 		if err != nil {
 			return err
 		}
@@ -281,13 +291,15 @@ func CleanupTestNamespaces(randPrefix string) {
 	cleanupNamespaces(nses...)
 }
 
-// CleanupTestMigrationHierarchies finds the list of migrationhierarchies labeled as test migrationhierarchies and delegates
-// to cleanupMigrationHierarchies function.
+// CleanupTestMigrationHierarchies finds the list of migrationhierarchies labeled as test
+// migrationhierarchies and delegates to cleanupMigrationHierarchies function.
 func CleanupTestMigrationHierarchies(randPrefix string) {
 	var mh []string
 	EventuallyWithOffset(1, func() error {
 		LabelQuery := randPrefix + "-" + testingMigrationHierarchyLabel + "=true"
-		out, err := RunCommand("kubectl get migrationhierarchies -o custom-columns=:.metadata.name --no-headers=true", "-l", LabelQuery)
+		out, err := RunCommand(
+			"kubectl get migrationhierarchies -o custom-columns=:.metadata.name --no-headers=true",
+			"-l", LabelQuery)
 		if err != nil {
 			return err
 		}
@@ -347,7 +359,7 @@ func cleanupNamespaces(nses ...string) {
 	// Now, actually delete them
 	for _, ns := range toDelete {
 		err := TryRun("kubectl delete ns", ns)
-		Expect(err).Should(BeNil())
+		Expect(err).ShouldNot(HaveOccurred())
 	}
 }
 
@@ -365,7 +377,7 @@ func cleanupMigrationHierarchies(mhs ...string) {
 	// Now, actually delete them
 	for _, mh := range toDelete {
 		err := TryRun("kubectl delete migrationhierarchy", mh)
-		Expect(err).Should(BeNil())
+		Expect(err).ShouldNot(HaveOccurred())
 	}
 }
 
@@ -385,7 +397,7 @@ func cleanupUsers(users ...string) {
 	// Now, actually delete them
 	for _, user := range toDelete {
 		err := TryRun("kubectl delete user", user)
-		Expect(err).Should(BeNil())
+		Expect(err).ShouldNot(HaveOccurred())
 	}
 }
 
@@ -393,24 +405,24 @@ func cleanupUsers(users ...string) {
 func cleanupGroup(group string) {
 
 	err := TryRun("kubectl delete group", group)
-	Expect(err).Should(BeNil())
+	Expect(err).ShouldNot(HaveOccurred())
 }
 func writeTempFile(cxt string) string {
 	f, err := os.CreateTemp(os.TempDir(), "e2e-test-*.yaml")
-	Expect(err).Should(BeNil())
+	Expect(err).ShouldNot(HaveOccurred())
 	defer func() {
 		err := f.Close()
-		Expect(err).Should(BeNil())
+		Expect(err).ShouldNot(HaveOccurred())
 	}()
 
 	_, err = io.WriteString(f, cxt)
-	Expect(err).Should(BeNil())
+	Expect(err).ShouldNot(HaveOccurred())
 
 	return f.Name()
 }
 
 func removeFile(path string) {
-	Expect(os.Remove(path)).Should(BeNil())
+	Expect(os.Remove(path)).Should(Succeed())
 }
 
 // silencer is a matcher that assumes that an empty string is good, and any

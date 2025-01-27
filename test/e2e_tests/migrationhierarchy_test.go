@@ -240,7 +240,8 @@ var _ = Describe("MigrationHierarchy", func() {
 		FieldShouldContain("namespace", "", nsG, ".metadata.labels", danav1.Parent+":"+nsD)
 	})
 
-	It("should migrate resourcepool with children to subnamespace, including the children migration, they all should remain resourcepools", func() {
+	It("should migrate resourcepool with children to subnamespace,"+
+		" including the children migration, they all should remain resourcepools", func() {
 		nsA := GenerateE2EName("a", testPrefix, randPrefix)
 		nsB := GenerateE2EName("b", testPrefix, randPrefix)
 		nsC := GenerateE2EName("c", testPrefix, randPrefix)
