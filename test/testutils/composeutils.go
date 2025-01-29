@@ -57,12 +57,20 @@ func GenerateE2EGroupName(nm string) string {
 
 // GrantTestingUserAdmin gives admin rolebinding to a user on a namnamespace.
 func GrantTestingUserAdmin(user, ns string) {
-	MustRun("kubectl create rolebinding", "test-admin-"+user+"-"+ns, "--user", user, "--namespace", ns, "--clusterrole admin")
+	MustRun("kubectl create rolebinding",
+		"test-admin-"+user+"-"+ns,
+		"--user", user,
+		"--namespace", ns,
+		"--clusterrole admin")
 }
 
 // GrantTestingServiceAccountAdmin gives admin rolebinding to a serviceaccount on a namnamespace.
 func GrantTestingServiceAccountAdmin(sa, ns string) {
-	MustRun("kubectl create rolebinding", "test-admin-"+sa+"-"+ns, "--serviceaccount", ns+":"+sa, "--namespace", ns, "--clusterrole admin")
+	MustRun("kubectl create rolebinding",
+		"test-admin-"+sa+"-"+ns,
+		"--serviceaccount", ns+":"+sa,
+		"--namespace", ns,
+		"--clusterrole admin")
 }
 
 // GrantTestingUserClusterAdmin gives cluster-admin cluster-rolebinding to a user.
@@ -77,7 +85,8 @@ func AnnotateNSSecondaryRoot(ns string) {
 
 // AnnotateNSDefaultAnnotations annotates a namespace with the default annotations.
 func AnnotateNSDefaultAnnotations(ns string) {
-	MustRun("kubectl annotate --overwrite ns", ns, danav1.DefaultAnnotations[0]+"='[{\"key\":\"test\",\"value\":\"true\",\"effect\":\"NoSchedule\"}]'")
+	MustRun("kubectl annotate --overwrite ns", ns,
+		danav1.DefaultAnnotations[0]+"='[{\"key\":\"test\",\"value\":\"true\",\"effect\":\"NoSchedule\"}]'")
 	MustRun("kubectl annotate --overwrite ns", ns, danav1.DefaultAnnotations[1]+"="+"testServer")
 }
 

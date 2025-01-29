@@ -14,6 +14,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+const (
+	trueString = "true"
+)
+
 // IsNamespace returns true if an object is of type namespace.
 func IsNamespace(obj client.Object) bool {
 	return reflect.TypeOf(obj) == reflect.TypeOf(&corev1.Namespace{})
@@ -70,12 +74,12 @@ func LabelsBasedOnParent(parentNS *objectcontext.ObjectContext, nsName string) m
 	defaultLabels(parentNS, labels)
 
 	labels[danav1.Parent] = parentNS.Object.(*corev1.Namespace).Name
-	labels[danav1.Hns] = "true"
+	labels[danav1.Hns] = trueString
 
 	for _, ns := range parentDisplayNameSliced {
-		labels[ns] = "true"
+		labels[ns] = trueString
 	}
-	labels[nsName] = "true"
+	labels[nsName] = trueString
 
 	return labels
 }

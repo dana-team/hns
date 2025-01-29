@@ -4,221 +4,152 @@ kind: ClusterRole
 metadata:
   name: manager-role
 rules:
-  - apiGroups:
-      - ""
-    resources:
-      - limitranges
-    verbs:
-      - create
-      - delete
-      - get
-      - list
-      - patch
-      - update
-      - watch
-  - apiGroups:
-      - ""
-    resources:
-      - namespaces/finalizers
-    verbs:
-      - update
-  - apiGroups:
-      - ""
-    resources:
-      - resourcequotas
-    verbs:
-      - create
-      - delete
-      - get
-      - list
-      - patch
-      - update
-      - watch
-  - apiGroups:
-      - ""
-    resources:
-      - users
-      - serviceaccounts
-    verbs:
-      - impersonate
-  - apiGroups:
-      - ""
-    resources:
-      - configmaps
-    verbs:
-      - get
-      - list
-      - watch
-  - apiGroups:
-      - ""
-    resources:
-      - namespaces
-    verbs:
-      - create
-      - delete
-      - get
-      - list
-      - patch
-      - update
-      - watch
-  - apiGroups:
-      - ""
-    resources:
-      - namespaces/status
-    verbs:
-      - get
-      - patch
-      - update
-  - apiGroups:
-      - dana.hns.io
-    resources:
-      - migrationhierarchies
-    verbs:
-      - create
-      - delete
-      - get
-      - list
-      - patch
-      - update
-      - watch
-  - apiGroups:
-      - dana.hns.io
-    resources:
-      - migrationhierarchies/status
-    verbs:
-      - get
-      - patch
-      - update
-  - apiGroups:
-      - dana.hns.io
-    resources:
-      - subnamespaces
-    verbs:
-      - create
-      - delete
-      - get
-      - list
-      - patch
-      - update
-      - watch
-  - apiGroups:
-      - dana.hns.io
-    resources:
-      - hnsconfigs
-    verbs:
-      - list
-      - watch
-      - get
-  - apiGroups:
-      - dana.hns.io
-    resources:
-      - subnamespaces/finalizers
-    verbs:
-      - update
-  - apiGroups:
-      - dana.hns.io
-    resources:
-      - subnamespaces/status
-    verbs:
-      - get
-      - patch
-      - update
-  - apiGroups:
-      - dana.hns.io
-    resources:
-      - updatequota
-    verbs:
-      - create
-      - delete
-      - get
-      - list
-      - patch
-      - update
-      - watch
-  - apiGroups:
-      - dana.hns.io
-    resources:
-      - updatequota/status
-    verbs:
-      - get
-      - patch
-      - update
-  - apiGroups:
-      - quota.openshift.io
-    resources:
-      - clusterresourcequotas
-    verbs:
-      - create
-      - delete
-      - get
-      - list
-      - patch
-      - update
-      - watch
-  - apiGroups:
-      - rbac.authorization.k8s.io
-    resources:
-      - clusterrolebindings
-    verbs:
-      - create
-      - delete
-      - get
-      - list
-      - patch
-      - update
-      - watch
-  - apiGroups:
-      - rbac.authorization.k8s.io
-    resources:
-      - clusterroles
-    verbs:
-      - bind
-      - create
-      - delete
-      - escalate
-      - get
-      - list
-      - patch
-      - update
-      - watch
-  - apiGroups:
-      - rbac.authorization.k8s.io
-    resources:
-      - rolebindings
-    verbs:
-      - create
-      - delete
-      - get
-      - list
-      - patch
-      - update
-      - watch
-  - apiGroups:
-      - rbac.authorization.k8s.io
-    resources:
-      - rolebindings/status
-    verbs:
-      - get
-      - patch
-      - update
-  - apiGroups:
-      - rbac.authorization.k8s.io
-    resources:
-      - roles
-    verbs:
-      - bind
-      - create
-      - delete
-      - get
-      - list
-      - patch
-      - update
-      - watch
-  - apiGroups:
-      - user.openshift.io
-    resources:
-      - groups
-    verbs:
-      - get
-      - list
-      - watch
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - limitranges
+  - namespaces
+  - resourcequotas
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - namespaces/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - ""
+  resources:
+  - namespaces/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - ""
+  resources:
+  - serviceaccounts
+  - users
+  verbs:
+  - impersonate
+- apiGroups:
+  - dana.hns.io
+  resources:
+  - hnsconfigs
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - dana.hns.io
+  resources:
+  - migrationhierarchies
+  - subnamespaces
+  - updatequota
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - dana.hns.io
+  resources:
+  - migrationhierarchies/status
+  - subnamespaces/status
+  - updatequota/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - dana.hns.io
+  resources:
+  - subnamespaces/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - quota.openshift.io
+  resources:
+  - clusterresourcequotas
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - rbac.authorization.k8s.io
+  resources:
+  - clusterrolebindings
+  - rolebindings
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - rbac.authorization.k8s.io
+  resources:
+  - clusterroles
+  verbs:
+  - bind
+  - create
+  - delete
+  - escalate
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - rbac.authorization.k8s.io
+  resources:
+  - rolebindings/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - rbac.authorization.k8s.io
+  resources:
+  - roles
+  verbs:
+  - bind
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - user.openshift.io
+  resources:
+  - groups
+  verbs:
+  - get
+  - list
+  - watch
