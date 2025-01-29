@@ -44,7 +44,7 @@ type UpdatequotaStatus struct {
 	Reason string `json:"reason,omitempty"`
 }
 
-//+kubebuilder:object:root=true
+// +kubebuilder:object:root=true
 
 // Updatequota is the Schema for the updatequota API
 type Updatequota struct {
@@ -55,7 +55,7 @@ type Updatequota struct {
 	Status UpdatequotaStatus `json:"status,omitempty"`
 }
 
-//+kubebuilder:object:root=true
+// +kubebuilder:object:root=true
 
 // UpdatequotaList contains a list of Updatequota
 type UpdatequotaList struct {

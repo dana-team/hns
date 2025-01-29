@@ -62,7 +62,8 @@ var _ = Describe("UpdateQuota", func() {
 
 	})
 
-	It("should not move resources from one sns to another if requesting user doesn't have permissions on both subnamespaces", func() {
+	It("should not move resources from one sns to another if requesting user doesn't"+
+		" have permissions on both subnamespaces", func() {
 		nsA := GenerateE2EName("a", testPrefix, randPrefix)
 		nsB := GenerateE2EName("b", testPrefix, randPrefix)
 		nsC := GenerateE2EName("c", testPrefix, randPrefix)
@@ -134,7 +135,8 @@ var _ = Describe("UpdateQuota", func() {
 		FieldShouldContain("subnamespace", nsA, nsC, ".status.total.free.pods", "20")
 	})
 
-	It("should give back resources up the branch even if requesting user has permissions only on source subnamespace", func() {
+	It("should give back resources up the branch even if requesting user has"+
+		" permissions only on source subnamespace", func() {
 		nsA := GenerateE2EName("a", testPrefix, randPrefix)
 		nsB := GenerateE2EName("b", testPrefix, randPrefix)
 		nsC := GenerateE2EName("c", testPrefix, randPrefix)
@@ -152,7 +154,8 @@ var _ = Describe("UpdateQuota", func() {
 		FieldShouldContain("subnamespace", nsB, nsC, ".status.total.free.pods", "10")
 
 		// move resources
-		CreateUpdateQuota("updatequota-from-"+nsC+"-to-"+nsA, nsC, nsA, userA, storage, "0", cpu, "0", memory, "0", pods, "10", gpu, "0")
+		CreateUpdateQuota("updatequota-from-"+nsC+"-to-"+nsA, nsC, nsA, userA, storage, "0",
+			cpu, "0", memory, "0", pods, "10", gpu, "0")
 
 		// verify after update
 		FieldShouldContain("subnamespace", nsB, nsC, ".status.total.free.pods", "0")

@@ -32,10 +32,12 @@ var _ = Describe("RoleBindings", func() {
 
 		By("Creating a child namespace")
 		nsChild := GenerateE2EName("child", testPrefix, randPrefix)
-		CreateSubnamespace(nsChild, nsRoot, randPrefix, false, storage, "50Gi", cpu, "50", memory, "50Gi", pods, "50", gpu, "50")
+		CreateSubnamespace(nsChild, nsRoot, randPrefix, false, storage, "50Gi",
+			cpu, "50", memory, "50Gi", pods, "50", gpu, "50")
 
 		By("Checking that the rolebinding has been created in the child namespace")
-		FieldShouldContain("rolebinding", nsChild, "test-admin-"+user+"-"+nsRoot, ".metadata.name", "test-admin-"+user+"-"+nsRoot)
+		FieldShouldContain("rolebinding", nsChild, "test-admin-"+user+"-"+nsRoot,
+			".metadata.name", "test-admin-"+user+"-"+nsRoot)
 	})
 
 	It("Should delete rolebinding from child if it has been deleted from parent", func() {
@@ -46,10 +48,12 @@ var _ = Describe("RoleBindings", func() {
 
 		By("Creating a child namespace")
 		nsChild := GenerateE2EName("child", testPrefix, randPrefix)
-		CreateSubnamespace(nsChild, nsRoot, randPrefix, false, storage, "50Gi", cpu, "50", memory, "50Gi", pods, "50", gpu, "50")
+		CreateSubnamespace(nsChild, nsRoot, randPrefix, false, storage, "50Gi",
+			cpu, "50", memory, "50Gi", pods, "50", gpu, "50")
 
 		By("Checking that the rolebinding has been created in the child namespace")
-		FieldShouldContain("rolebinding", nsChild, "test-admin-"+user+"-"+nsRoot, ".metadata.name", "test-admin-"+user+"-"+nsRoot)
+		FieldShouldContain("rolebinding", nsChild, "test-admin-"+user+"-"+nsRoot,
+			".metadata.name", "test-admin-"+user+"-"+nsRoot)
 
 		By("Deleting the rolebinding from the root namespace")
 		ShouldDelete("rolebinding", nsRoot, "test-admin-"+user+"-"+nsRoot)
@@ -66,10 +70,12 @@ var _ = Describe("RoleBindings", func() {
 
 		By("Creating a child namespace")
 		nsChild := GenerateE2EName("child", testPrefix, randPrefix)
-		CreateSubnamespace(nsChild, nsRoot, randPrefix, false, storage, "50Gi", cpu, "50", memory, "50Gi", pods, "50", gpu, "50")
+		CreateSubnamespace(nsChild, nsRoot, randPrefix, false, storage, "50Gi",
+			cpu, "50", memory, "50Gi", pods, "50", gpu, "50")
 
 		By("Checking that the rolebinding has been created in the child namespace")
-		FieldShouldContain("rolebinding", nsChild, "test-admin-"+user+"-"+nsRoot, ".metadata.name", "test-admin-"+user+"-"+nsRoot)
+		FieldShouldContain("rolebinding", nsChild, "test-admin-"+user+"-"+nsRoot,
+			".metadata.name", "test-admin-"+user+"-"+nsRoot)
 
 		By("Trying to delete the rolebinding from the child namespace")
 		ShouldNotDelete("rolebinding", nsChild, "test-admin-"+user+"-"+nsRoot)
@@ -78,24 +84,28 @@ var _ = Describe("RoleBindings", func() {
 	It("Should create hns-view rolebindings in subnamespace and bind to all other rolebinding subjects", func() {
 		By("Creating a subnamespace")
 		nsChild := GenerateE2EName("child", testPrefix, randPrefix)
-		CreateSubnamespace(nsChild, nsRoot, randPrefix, false, storage, "50Gi", cpu, "50", memory, "50Gi", pods, "50", gpu, "50")
+		CreateSubnamespace(nsChild, nsRoot, randPrefix, false, storage, "50Gi",
+			cpu, "50", memory, "50Gi", pods, "50", gpu, "50")
 
 		user := GenerateE2EUserName("user")
 		CreateUser(user, randPrefix)
 		GrantTestingUserAdmin(user, nsChild)
 		FieldShouldContain("clusterrolebindings", "", nsChild+"-hns-view", ".metadata.name", nsChild+"-hns-view")
-		ComplexFieldShouldContain("clusterrolebindings", "", nsChild+"-hns-view", "'{{range.subjects}}{{.name}}{{\"\\n\"}}{{end}}'", user)
+		ComplexFieldShouldContain("clusterrolebindings", "", nsChild+"-hns-view",
+			"'{{range.subjects}}{{.name}}{{\"\\n\"}}{{end}}'", user)
 	})
 
 	It("Should not bind a serviceaccount to the hns-view rolebinding", func() {
 		By("Creating a subnamespace")
 		nsChild := GenerateE2EName("child", testPrefix, randPrefix)
-		CreateSubnamespace(nsChild, nsRoot, randPrefix, false, storage, "50Gi", cpu, "50", memory, "50Gi", pods, "50", gpu, "50")
+		CreateSubnamespace(nsChild, nsRoot, randPrefix, false, storage, "50Gi",
+			cpu, "50", memory, "50Gi", pods, "50", gpu, "50")
 
 		serviceAccount := GenerateE2EUserName("serviceaccount")
 		CreateServiceAccount(serviceAccount, nsRoot, randPrefix)
 		GrantTestingServiceAccountAdmin(serviceAccount, nsRoot)
-		ComplexFieldShouldNotContain("clusterrolebindings", "", nsChild+"-hns-view", "'{{range.subjects}}{{.name}}{{\"\\n\"}}{{end}}'", serviceAccount)
+		ComplexFieldShouldNotContain("clusterrolebindings", "", nsChild+"-hns-view",
+			"'{{range.subjects}}{{.name}}{{\"\\n\"}}{{end}}'", serviceAccount)
 
 	})
 })
