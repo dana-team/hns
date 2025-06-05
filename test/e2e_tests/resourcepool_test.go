@@ -66,6 +66,11 @@ var _ = Describe("ResourcePool", func() {
 		FieldShouldContain("subnamespace", nsC, nsD, ".metadata.annotations", danav1.IsRq+":"+danav1.False)
 		FieldShouldContain("subnamespace", nsC, nsD, ".metadata.annotations", danav1.IsUpperRp+":"+danav1.False)
 		FieldShouldContain("subnamespace", nsC, nsD, ".metadata.annotations", danav1.UpperRp+":"+nsC)
+
+		// verify ns labels + annotations
+		FieldShouldContain("namespace", "", nsC, ".metadata.annotations", danav1.IsUpperRp+":"+danav1.True)
+		FieldShouldContain("namespace", "", nsD, ".metadata.annotations", danav1.UpperRp+":"+nsC)
+
 	})
 
 	It("should update the resources of an upper resourcepool", func() {

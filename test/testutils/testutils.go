@@ -108,7 +108,7 @@ func MustNotRun(cmdln ...string) {
 func mustNotRun(offset int, cmdln ...string) {
 	ConsistentlyWithOffset(offset+1, func() error {
 		return TryRun(cmdln...)
-	}).ShouldNot(BeNil(), "Command: %s", cmdln)
+	}).ShouldNot(Succeed(), "Command: %s", cmdln)
 }
 
 func TryRun(cmdln ...string) error {
@@ -364,7 +364,7 @@ func cleanupNamespaces(nses ...string) {
 	// Now, actually delete them
 	for _, ns := range toDelete {
 		err := TryRun("kubectl delete ns", ns)
-		Expect(err).Should(BeNil())
+		Expect(err).ShouldNot(HaveOccurred())
 	}
 }
 
@@ -382,7 +382,7 @@ func cleanupMigrationHierarchies(mhs ...string) {
 	// Now, actually delete them
 	for _, mh := range toDelete {
 		err := TryRun("kubectl delete migrationhierarchy", mh)
-		Expect(err).Should(BeNil())
+		Expect(err).ShouldNot(HaveOccurred())
 	}
 }
 
@@ -402,7 +402,7 @@ func cleanupUsers(users ...string) {
 	// Now, actually delete them
 	for _, user := range toDelete {
 		err := TryRun("kubectl delete user", user)
-		Expect(err).Should(BeNil())
+		Expect(err).ShouldNot(HaveOccurred())
 	}
 }
 
@@ -410,24 +410,24 @@ func cleanupUsers(users ...string) {
 func cleanupGroup(group string) {
 
 	err := TryRun("kubectl delete group", group)
-	Expect(err).Should(BeNil())
+	Expect(err).ShouldNot(HaveOccurred())
 }
 func writeTempFile(cxt string) string {
 	f, err := os.CreateTemp(os.TempDir(), "e2e-test-*.yaml")
-	Expect(err).Should(BeNil())
+	Expect(err).ShouldNot(HaveOccurred())
 	defer func() {
 		err := f.Close()
-		Expect(err).Should(BeNil())
+		Expect(err).ShouldNot(HaveOccurred())
 	}()
 
 	_, err = io.WriteString(f, cxt)
-	Expect(err).Should(BeNil())
+	Expect(err).ShouldNot(HaveOccurred())
 
 	return f.Name()
 }
 
 func removeFile(path string) {
-	Expect(os.Remove(path)).Should(BeNil())
+	Expect(os.Remove(path)).Should(Succeed())
 }
 
 // silencer is a matcher that assumes that an empty string is good, and any

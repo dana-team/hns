@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"strconv"
 
+	"k8s.io/apimachinery/pkg/api/errors"
+
 	danav1 "github.com/dana-team/hns/api/v1"
 	"github.com/dana-team/hns/internal/namespace/nsutils"
 	"github.com/dana-team/hns/internal/objectcontext"
@@ -46,8 +48,46 @@ func (r *NamespaceReconciler) sync(nsObject *objectcontext.ObjectContext) error 
 	if err := ensureChildrenSNSResourcePoolLabel(nsObject); err != nil {
 		return fmt.Errorf("failed to set ResourcePool labels of children subnamespaces of namespace %q: %v", nsName, err.Error())
 	}
+	if err := ensureNSResourcePoolLabelsAndAnnotations(nsObject); err != nil {
+		return fmt.Errorf("failed to sync ResourcePool labels and annotations of namespace %q: %v", nsName, err.Error())
+	}
 	logger.Info("successfully set ResourcePool labels of children subnamespaces of namespace", "namespace", nsName)
 
+	return nil
+}
+
+// ensureNSResourcePoolLabels makes sure that the ResourcePool labels and annotations on a namespace is set correctly.
+func ensureNSResourcePoolLabelsAndAnnotations(nsObject *objectcontext.ObjectContext) error {
+	nsName := nsObject.Name()
+	sns, err := objectcontext.New(nsObject.Ctx, nsObject.Client, types.NamespacedName{Name: nsName, Namespace: nsObject.Object.GetLabels()[danav1.Parent]}, &danav1.Subnamespace{})
+	if err != nil {
+		if errors.IsNotFound(err) {
+			// If the subnamespace does not exist, we can skip this step.
+			return nil
+		}
+		return fmt.Errorf("failed to get subnamespace %q: %v", nsName, err)
+	}
+	snsLabels := sns.Object.GetLabels()
+	snsAnnotations := sns.Object.GetAnnotations()
+	isRp, ok := snsLabels[danav1.ResourcePool]
+	if !ok || isRp != strconv.FormatBool(true) {
+		// If the subnamespace is not a ResourcePool, we can skip this step.
+		return nil
+	}
+	isUpperRp, ok := snsAnnotations[danav1.IsUpperRp]
+	if !ok {
+		isUpperRp = strconv.FormatBool(false)
+	}
+	upperRp, ok := snsAnnotations[danav1.UpperRp]
+	if !ok {
+		upperRp = ""
+	}
+	if err := nsObject.AppendAnnotations(map[string]string{danav1.IsUpperRp: isUpperRp, danav1.UpperRp: upperRp}); err != nil {
+		return fmt.Errorf("failed to append annotation %q to namespace %q: %v", danav1.IsUpperRp, nsName, err)
+	}
+	if err := nsObject.AppendLabels(map[string]string{danav1.ResourcePool: isRp}); err != nil {
+		return fmt.Errorf("failed to append label %q to namespace %q: %v", danav1.ResourcePool, nsName, err)
+	}
 	return nil
 }
 
