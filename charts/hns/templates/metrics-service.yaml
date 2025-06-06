@@ -1,3 +1,4 @@
+{{if .Values.monitoring.enabled}}
 apiVersion: v1
 kind: Service
 metadata:
@@ -6,11 +7,12 @@ metadata:
     control-plane: controller-manager
   {{- include "hns.labels" . | nindent 4 }}
 spec:
-  type: {{ .Values.service.type }}
+  type: {{ .Values.monitoring.service.type }}
   ports:
   - name: https
-    port: {{ .Values.service.httpsPort }}
-    protocol: {{ .Values.service.protocol }}
-    targetPort: {{ .Values.service.targetPort }}
+    port: {{ .Values.monitoring.service.port }}
+    protocol: {{ .Values.monitoring.service.protocol }}
+    targetPort: {{ .Values.monitoring.service.targetPort }}
   selector:
     control-plane: controller-manager
+{{end}}

@@ -121,17 +121,22 @@ volumes:
       secretName: webhook-server-cert
       defaultMode: 420
 
+#-- Configuration for the HNS controller
 hnsConfig:
   name: "hns-config"
+  # -- create an HNSConfig resource to configure the HNS controller.
   enabled: false
+  # -- Groups that are allowed to create and manage HNSConfig resources.
   permittedGroups:
     - test
+  # -- Resources that the HNSConfig controller will manage.
   observedResources:
     - basic.storageclass.storage.k8s.io/requests.storage
     - cpu
     - memory
     - pods
     - requests.nvidia.com/gpu
+  # -- Default values for the LimitRange created in each namespace.
   limitRange:
     minimum:
        memory: 50Mi
@@ -146,3 +151,21 @@ hnsConfig:
        cpu: 128
     minimumPVC:
       storage: 20Mi
+
+# -- Configuration for prometheus monitoring.
+monitoring:
+    # -- Enable or disable Prometheus monitoring.
+  enabled: false
+  # -- configuration for the Prometheus service monitor.
+  serviceMonitor:
+    interval: 30s
+    scrapeTimeout: 10s
+    labels: {}
+    metricRelabelings: []
+    relabelings: []
+  # -- Configuration for the Prometheus service.
+  service:
+    type: ClusterIP
+    port: 8443
+    protocol: TCP
+    targetPort: 8443
