@@ -72,6 +72,9 @@ func Init(scheme *runtime.Scheme, logger logr.Logger) (*NamespaceDB, error) {
 
 	if len(nsWithSns.Items) > 0 {
 		rootNS = LocateNS(nsList, nsWithSns.Items[0].Annotations[danav1.RootCrqSelector])
+		if rootNS == nil {
+			return nDB, fmt.Errorf("root namespace %q not found in cluster", nsWithSns.Items[0].Annotations[danav1.RootCrqSelector])
+		}
 	}
 
 	for _, ns := range nsWithSns.Items {
@@ -108,7 +111,10 @@ func isSNS(snsList danav1.SubnamespaceList, nsName string) bool {
 
 // addHierarchy adds given a namespace and all its ancestor namespaces to the appropriate key in the DB.
 func addHierarchy(ns corev1.Namespace, nsList corev1.NamespaceList, ndb *NamespaceDB, rootNS *corev1.Namespace) error {
-	nsListUp, _ := NSListUp(ns, rootNS.Name, nsList)
+	nsListUp, err := NSListUp(ns, rootNS.Name, nsList)
+	if err != nil {
+		return fmt.Errorf("failed to build namespace hierarchy for %q: %v", ns.Name, err)
+	}
 
 	sort.Slice(nsListUp, func(i, j int) bool {
 		return nsListUp[i].Annotations[danav1.Depth] < nsListUp[j].Annotations[danav1.Depth]
@@ -152,8 +158,11 @@ func NSListUp(ns corev1.Namespace, rootNS string, nsList corev1.NamespaceList) (
 
 	var nsListUp []corev1.Namespace
 	for i := len(snsArr) - 1; i >= 1; i-- {
-		ns := LocateNS(nsList, snsArr[i])
-		nsListUp = append(nsListUp, *ns)
+		foundNS := LocateNS(nsList, snsArr[i])
+		if foundNS == nil {
+			return nil, fmt.Errorf("namespace %q not found in namespace list", snsArr[i])
+		}
+		nsListUp = append(nsListUp, *foundNS)
 	}
 
 	return nsListUp, nil
